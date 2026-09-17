@@ -37,7 +37,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
   if (!taskResponse.data) notFound();
 
   const task = taskResponse.data as {
-    id: string; title: string; description: string | null; status: string; priority: string; due_date: string | null; estimated_minutes: number | null; actual_minutes: number | null; client_id: string | null; project_id: string | null; milestone_id: string | null; parent_task_id: string | null; depends_on_task_id: string | null; recurrence_rule: Record<string, unknown> | null;
+    id: string; title: string; description: string | null; status: string; priority: string; due_date: string | null; estimated_minutes: number | null; actual_minutes: number | null; scheduled_date: string | null; client_id: string | null; project_id: string | null; milestone_id: string | null; parent_task_id: string | null; depends_on_task_id: string | null; recurrence_rule: Record<string, unknown> | null;
   };
   const clients = (clientsResponse.data ?? []) as { id: string; name: string }[];
   const projects = (projectsResponse.data ?? []) as { id: string; name: string }[];

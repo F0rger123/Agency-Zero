@@ -107,25 +107,25 @@ Source of truth for actual time (manual entry first; timer is a backlog idea).
 
 ---
 
-## 5. Workload, Calendar & Reminders — Phase 4
+## 5. Workload, Calendar & Reminders — Phase 4 ✅ migrated in 0007
 
-### `workday_capacity`
+### `workday_capacity` ✅ migrated (0007)
 Available work hours per day (specific dates override weekday defaults).
 
 - `date date` (unique), `available_minutes int`
 
-### `weekly_capacity`
-- `weekday smallint` (0–6), `available_minutes int`
+### `weekly_capacity` ✅ migrated (0007)
+- `weekday smallint` (0–6), `available_minutes int
 
-### `calendar_events`
+### `calendar_events` ✅ migrated (0007)
 Meetings and planned work blocks (deadlines/tasks/milestones are read from their own tables; only meetings/blocks are stored here).
 
-- `id`, `title text`, `type cal_event_type` (meeting | work_block | other)
+- `id`, `title text`, `type calendar_event_type` (meeting | work_block | other)
 - `starts_at timestamptz`, `ends_at timestamptz`
 - `client_id null`, `project_id null`, `task_id null`, `notes text`
 - `external_id text null` + `provider text null` (Google Calendar sync later — `Future`)
 
-### `reminders`
+### `reminders` ✅ migrated (0007)
 Polymorphic reminder engine powering MASTER_SPEC §4.13.
 
 - `id`, `kind reminder_kind` (task_due_soon | task_overdue | client_no_response | quote_awaiting_response | contract_unsigned | invoice_due | invoice_overdue | project_deadline_approaching | schedule_overloaded | custom)
@@ -134,36 +134,36 @@ Polymorphic reminder engine powering MASTER_SPEC §4.13.
 
 ---
 
-## 6. Sales: Quotes, Contracts, Invoices, Payments — Phase 5
+## 6. Sales: Quotes, Contracts, Invoices, Payments — Phase 5 ✅ migrated in 0006
 
-### `quotes`
-- `id`, `client_id → clients`, `number text unique`, `status quote_status` (draft | sent | viewed | accepted | rejected | expired)
+### `quotes` ✅ migrated (0006)
+- `id`, `client_id → clients`, `number text unique`, `title`, `notes`, `status quote_status` (draft | sent | viewed | accepted | rejected | expired)
 - `issued_on date`, `valid_until date null`
 - `subtotal_cents`, `discount_cents` (or `discount_pct`), `tax_cents` / `tax_rate numeric`, `total_cents`
-- `public_token text unique` (secure public link), `token_expires_at null`
+- `public_token text unique`, `public_token_hash text unique` (secure public link), `token_expires_at null`
 - `viewed_at timestamptz null`, `accepted_at null`, `rejected_at null`
 - `converted_project_id → projects null` (set when accepted quote becomes a project)
 
-### `quote_line_items`
+### `quote_line_items` ✅ migrated (0006)
 - `id`, `quote_id → quotes`, `sort_order int`, `description text`
 - `qty numeric`, `unit_amount_cents int`, `is_recurring bool`, `billing_period month | quarter | year null`, `amount_cents int`
 
-### `contracts`
+### `contracts` ✅ migrated (0006)
 - `id`, `client_id → clients`, `quote_id null`, `project_id null`
 - `title text`, `status contract_status` (draft | sent | signed | void)
 - `body text` (or markdown), `template_id → contract_templates null`, `version int`
-- `public_token text unique`, `signed_at timestamptz null`, `signer_name text null`
-- `signed_file_path text null` (PDF snapshot in Supabase Storage)
+- `public_token text unique`, `public_token_hash text unique`, `signed_at timestamptz null`, `signer_name text null`
+- `signed_snapshot text null` (preserved text/markdown document at signing), `signed_file_path text null` (optional PDF snapshot in Supabase Storage)
 
-### `contract_versions`
+### `contract_versions` ✅ migrated (0006)
 Version history; immutable rows.
 
 - `id`, `contract_id → contracts`, `version int`, `body text`, `created_at`
 
-### `contract_templates`
+### `contract_templates` ✅ migrated (0006)
 - `id`, `name text`, `body text` (with `{{placeholders}}`), `active bool`
 
-### `invoices`
+### `invoices` ✅ migrated (0006)
 - `id`, `client_id → clients`, `project_id null`, `quote_id null`, `contract_id null`
 - `number text unique`, `status invoice_status` (draft | sent | partially_paid | paid | overdue | void)
 - `issued_on date`, `due_on date`
@@ -171,10 +171,10 @@ Version history; immutable rows.
 - `deposit_cents int null` (requested deposit), `paid_cents int` (derived from payments, may be cached)
 - `balance_cents` (total − paid), `public_token text unique null`
 
-### `invoice_line_items`
+### `invoice_line_items` ✅ migrated (0006)
 - `id`, `invoice_id → invoices`, `sort_order`, `description`, `qty`, `unit_amount_cents`, `amount_cents`
 
-### `payments`
+### `payments` ✅ migrated (0006)
 Manual recording first; Stripe later (`Future`).
 
 - `id`, `invoice_id → invoices`, `amount_cents int`, `paid_on date`
@@ -303,5 +303,7 @@ Applied-state record. Migrations in `supabase/migrations/` are the source of tru
 | `0003_projects.sql` | `project_status` enum, `projects` table (client FK cascade, `currency` per D-012, progress check, indexes), RLS | ✅ Written (Phase 1) |
 | `0004_tasks.sql` | `task_status` + `task_priority` enums, `tasks` table (self-FK subtasks, `depends_on_task_id`, `recurrence_rule jsonb`, indexes), RLS | ✅ Written (Phase 1) |
 | `0005_crm_core.sql` | `services`, `contacts`, `client_notes`, `client_files`, `communications`, `client_services`, `milestones`; task client/milestone assignment; `task_dependencies`, `recurring_tasks`, `time_entries`; private `client-files` Storage bucket and policies; RLS/triggers | ✅ Written (Phases 2–3) |
+| `0006_sales.sql` | Quotes and quote line items; hashed public quote functions and acceptance/rejection; contract templates, contracts, immutable versions, hashed public signing functions; invoices, invoice line items, payments, payment totals/status triggers; RLS | ✅ Written (Phase 5) |
+| `0007_planning_and_reminders.sql` | Task planned dates; weekly/date-specific capacity; calendar events; reminder rows; enums, indexes, updated-at triggers, RLS | ✅ Written (Phase 4) |
 
 RLS pattern (D-014): RLS enabled on every table; policies `to authenticated` with `(select auth.uid())` predicates — owner-only until public token surfaces arrive.

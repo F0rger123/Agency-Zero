@@ -8,10 +8,10 @@ Agency Zero manages the full lifecycle in one place: clients, projects, tasks, w
 
 ## Status
 
-🚧 **Phases 2–3 — CRM core (code complete; pending live Supabase verification).**
-The app now includes validated clients, contacts, notes, private files, activity history, services, projects, milestones, tasks, subtasks, dependencies, recurring-task architecture, time entries, useful detail pages, and a live dashboard. All internal tables use row-level security and no mock data is used.
+🚧 **Phases 4–5 — Sales, scheduling, workload & reminders (code complete; pending live Supabase verification).**
+The app now includes the CRM core plus quotes, line items, secure public quote acceptance, contract templates/versioning/signing, invoices, manual payments, revenue tracking, daily/weekly/monthly calendar views, capacity planning, overload detection, task rescheduling, and live/custom reminders. All internal tables use row-level security, tokenized public surfaces use narrow RPCs, and no mock data or Stripe/Google Calendar integrations are used.
 
-**Remaining before the built phases are fully verified:** provision a Supabase project, apply `supabase/migrations/0001` through `0005`, create the owner user, and exercise the first live CRUD flows (see `supabase/README.md`).
+**Remaining before the built phases are fully verified:** provision a Supabase project, apply `supabase/migrations/0001` through `0007`, create the owner user, and exercise the owner/customer sales and planning flows (see `supabase/README.md`).
 
 ## Tech stack
 

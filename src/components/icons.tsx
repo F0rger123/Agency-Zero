@@ -35,6 +35,17 @@ const paths: Record<string, JSX.Element> = {
       <path d="M4 9.5h16M8 3v3.5M16 3v3.5" />
     </>
   ),
+  workload: (
+    <>
+      <path d="M4 19.5h16M6 17V9M10 17V5M14 17v-3M18 17V7" />
+    </>
+  ),
+  reminders: (
+    <>
+      <path d="M6.5 10a5.5 5.5 0 0 1 11 0c0 6 2 6.5 2 6.5h-15s2-.5 2-6.5Z" />
+      <path d="M10 20h4" />
+    </>
+  ),
   quotes: (
     <>
       <path d="M14 3.5H7C6.2 3.5 5.5 4.2 5.5 5v14c0 .8.7 1.5 1.5 1.5h10c.8 0 1.5-.7 1.5-1.5V8z" />

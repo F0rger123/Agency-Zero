@@ -9,6 +9,8 @@ export const navItems = [
   { label: "Projects", href: "/projects", icon: "projects" },
   { label: "Tasks", href: "/tasks", icon: "tasks" },
   { label: "Calendar", href: "/calendar", icon: "calendar" },
+  { label: "Workload", href: "/workload", icon: "workload" },
+  { label: "Reminders", href: "/reminders", icon: "reminders" },
   { label: "Quotes", href: "/quotes", icon: "quotes" },
   { label: "Contracts", href: "/contracts", icon: "contracts" },
   { label: "Invoices", href: "/invoices", icon: "invoices" },

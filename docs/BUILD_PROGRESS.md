@@ -12,9 +12,9 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 | | |
 |---|---|
-| **Current phase** | Phases 2–3 — CRM core *(code complete — pending live Supabase verification)* |
-| **Next up** | Phase 4 — Workload, Calendar & Reminders |
-| **Blocked by** | Nothing in code. Owner action: provision a Supabase project, apply migrations `0001`–`0005`, create the owner user, and verify the core CRUD flows (see `supabase/README.md`). |
+| **Current phase** | Phases 4–5 — Sales, Scheduling, Workload & Reminders *(code complete — pending live Supabase verification)* |
+| **Next up** | Phase 6 — AI Assistant v1 |
+| **Blocked by** | Nothing in code. Owner action: provision a Supabase project, apply migrations `0001`–`0007`, create the owner user, and verify the core CRUD/public-link flows (see `supabase/README.md`). |
 
 ---
 
@@ -40,7 +40,7 @@ Goal: a running Next.js + TypeScript + Tailwind + Supabase skeleton with the mon
 - [x] Supabase Auth: owner login (email/password to start) — `/login` form, `/auth/callback` code exchange, sign-out server action; no sign-up page by design (owner created in Supabase — D-003)
 - [x] First migrations for core tables from DATABASE_PLAN.md — `supabase/migrations/0001–0004`: profiles + settings (with auto-create trigger), clients, projects, tasks; enums, indexes, `updated_at` triggers, RLS on every table. (Clients/projects/tasks schema pulled forward from Phases 2–3 per owner instruction — see D-017; CRUD UIs still land in Phases 2–3.)
 - [x] Monochrome design tokens: grayscale palette, typography scale, spacing, minimal card/border styles — Tailwind v4 `@theme` tokens (background / foreground / muted / border / muted-foreground / faint-foreground / inverted), hairline dividers instead of cards, system font stack (D-016)
-- [x] App shell: sidebar/navigation, empty dashboard page, desktop-first responsive layout — fixed sidebar ≥ lg, slide-over drawer on mobile, 11 nav sections (Dashboard, Clients, Projects, Tasks, Calendar, Quotes, Contracts, Invoices, Social, Marketing, Settings), working sign-out
+- [x] App shell: sidebar/navigation, empty dashboard page, desktop-first responsive layout — fixed sidebar ≥ lg, slide-over drawer on mobile, 13 nav sections (Dashboard, Clients, Projects, Tasks, Calendar, Workload, Reminders, Quotes, Contracts, Invoices, Social, Marketing, Settings), working sign-out
 - [x] Useful empty/loading/error states — honest per-phase empty states (no dead buttons), grayscale loading skeletons, `error.tsx` boundaries (app + root), `not-found.tsx`, "Supabase not configured" and "migrations not applied" setup states, dashboard shows real DB counts (zeros while empty)
 - [x] `npm run lint`, `npx tsc --noEmit`, `npm run build` all pass; routes smoke-tested (unauthenticated → redirected to `/login`; unconfigured → setup states, zero server errors)
 
@@ -73,28 +73,30 @@ Goal: delivery engine.
 - [x] Manual time entries for task/project actual-time history
 - [x] Dashboard live views for due today, overdue, upcoming deadlines, active projects, waiting-on-client items, and recent activity
 
-### Phase 4 — Workload, Calendar & Reminders `NOT STARTED`
+### Phase 4 — Workload, Calendar & Reminders `DONE` — code complete, verify against live Supabase
 
 Goal: the operator's day, planned.
 
-- [ ] Available work hours per day
-- [ ] Overloaded-day detection
-- [ ] Daily & weekly planning views
-- [ ] Calendar: deadlines, tasks, milestones, meetings, planned work blocks
-- [ ] Reminder engine (due soon, overdue, client not responded, quote awaiting response, unsigned contract, invoice due/overdue, project deadline approaching, overloaded schedule)
+- [x] Weekly default and date-specific available work capacity
+- [x] Overloaded-day detection with available vs scheduled time
+- [x] Daily, weekly, and monthly calendar views
+- [x] Calendar: deadlines, tasks, milestones, meetings, and planned work blocks
+- [x] Meeting/work-block create, edit, delete, and task rescheduling
+- [x] Reminder engine for due soon, overdue, waiting-on-client, client-no-response, quote response, unsigned contract, invoice due/overdue, project deadlines, overloaded schedule, and custom reminders
 
-### Phase 5 — Quotes, Contracts, Invoices & Payments `NOT STARTED`
+### Phase 5 — Quotes, Contracts, Invoices & Payments `DONE` — code complete, verify against live Supabase
 
 Goal: get paid.
 
-- [ ] Quotes: line items, discounts, recurring services, taxes
-- [ ] Public secure quote links: view, accept/reject, viewed/accepted dates
-- [ ] Convert accepted quote → project
-- [ ] Contracts: linked to quotes/projects, templates, version history
-- [ ] Public secure contract links: view + electronic sign; store signed timestamp & signed document
-- [ ] Invoices: line items, deposits, partial payments, remaining balance, due dates
-- [ ] Paid / unpaid / overdue status; manually record external payments
-- [ ] Payment history per client; revenue tracking
+- [x] Quotes with line items, quantities, pricing, discounts, recurring services, and taxes
+- [x] Quote lifecycle: draft, sent, viewed, accepted, rejected, expired
+- [x] Secure hashed-token public quote links with viewed timestamp and accept/reject actions
+- [x] Convert accepted quotes into planning projects
+- [x] Contracts linked to clients, quotes, and/or projects
+- [x] Contract templates, immutable version history, secure public links, electronic signature, signer name, timestamp, and preserved signed snapshot
+- [x] Invoices with line items, deposits, partial payments, remaining balances, due dates, and lifecycle states
+- [x] Manual external payments with method, reference, note, and payment history
+- [x] Revenue and outstanding-balance tracking; Stripe remains deferred
 
 ### Phase 6 — AI Assistant v1 `NOT STARTED`
 
@@ -159,3 +161,4 @@ Goal: AI on top of marketing data (respects the §4.10/§4.12 safety rules).
 | 2026-09-17 | Roadmap created. Phase 0 documentation completed (all 5 docs + README). |
 | 2026-09-17 | **Phase 1 built:** Next.js 16 + TypeScript + Tailwind v4 scaffold; Supabase Auth (owner login, session proxy, sign-out, callback); monochrome design system; responsive app shell with all 11 nav sections; honest empty/loading/error states. Initial migrations 0001–0004 (profiles, settings, clients, projects, tasks) with RLS — clients/projects/tasks schema pulled forward from Phases 2–3 per owner instruction (D-017). Lint, typecheck, and build pass. Remaining: apply migrations to a live Supabase project + first real login. |
 | 2026-09-17 | **Phases 2–3 built:** migration `0005_crm_core.sql` adds services, contacts, notes, private files, communications, client services, milestones, task assignment fields, task dependencies, recurring-task architecture, and time entries — all with RLS. Added validated server actions and responsive CRUD/detail routes for clients, projects, milestones, tasks, subtasks, dependencies, and time entries; client files use private Storage with signed links. Dashboard now reads live due-today, overdue, deadline, active-project, waiting-on-client, and recent-activity data. Lint, typecheck, build, and unconfigured smoke tests pass. Remaining: apply migrations to a live Supabase project and exercise CRUD end-to-end. |
+| 2026-09-17 | **Phases 4–5 built:** migrations `0006_sales.sql` and `0007_planning_and_reminders.sql` add owner-only sales, calendar, capacity, and reminder tables plus narrow hashed-token public quote/contract functions. Added validated sales CRUD/detail routes, customer quote acceptance/rejection, quote-to-project conversion, electronic contract signing with immutable versions and snapshots, manual invoice payments and derived balances, daily/weekly/monthly calendar views, workload capacity/overload calculations, task rescheduling, and dynamic/custom reminders. Added `/q/[token]` and `/c/[token]` public surfaces without fake integrations. Lint, typecheck, build, and unconfigured smoke tests pass. Remaining: apply migrations to a live Supabase project and exercise owner/customer flows end-to-end. |

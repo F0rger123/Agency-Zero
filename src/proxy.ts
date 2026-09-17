@@ -7,7 +7,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * the private-app boundary: everything except /login and /auth/callback
  * requires an authenticated owner (DECISIONS.md D-003).
  */
-const PUBLIC_PATHS = ["/login", "/auth/callback"];
+const PUBLIC_PATHS = ["/login", "/auth/callback", "/q", "/c"];
 
 export async function proxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

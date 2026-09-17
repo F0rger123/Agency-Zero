@@ -11,7 +11,7 @@ const initialState: ActionState = {};
 type Option = { id: string; label: string };
 type Task = {
   id: string; title: string; description: string | null; status: string; priority: string; due_date: string | null;
-  estimated_minutes: number | null; actual_minutes: number | null; client_id: string | null; project_id: string | null;
+  estimated_minutes: number | null; actual_minutes: number | null; scheduled_date: string | null; client_id: string | null; project_id: string | null;
   milestone_id: string | null; parent_task_id: string | null; depends_on_task_id: string | null; recurrence_rule: Record<string, unknown> | null;
 };
 
@@ -30,6 +30,7 @@ function TaskFields({ task, clients, projects, milestones, tasks }: { task?: Tas
       <div><FieldLabel label="Milestone" htmlFor="task-milestone" /><SelectInput id="task-milestone" name="milestone_id" defaultValue={task?.milestone_id}><option value="">No milestone</option>{milestones.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</SelectInput></div>
       <div><FieldLabel label="Parent task" htmlFor="task-parent" hint="for subtasks" /><SelectInput id="task-parent" name="parent_task_id" defaultValue={task?.parent_task_id}><option value="">No parent</option>{tasks.filter((option) => option.id !== task?.id).map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</SelectInput></div>
       <div><FieldLabel label="Due date" htmlFor="task-due" /><TextInput id="task-due" name="due_date" type="date" defaultValue={task?.due_date} /></div>
+      <div><FieldLabel label="Planned date" htmlFor="task-scheduled" hint="workload" /><TextInput id="task-scheduled" name="scheduled_date" type="date" defaultValue={task?.scheduled_date} /></div>
       <div><FieldLabel label="Depends on" htmlFor="task-dependency" hint="one predecessor" /><SelectInput id="task-dependency" name="depends_on_task_id" defaultValue={task?.depends_on_task_id}><option value="">No dependency</option>{tasks.filter((option) => option.id !== task?.id).map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</SelectInput></div>
       <div><FieldLabel label="Estimated time" htmlFor="task-estimated" hint="hours" /><TextInput id="task-estimated" name="estimated_hours" type="number" min={0} step={0.25} defaultValue={task?.estimated_minutes != null ? task.estimated_minutes / 60 : null} /></div>
       <div><FieldLabel label="Actual time" htmlFor="task-actual" hint="hours" /><TextInput id="task-actual" name="actual_hours" type="number" min={0} step={0.25} defaultValue={task?.actual_minutes != null ? task.actual_minutes / 60 : null} /></div>

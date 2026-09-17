@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import type { ReactNode } from "react";
+import type { ChangeEventHandler, ReactNode } from "react";
 
 export function SubmitButton({
   children,
@@ -72,6 +72,7 @@ export function TextInput({
   min,
   max,
   step,
+  onChange,
 }: {
   id: string;
   name: string;
@@ -82,6 +83,7 @@ export function TextInput({
   min?: number;
   max?: number;
   step?: number;
+  onChange?: ChangeEventHandler<HTMLInputElement>;
 }) {
   return (
     <input
@@ -94,6 +96,7 @@ export function TextInput({
       min={min}
       max={max}
       step={step}
+      onChange={onChange}
       className="mt-2 block w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-faint-foreground focus:border-foreground"
     />
   );
@@ -133,12 +136,14 @@ export function SelectInput({
   defaultValue,
   children,
   required = false,
+  onChange,
 }: {
   id: string;
   name: string;
   defaultValue?: string | null;
   children: ReactNode;
   required?: boolean;
+  onChange?: ChangeEventHandler<HTMLSelectElement>;
 }) {
   return (
     <select
@@ -146,6 +151,7 @@ export function SelectInput({
       name={name}
       defaultValue={defaultValue ?? ""}
       required={required}
+      onChange={onChange}
       className="mt-2 block w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground"
     >
       {children}

@@ -51,6 +51,7 @@ function taskFields(formData: FormData): ActionState | Record<string, string | n
     status,
     priority,
     due_date: optionalDate(formData, "due_date"),
+    scheduled_date: optionalDate(formData, "scheduled_date"),
     estimated_minutes: estimated,
     actual_minutes: actual,
     client_id: optionalField(formData, "client_id"),

@@ -14,7 +14,7 @@ export default async function TasksPage() {
   if (!isSupabaseConfigured()) return <SetupRequired />;
   const supabase = await createClient();
   const [tasksResponse, clientsResponse, projectsResponse, milestonesResponse] = await Promise.all([
-    supabase.from("tasks").select("id, title, status, priority, due_date, estimated_minutes, actual_minutes, client_id, project_id, milestone_id, parent_task_id, clients(name), projects(name), milestones(name)").order("due_date", { ascending: true, nullsFirst: false }).order("priority"),
+    supabase.from("tasks").select("id, title, status, priority, due_date, scheduled_date, estimated_minutes, actual_minutes, client_id, project_id, milestone_id, parent_task_id, clients(name), projects(name), milestones(name)").order("due_date", { ascending: true, nullsFirst: false }).order("priority"),
     supabase.from("clients").select("id, name").is("deleted_at", null).order("name"),
     supabase.from("projects").select("id, name, client_id").is("deleted_at", null).order("name"),
     supabase.from("milestones").select("id, name, project_id, projects(name)").order("due_date", { ascending: true, nullsFirst: false }),
@@ -25,7 +25,7 @@ export default async function TasksPage() {
   if (failed?.error) throw new Error(failed.error.message);
 
   const tasks = (tasksResponse.data ?? []) as {
-    id: string; title: string; status: string; priority: string; due_date: string | null; estimated_minutes: number | null; actual_minutes: number | null; client_id: string | null; project_id: string | null; milestone_id: string | null; parent_task_id: string | null; clients: { name: string } | { name: string }[] | null; projects: { name: string } | { name: string }[] | null; milestones: { name: string } | { name: string }[] | null;
+    id: string; title: string; status: string; priority: string; due_date: string | null; scheduled_date: string | null; estimated_minutes: number | null; actual_minutes: number | null; client_id: string | null; project_id: string | null; milestone_id: string | null; parent_task_id: string | null; clients: { name: string } | { name: string }[] | null; projects: { name: string } | { name: string }[] | null; milestones: { name: string } | { name: string }[] | null;
   }[];
   const clients = (clientsResponse.data ?? []) as { id: string; name: string }[];
   const projects = (projectsResponse.data ?? []) as { id: string; name: string; client_id: string }[];

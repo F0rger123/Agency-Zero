@@ -23,7 +23,7 @@ cp .env.example .env.local
 Run each file in `supabase/migrations/` **in numeric order**, exactly once:
 
 - **Option A — SQL editor:** Supabase dashboard → SQL Editor → paste the file
-  contents → Run. Repeat for `0001` → `0005`.
+  contents → Run. Repeat for `0001` → `0007`.
 - **Option B — Supabase CLI:**
   ```bash
   npx supabase login
@@ -40,8 +40,10 @@ What gets created:
 | `0003_projects.sql` | `projects` + `project_status` enum |
 | `0004_tasks.sql` | `tasks` + `task_status` / `task_priority` enums |
 | `0005_crm_core.sql` | CRM detail tables, milestones, task extensions, dependencies, recurring-task architecture, time entries, and private `client-files` Storage bucket |
+| `0006_sales.sql` | Quotes, quote line items, secure public quote RPCs, contract templates/contracts/version history/signing RPCs, invoices, invoice line items, payments, derived balances/statuses |
+| `0007_planning_and_reminders.sql` | Planned task dates, weekly/date-specific capacity, calendar events, and custom reminder rows |
 
-Migration `0005` also seeds the seven Agency Zero services (software development, custom CRMs/software, websites, SEO, Meta ads, social media management, and social video creation). Client files are private and are served by expiring signed URLs.
+Migration `0005` also seeds the seven Agency Zero services (software development, custom CRMs/software, websites, SEO, Meta ads, social media management, and social video creation). Client files are private and are served by expiring signed URLs. Migration `0006` creates the public `/q/[token]` and `/c/[token]` surfaces; those links use random tokens and narrow security-definer functions, not broad anonymous table access. Stripe and Google Calendar remain intentionally unconnected.
 
 All tables have **row-level security** enabled: only the authenticated owner can
 read/write (see `docs/DECISIONS.md` D-014). Future public token surfaces (quote /
@@ -73,5 +75,9 @@ npm run dev
 ```
 
 Sign in → the dashboard should show zeros (not a migration error). Settings
-should show your account email. If you see "Migrations are not applied yet",
-step 3 was skipped or partially applied.
+should show your account email. Create a client, quote, contract, invoice, task,
+calendar item, capacity override, and custom reminder to verify the owner flows.
+Set a quote to Sent and open `/q/<token>` in a private browser window to verify
+viewed/accept/reject. Set a contract to Sent and open `/c/<token>` to verify the
+signer name, timestamp, and preserved snapshot. If you see "Migrations are not
+applied yet", step 3 was skipped or partially applied.
