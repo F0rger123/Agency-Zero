@@ -1,0 +1,74 @@
+# Supabase setup (Agency Zero)
+
+The app is built against Supabase (Postgres + Auth + Storage). This folder holds
+the SQL migrations. Nothing here requires the Supabase CLI — you can apply
+everything from the dashboard SQL editor.
+
+## 1. Create the project
+
+1. Create a project at [supabase.com](https://supabase.com) (or self-host).
+2. Copy **Project Settings → API**: the **Project URL** and the **anon/public key**.
+
+## 2. Configure the app
+
+```bash
+cp .env.example .env.local
+# fill in:
+#   NEXT_PUBLIC_SUPABASE_URL=...
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+```
+
+## 3. Apply the migrations
+
+Run each file in `supabase/migrations/` **in numeric order**, exactly once:
+
+- **Option A — SQL editor:** Supabase dashboard → SQL Editor → paste the file
+  contents → Run. Repeat for `0001` → `0004`.
+- **Option B — Supabase CLI:**
+  ```bash
+  npx supabase login
+  npx supabase link --project-ref <your-project-ref>
+  npx supabase db push
+  ```
+
+What gets created:
+
+| Migration | Contents |
+|---|---|
+| `0001_profiles_and_settings.sql` | `profiles` (owner), `settings` (single row), auto-create trigger on sign-up, `updated_at` helper |
+| `0002_clients.sql` | `clients` + `client_status` enum |
+| `0003_projects.sql` | `projects` + `project_status` enum |
+| `0004_tasks.sql` | `tasks` + `task_status` / `task_priority` enums |
+
+All tables have **row-level security** enabled: only the authenticated owner can
+read/write (see `docs/DECISIONS.md` D-014). Future public token surfaces (quote /
+contract links) will get their own narrow policies.
+
+## 4. Create the owner account
+
+Agency Zero has **no sign-up page by design** (private app, D-003):
+
+1. Supabase dashboard → **Authentication → Users → Add user**.
+2. Enter email + password, enable **Auto Confirm User**.
+3. Sign in at the app's `/login` with those credentials.
+
+A profile row and the workspace settings row are created automatically by the
+`on_auth_user_created` trigger.
+
+## 5. Lock it down (recommended)
+
+- **Authentication → Sign In / Providers → Email**: disable **Allow new users to
+  sign up** so nobody else can create accounts.
+- Configure the **Site URL** (Authentication → URL Configuration) to your
+  deployed domain so auth links/redirects work; set `NEXT_PUBLIC_SITE_URL` in
+  your hosting environment to match.
+
+## 6. Verify
+
+```bash
+npm run dev
+```
+
+Sign in → the dashboard should show zeros (not a migration error). Settings
+should show your account email. If you see "Migrations are not applied yet",
+step 3 was skipped or partially applied.

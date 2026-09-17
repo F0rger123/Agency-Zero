@@ -21,7 +21,7 @@ Status labels: `Phase 1–8` = core build · `Later` = client portal phase · `F
 
 ---
 
-## 2. Identity & Settings
+## 2. Identity & Settings — `profiles` + `settings` ✅ migrated (0001); `services` Phase 2
 
 ### `profiles` — Phase 1
 The agency owner (extends Supabase Auth user).
@@ -41,7 +41,7 @@ Catalog of agency services (software dev, custom CRMs, websites, SEO, Meta ads, 
 
 ---
 
-## 3. Clients & Communication — Phase 2
+## 3. Clients & Communication — Phase 2 (`clients` ✅ migrated in 0002; contacts/notes/files/communications/client_services land with Phase 2)
 
 ### `clients`
 - `id`, `name text`, `status client_status` (lead | active | past | archived)
@@ -71,7 +71,7 @@ Which services the agency provides to which client.
 
 ---
 
-## 4. Projects & Tasks — Phase 3
+## 4. Projects & Tasks — Phase 3 (`projects` ✅ migrated in 0003; `tasks` ✅ migrated in 0004; milestones / dependencies / recurring / time entries land with Phase 3)
 
 ### `projects`
 - `id`, `client_id → clients`, `name text`, `description text`
@@ -83,7 +83,7 @@ Which services the agency provides to which client.
 - `id`, `project_id → projects`, `name text`, `due_date date null`, `completed_at timestamptz null`, `sort_order int`
 
 ### `tasks`
-- `id`, `project_id → projects null` (tasks may be standalone), `milestone_id → milestones null`
+- `id`, `project_id → projects null` (tasks may be standalone), `milestone_id → milestones null` *(deferred to the Phase 3 migration that creates `milestones`)*
 - `parent_task_id → tasks null` (subtasks)
 - `title text`, `description text`
 - `status task_status` (todo | in_progress | blocked_waiting_client | blocked_other | done | cancelled)
@@ -289,3 +289,18 @@ erDiagram
 | Integrations secrets | Server-side only, never exposed to the browser |
 
 Tokens: long random strings (e.g. 32+ bytes), stored hashed where feasible, revocable, optional expiry.
+
+---
+
+## 13. Migration log
+
+Applied-state record. Migrations in `supabase/migrations/` are the source of truth; keep this list in sync.
+
+| Migration | Contents | Status |
+|---|---|---|
+| `0001_profiles_and_settings.sql` | `profiles`, `settings` (single row, `id = 1` check), `set_updated_at()` helper, `handle_new_user()` security-definer trigger (auto-creates profile + settings row on sign-up), RLS policies | ✅ Written (Phase 1) |
+| `0002_clients.sql` | `client_status` enum, `clients` table (soft delete, email check, partial status index), RLS | ✅ Written (Phase 1) |
+| `0003_projects.sql` | `project_status` enum, `projects` table (client FK cascade, `currency` per D-012, progress check, indexes), RLS | ✅ Written (Phase 1) |
+| `0004_tasks.sql` | `task_status` + `task_priority` enums, `tasks` table (self-FK subtasks, `depends_on_task_id`, `recurrence_rule jsonb`, indexes), RLS | ✅ Written (Phase 1) |
+
+RLS pattern (D-014): RLS enabled on every table; policies `to authenticated` with `(select auth.uid())` predicates — owner-only until public token surfaces arrive.

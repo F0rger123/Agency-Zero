@@ -8,18 +8,49 @@ Agency Zero manages the full lifecycle in one place: clients, projects, tasks, w
 
 ## Status
 
-📋 **Documentation phase (Phase 0).** Requirements and architecture are locked in before any application code is written. See the roadmap in [`docs/BUILD_PROGRESS.md`](docs/BUILD_PROGRESS.md).
+🚧 **Phase 1 — App scaffold, auth & design system (code complete).**
+Next.js + TypeScript + Tailwind v4 shell with Supabase Auth (owner login), responsive sidebar navigation, dashboard, all section pages with honest empty states, and initial database migrations (profiles, settings, clients, projects, tasks) with row-level security.
 
-## Tech direction
+**Remaining before Phase 1 is fully done:** provision a Supabase project, apply `supabase/migrations/`, create the owner user, and verify the first live login (see `supabase/README.md`).
 
-- **Next.js** + **TypeScript**
+## Tech stack
+
+- **Next.js** (App Router) + **TypeScript**
+- **Tailwind CSS** v4 — black / white / grayscale only; no gradients, no accent colors
 - **Supabase** — Postgres, Auth, Storage
-- **Tailwind CSS**
-- Stripe, Google Calendar, Meta, Search Console, and GA4 integrations are **deferred**; the architecture is designed so they can be added later.
+- Stripe, Google Calendar, Meta, Search Console, and GA4 integrations are **deferred by design**; the architecture is prepared for them (adapter boundaries + integration-ready schema)
 
-## Design
+## Getting started
 
-Extremely simple black-and-white UI: black, white, and grayscale only. Minimal borders, minimal cards, lots of spacing, clean typography. No gradients, no bright accent colors, no clutter. Desktop-first, mobile usable. **Speed and usability over flashy design.**
+```bash
+npm install
+cp .env.example .env.local   # fill in NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY
+```
+
+1. Create a Supabase project and apply the SQL files in `supabase/migrations/` (in order) — full instructions in [`supabase/README.md`](supabase/README.md).
+2. Create the owner account in Supabase (Authentication → Users → Add user) — there is **no sign-up page by design**.
+3. `npm run dev` and sign in at `/login`.
+
+### Scripts
+
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Development server |
+| `npm run build` | Production build (runs type checking) |
+| `npm run start` | Serve the production build |
+| `npm run lint` | ESLint |
+| `npx tsc --noEmit` | Type check |
+
+## Project structure
+
+```
+docs/            Requirements, decisions, roadmap, database plan (read these first)
+supabase/        SQL migrations + setup guide
+src/app/         Routes: (app)/ dashboard + sections, login/, auth/callback
+src/components/  App shell, icons, shared states
+src/lib/         Supabase clients (server/browser/config), navigation
+src/proxy.ts     Next.js 16 proxy (auth session + route protection)
+```
 
 ## Documentation
 
@@ -31,10 +62,11 @@ The docs in [`/docs`](docs/) are the permanent record — future AI agents and d
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | Decision log — what was decided, when, and why. |
 | [`docs/IDEAS_BACKLOG.md`](docs/IDEAS_BACKLOG.md) | Future / incomplete ideas, waiting to be confirmed. |
 | [`docs/BUILD_PROGRESS.md`](docs/BUILD_PROGRESS.md) | Phased roadmap and current build status. |
-| [`docs/DATABASE_PLAN.md`](docs/DATABASE_PLAN.md) | Preliminary database entity plan. |
+| [`docs/DATABASE_PLAN.md`](docs/DATABASE_PLAN.md) | Database entity plan + migration log. |
 
 ## Ground rules for agents working on this repo
 
 1. `docs/MASTER_SPEC.md` is the single source of truth and is additive-only.
 2. Build in phases — do not attempt every integration at once.
 3. The AI assistant never silently performs high-impact financial or ad-spend actions; it recommends, the owner approves.
+4. No fake UI: unbuilt features get honest "planned" states, never dead buttons that pretend to work.

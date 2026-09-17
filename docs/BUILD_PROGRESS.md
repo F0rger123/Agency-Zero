@@ -12,15 +12,15 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 | | |
 |---|---|
-| **Current phase** | Phase 0 — Foundation & Documentation |
-| **Next up** | Phase 1 — App scaffold, auth & design system |
-| **Blocked by** | Nothing |
+| **Current phase** | Phase 1 — App scaffold, Auth & Design system *(code complete — pending first live Supabase login)* |
+| **Next up** | Phase 2 — Clients & Contacts |
+| **Blocked by** | Nothing in code. Owner action: provision a Supabase project, apply migrations, create the owner user (see `supabase/README.md`). |
 
 ---
 
 ## Phased roadmap
 
-### Phase 0 — Foundation & Documentation `IN PROGRESS`
+### Phase 0 — Foundation & Documentation `DONE`
 
 Goal: lock in requirements and architecture before any code.
 
@@ -31,16 +31,20 @@ Goal: lock in requirements and architecture before any code.
 - [x] Create /docs/DATABASE_PLAN.md
 - [x] Write root README explaining Agency Zero
 
-### Phase 1 — App scaffold, Auth & Design system `NOT STARTED`
+### Phase 1 — App scaffold, Auth & Design system `IN PROGRESS` — code complete, verify against live Supabase
 
 Goal: a running Next.js + TypeScript + Tailwind + Supabase skeleton with the monochrome design system and owner login.
 
-- [ ] Next.js (TypeScript) project scaffold with Tailwind
-- [ ] Supabase project wiring (Postgres, Auth, Storage) + environment config
-- [ ] Supabase Auth: owner login (email/password to start)
-- [ ] First migrations for core tables (clients, projects, tasks) from DATABASE_PLAN.md
-- [ ] Monochrome design tokens: grayscale palette, typography scale, spacing, minimal card/border styles
-- [ ] App shell: sidebar/navigation, empty dashboard page, desktop-first responsive layout
+- [x] Next.js (TypeScript) project scaffold with Tailwind — Next.js 16 (App Router, src dir), Tailwind v4, ESLint 9
+- [x] Supabase project wiring (Postgres, Auth, Storage) + environment config — `@supabase/supabase-js` + `@supabase/ssr`; server/browser client helpers; `src/proxy.ts` (Next 16 middleware) refreshes sessions and protects all routes; `.env.example` template
+- [x] Supabase Auth: owner login (email/password to start) — `/login` form, `/auth/callback` code exchange, sign-out server action; no sign-up page by design (owner created in Supabase — D-003)
+- [x] First migrations for core tables from DATABASE_PLAN.md — `supabase/migrations/0001–0004`: profiles + settings (with auto-create trigger), clients, projects, tasks; enums, indexes, `updated_at` triggers, RLS on every table. (Clients/projects/tasks schema pulled forward from Phases 2–3 per owner instruction — see D-017; CRUD UIs still land in Phases 2–3.)
+- [x] Monochrome design tokens: grayscale palette, typography scale, spacing, minimal card/border styles — Tailwind v4 `@theme` tokens (background / foreground / muted / border / muted-foreground / faint-foreground / inverted), hairline dividers instead of cards, system font stack (D-016)
+- [x] App shell: sidebar/navigation, empty dashboard page, desktop-first responsive layout — fixed sidebar ≥ lg, slide-over drawer on mobile, 11 nav sections (Dashboard, Clients, Projects, Tasks, Calendar, Quotes, Contracts, Invoices, Social, Marketing, Settings), working sign-out
+- [x] Useful empty/loading/error states — honest per-phase empty states (no dead buttons), grayscale loading skeletons, `error.tsx` boundaries (app + root), `not-found.tsx`, "Supabase not configured" and "migrations not applied" setup states, dashboard shows real DB counts (zeros while empty)
+- [x] `npm run lint`, `npx tsc --noEmit`, `npm run build` all pass; routes smoke-tested (unauthenticated → redirected to `/login`; unconfigured → setup states, zero server errors)
+
+> **To close Phase 1:** apply migrations to a real Supabase project, create the owner user, verify sign-in end-to-end, disable public sign-ups (steps in `supabase/README.md`).
 
 ### Phase 2 — Clients & Contacts `NOT STARTED`
 
@@ -149,3 +153,4 @@ Goal: AI on top of marketing data (respects the §4.10/§4.12 safety rules).
 | Date | Update |
 |---|---|
 | 2026-09-17 | Roadmap created. Phase 0 documentation completed (all 5 docs + README). |
+| 2026-09-17 | **Phase 1 built:** Next.js 16 + TypeScript + Tailwind v4 scaffold; Supabase Auth (owner login, session proxy, sign-out, callback); monochrome design system; responsive app shell with all 11 nav sections; honest empty/loading/error states. Initial migrations 0001–0004 (profiles, settings, clients, projects, tasks) with RLS — clients/projects/tasks schema pulled forward from Phases 2–3 per owner instruction (D-017). Lint, typecheck, and build pass. Remaining: apply migrations to a live Supabase project + first real login. |
