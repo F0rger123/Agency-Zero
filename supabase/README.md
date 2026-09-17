@@ -23,7 +23,7 @@ cp .env.example .env.local
 Run each file in `supabase/migrations/` **in numeric order**, exactly once:
 
 - **Option A — SQL editor:** Supabase dashboard → SQL Editor → paste the file
-  contents → Run. Repeat for `0001` → `0004`.
+  contents → Run. Repeat for `0001` → `0005`.
 - **Option B — Supabase CLI:**
   ```bash
   npx supabase login
@@ -39,6 +39,9 @@ What gets created:
 | `0002_clients.sql` | `clients` + `client_status` enum |
 | `0003_projects.sql` | `projects` + `project_status` enum |
 | `0004_tasks.sql` | `tasks` + `task_status` / `task_priority` enums |
+| `0005_crm_core.sql` | CRM detail tables, milestones, task extensions, dependencies, recurring-task architecture, time entries, and private `client-files` Storage bucket |
+
+Migration `0005` also seeds the seven Agency Zero services (software development, custom CRMs/software, websites, SEO, Meta ads, social media management, and social video creation). Client files are private and are served by expiring signed URLs.
 
 All tables have **row-level security** enabled: only the authenticated owner can
 read/write (see `docs/DECISIONS.md` D-014). Future public token surfaces (quote /

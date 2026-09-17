@@ -12,9 +12,9 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 | | |
 |---|---|
-| **Current phase** | Phase 1 — App scaffold, Auth & Design system *(code complete — pending first live Supabase login)* |
-| **Next up** | Phase 2 — Clients & Contacts |
-| **Blocked by** | Nothing in code. Owner action: provision a Supabase project, apply migrations, create the owner user (see `supabase/README.md`). |
+| **Current phase** | Phases 2–3 — CRM core *(code complete — pending live Supabase verification)* |
+| **Next up** | Phase 4 — Workload, Calendar & Reminders |
+| **Blocked by** | Nothing in code. Owner action: provision a Supabase project, apply migrations `0001`–`0005`, create the owner user, and verify the core CRUD flows (see `supabase/README.md`). |
 
 ---
 
@@ -46,28 +46,32 @@ Goal: a running Next.js + TypeScript + Tailwind + Supabase skeleton with the mon
 
 > **To close Phase 1:** apply migrations to a real Supabase project, create the owner user, verify sign-in end-to-end, disable public sign-ups (steps in `supabase/README.md`).
 
-### Phase 2 — Clients & Contacts `NOT STARTED`
+### Phase 2 — Clients & Contacts `DONE` — code complete, verify against live Supabase
 
 Goal: the CRM core.
 
-- [ ] Clients CRUD with status
-- [ ] Contacts per client
-- [ ] Client notes
-- [ ] Client files (Supabase Storage)
-- [ ] Communication history log
-- [ ] Services being provided per client
+- [x] Clients create/edit/archive CRUD with status and server-side validation
+- [x] Contacts per client (multiple contacts, primary flag, remove)
+- [x] Client notes (pinned notes, remove)
+- [x] Client files via private Supabase Storage bucket with signed downloads (10 MB validation)
+- [x] Communication history log (channel, direction, contact, timestamp, summary)
+- [x] Services catalogue and services assigned to each client
+- [x] Useful client detail route with projects and all CRM sections
 
-### Phase 3 — Projects & Tasks `NOT STARTED`
+### Phase 3 — Projects & Tasks `DONE` — code complete, verify against live Supabase
 
 Goal: delivery engine.
 
-- [ ] Projects CRUD (per client, status, value, deadlines, estimated/actual hours, progress)
-- [ ] Milestones
-- [ ] Tasks & subtasks with priorities, due dates, estimated/actual time
-- [ ] Task dependencies
-- [ ] Blocked / waiting-on-client status
-- [ ] Recurring tasks
-- [ ] Task reminders
+- [x] Projects create/edit/archive CRUD per client with status, value, deadlines, estimated/actual hours, and progress
+- [x] Milestones with due dates, completion, ordering, edit, and removal
+- [x] Tasks create/edit/delete/complete with priorities, due dates, estimated/actual time
+- [x] Subtasks via parent task nesting
+- [x] Task assignment to client, project, and milestone
+- [x] Task dependency chain plus many-to-many dependency table architecture
+- [x] Blocked / waiting-on-client status
+- [x] Recurring-task JSON rule architecture and recurring template table
+- [x] Manual time entries for task/project actual-time history
+- [x] Dashboard live views for due today, overdue, upcoming deadlines, active projects, waiting-on-client items, and recent activity
 
 ### Phase 4 — Workload, Calendar & Reminders `NOT STARTED`
 
@@ -154,3 +158,4 @@ Goal: AI on top of marketing data (respects the §4.10/§4.12 safety rules).
 |---|---|
 | 2026-09-17 | Roadmap created. Phase 0 documentation completed (all 5 docs + README). |
 | 2026-09-17 | **Phase 1 built:** Next.js 16 + TypeScript + Tailwind v4 scaffold; Supabase Auth (owner login, session proxy, sign-out, callback); monochrome design system; responsive app shell with all 11 nav sections; honest empty/loading/error states. Initial migrations 0001–0004 (profiles, settings, clients, projects, tasks) with RLS — clients/projects/tasks schema pulled forward from Phases 2–3 per owner instruction (D-017). Lint, typecheck, and build pass. Remaining: apply migrations to a live Supabase project + first real login. |
+| 2026-09-17 | **Phases 2–3 built:** migration `0005_crm_core.sql` adds services, contacts, notes, private files, communications, client services, milestones, task assignment fields, task dependencies, recurring-task architecture, and time entries — all with RLS. Added validated server actions and responsive CRUD/detail routes for clients, projects, milestones, tasks, subtasks, dependencies, and time entries; client files use private Storage with signed links. Dashboard now reads live due-today, overdue, deadline, active-project, waiting-on-client, and recent-activity data. Lint, typecheck, build, and unconfigured smoke tests pass. Remaining: apply migrations to a live Supabase project and exercise CRUD end-to-end. |

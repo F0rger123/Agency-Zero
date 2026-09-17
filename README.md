@@ -8,10 +8,10 @@ Agency Zero manages the full lifecycle in one place: clients, projects, tasks, w
 
 ## Status
 
-🚧 **Phase 1 — App scaffold, auth & design system (code complete).**
-Next.js + TypeScript + Tailwind v4 shell with Supabase Auth (owner login), responsive sidebar navigation, dashboard, all section pages with honest empty states, and initial database migrations (profiles, settings, clients, projects, tasks) with row-level security.
+🚧 **Phases 2–3 — CRM core (code complete; pending live Supabase verification).**
+The app now includes validated clients, contacts, notes, private files, activity history, services, projects, milestones, tasks, subtasks, dependencies, recurring-task architecture, time entries, useful detail pages, and a live dashboard. All internal tables use row-level security and no mock data is used.
 
-**Remaining before Phase 1 is fully done:** provision a Supabase project, apply `supabase/migrations/`, create the owner user, and verify the first live login (see `supabase/README.md`).
+**Remaining before the built phases are fully verified:** provision a Supabase project, apply `supabase/migrations/0001` through `0005`, create the owner user, and exercise the first live CRUD flows (see `supabase/README.md`).
 
 ## Tech stack
 

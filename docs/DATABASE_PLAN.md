@@ -21,7 +21,7 @@ Status labels: `Phase 1–8` = core build · `Later` = client portal phase · `F
 
 ---
 
-## 2. Identity & Settings — `profiles` + `settings` ✅ migrated (0001); `services` Phase 2
+## 2. Identity & Settings — `profiles` + `settings` ✅ migrated (0001); `services` ✅ migrated (0005)
 
 ### `profiles` — Phase 1
 The agency owner (extends Supabase Auth user).
@@ -34,14 +34,14 @@ The agency owner (extends Supabase Auth user).
 - `business_name text`, `address text`, `tax_id text`
 - `default_currency text`, `default_tax_rate numeric`, `quote_prefix text`, `invoice_prefix text`
 
-### `services` — Phase 2
+### `services` — Phase 2 ✅ migrated (0005)
 Catalog of agency services (software dev, custom CRMs, websites, SEO, Meta ads, social media management, social video creation).
 
 - `id`, `name text`, `description text`, `default_billing text` (one_off | recurring), `active bool`
 
 ---
 
-## 3. Clients & Communication — Phase 2 (`clients` ✅ migrated in 0002; contacts/notes/files/communications/client_services land with Phase 2)
+## 3. Clients & Communication — Phase 2 (`clients` ✅ migrated in 0002; contacts/notes/files/communications/client_services ✅ migrated in 0005)
 
 ### `clients`
 - `id`, `name text`, `status client_status` (lead | active | past | archived)
@@ -56,7 +56,7 @@ Catalog of agency services (software dev, custom CRMs, websites, SEO, Meta ads, 
 - `id`, `client_id → clients`, `body text`, `pinned bool`
 
 ### `client_files`
-- `id`, `client_id → clients`, `file_name text`, `storage_path text` (Supabase Storage), `mime_type`, `size_bytes`
+- `id`, `client_id → clients`, `file_name text`, `storage_path text` (private Supabase Storage `client-files` bucket), `mime_type`, `size_bytes`
 
 ### `communications`
 One row per logged interaction (call, email, meeting, message — manual logging first; automation is a backlog idea).
@@ -71,7 +71,7 @@ Which services the agency provides to which client.
 
 ---
 
-## 4. Projects & Tasks — Phase 3 (`projects` ✅ migrated in 0003; `tasks` ✅ migrated in 0004; milestones / dependencies / recurring / time entries land with Phase 3)
+## 4. Projects & Tasks — Phase 3 (`projects` ✅ migrated in 0003; `tasks` ✅ migrated in 0004; milestones / dependencies / recurring / time entries ✅ migrated in 0005)
 
 ### `projects`
 - `id`, `client_id → clients`, `name text`, `description text`
@@ -83,7 +83,7 @@ Which services the agency provides to which client.
 - `id`, `project_id → projects`, `name text`, `due_date date null`, `completed_at timestamptz null`, `sort_order int`
 
 ### `tasks`
-- `id`, `project_id → projects null` (tasks may be standalone), `milestone_id → milestones null` *(deferred to the Phase 3 migration that creates `milestones`)*
+- `id`, `project_id → projects null` (tasks may be standalone), `client_id → clients null`, `milestone_id → milestones null` *(added in 0005)*
 - `parent_task_id → tasks null` (subtasks)
 - `title text`, `description text`
 - `status task_status` (todo | in_progress | blocked_waiting_client | blocked_other | done | cancelled)
@@ -302,5 +302,6 @@ Applied-state record. Migrations in `supabase/migrations/` are the source of tru
 | `0002_clients.sql` | `client_status` enum, `clients` table (soft delete, email check, partial status index), RLS | ✅ Written (Phase 1) |
 | `0003_projects.sql` | `project_status` enum, `projects` table (client FK cascade, `currency` per D-012, progress check, indexes), RLS | ✅ Written (Phase 1) |
 | `0004_tasks.sql` | `task_status` + `task_priority` enums, `tasks` table (self-FK subtasks, `depends_on_task_id`, `recurrence_rule jsonb`, indexes), RLS | ✅ Written (Phase 1) |
+| `0005_crm_core.sql` | `services`, `contacts`, `client_notes`, `client_files`, `communications`, `client_services`, `milestones`; task client/milestone assignment; `task_dependencies`, `recurring_tasks`, `time_entries`; private `client-files` Storage bucket and policies; RLS/triggers | ✅ Written (Phases 2–3) |
 
 RLS pattern (D-014): RLS enabled on every table; policies `to authenticated` with `(select auth.uid())` predicates — owner-only until public token surfaces arrive.
