@@ -1,35 +1,44 @@
 # Supabase setup (Agency Zero)
 
 The app is built against Supabase (Postgres + Auth + Storage). This folder holds
-the SQL migrations. Nothing here requires the Supabase CLI — you can apply
-everything from the dashboard SQL editor.
+the ordered SQL migrations and the committed `config.toml` used by the Supabase
+CLI. The complete Cloudflare and production environment checklist is in
+[`docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md).
 
 ## 1. Create the project
 
 1. Create a project at [supabase.com](https://supabase.com) (or self-host).
-2. Copy **Project Settings → API**: the **Project URL** and the **anon/public key**.
+2. Copy **Project Settings → API**: the **Project URL** and the
+   **publishable** key (the legacy `anon` key is also supported).
 
 ## 2. Configure the app
 
 ```bash
 cp .env.example .env.local
-# fill in:
-#   NEXT_PUBLIC_SUPABASE_URL=...
-#   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+# fill in NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
+# and NEXT_PUBLIC_SITE_URL for the local or deployed origin
 ```
 
 ## 3. Apply the migrations
 
-Run each file in `supabase/migrations/` **in numeric order**, exactly once:
+Run each file in `supabase/migrations/` **in numeric order**, exactly once. The
+preferred path records migration history for future updates:
 
-- **Option A — SQL editor:** Supabase dashboard → SQL Editor → paste the file
-  contents → Run. Repeat for `0001` → `0007`.
-- **Option B — Supabase CLI:**
-  ```bash
-  npx supabase login
-  npx supabase link --project-ref <your-project-ref>
-  npx supabase db push
-  ```
+```bash
+npx supabase login
+npx supabase link --project-ref <your-project-ref>
+npx supabase db push --linked
+```
+
+The dashboard SQL editor is a fallback: paste and run the files one at a time,
+from `0001` through `0007`. A manually applied set does not automatically
+reconcile the CLI migration history, so do not run `db push` afterward until
+that history has been reconciled. Never run the same migration twice.
+
+For a local Docker-backed verification environment, run `npx supabase start`
+then `npx supabase db reset --local --no-seed`; `npx supabase db lint --local`
+checks the resulting schema. This repository's live-readiness pass does not
+start Docker or connect to an external project.
 
 What gets created:
 
@@ -45,30 +54,38 @@ What gets created:
 
 Migration `0005` also seeds the seven Agency Zero services (software development, custom CRMs/software, websites, SEO, Meta ads, social media management, and social video creation). Client files are private and are served by expiring signed URLs. Migration `0006` creates the public `/q/[token]` and `/c/[token]` surfaces; those links use random tokens and narrow security-definer functions, not broad anonymous table access. Stripe and Google Calendar remain intentionally unconnected.
 
-All tables have **row-level security** enabled: only the authenticated owner can
-read/write (see `docs/DECISIONS.md` D-014). Future public token surfaces (quote /
-contract links) will get their own narrow policies.
+All application tables have **row-level security** enabled: only the
+authenticated owner can read/write (see `docs/DECISIONS.md` D-014). Public quote
+and contract access uses the narrow hashed-token functions created in `0006`,
+not broad anonymous table policies.
 
-## 4. Create the owner account
+## 4. Configure production Auth and create the owner
 
 Agency Zero has **no sign-up page by design** (private app, D-003):
 
-1. Supabase dashboard → **Authentication → Users → Add user**.
-2. Enter email + password, enable **Auto Confirm User**.
-3. Sign in at the app's `/login` with those credentials.
+1. In Authentication → URL Configuration, set **Site URL** to the exact value
+   of `NEXT_PUBLIC_SITE_URL` and add `https://your-domain.example/auth/callback`
+   as an allowed redirect URL. Keep local callback URLs separate and only while
+   local testing is needed.
+2. In Authentication → Sign In / Providers → Email, keep email/password enabled
+   and disable **Allow new users to sign up**.
+3. Supabase dashboard → **Authentication → Users → Add user**. Enter the owner
+   email and password, and confirm the email as appropriate for the test.
+4. Sign in at the app's `/login` with those credentials.
 
 A profile row and the workspace settings row are created automatically by the
-`on_auth_user_created` trigger.
+`on_auth_user_created` trigger. The Next.js proxy calls `auth.getUser()` to
+refresh the cookie session, while protected layouts and server actions verify
+ownership again. No service-role key is used by the app.
 
-## 5. Lock it down (recommended)
+## 5. Verify
 
-- **Authentication → Sign In / Providers → Email**: disable **Allow new users to
-  sign up** so nobody else can create accounts.
-- Configure the **Site URL** (Authentication → URL Configuration) to your
-  deployed domain so auth links/redirects work; set `NEXT_PUBLIC_SITE_URL` in
-  your hosting environment to match.
+Before calling the project live-ready, run `npx supabase db lint --linked` and
+check that the migrations created the private `client-files` bucket, RLS on
+every application table, and the narrow public quote/contract RPCs. Then
+exercise the owner and tokenized customer flows described below.
 
-## 6. Verify
+## 6. End-to-end verification
 
 ```bash
 npm run dev

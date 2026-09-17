@@ -328,6 +328,13 @@ begin
 end;
 $$;
 
+-- Make the RPC boundary explicit. PostgreSQL grants EXECUTE to PUBLIC by
+-- default; revoke that default before granting only the intended API roles.
+revoke execute on function public.mark_public_quote_viewed(text) from public;
+revoke execute on function public.get_public_quote(text) from public;
+revoke execute on function public.respond_public_quote(text, text) from public;
+revoke execute on function public.convert_quote_to_project(uuid) from public;
+revoke execute on function public.refresh_invoice_statuses() from public;
 grant execute on function public.mark_public_quote_viewed(text) to anon, authenticated;
 grant execute on function public.get_public_quote(text) to anon, authenticated;
 grant execute on function public.respond_public_quote(text, text) to anon, authenticated;
@@ -378,5 +385,7 @@ begin
 end;
 $$;
 
+revoke execute on function public.get_public_contract(text) from public;
+revoke execute on function public.sign_public_contract(text, text) from public;
 grant execute on function public.get_public_contract(text) to anon, authenticated;
 grant execute on function public.sign_public_contract(text, text) to anon, authenticated;

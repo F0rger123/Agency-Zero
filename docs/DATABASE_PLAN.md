@@ -306,4 +306,4 @@ Applied-state record. Migrations in `supabase/migrations/` are the source of tru
 | `0006_sales.sql` | Quotes and quote line items; hashed public quote functions and acceptance/rejection; contract templates, contracts, immutable versions, hashed public signing functions; invoices, invoice line items, payments, payment totals/status triggers; RLS | ✅ Written (Phase 5) |
 | `0007_planning_and_reminders.sql` | Task planned dates; weekly/date-specific capacity; calendar events; reminder rows; enums, indexes, updated-at triggers, RLS | ✅ Written (Phase 4) |
 
-RLS pattern (D-014): RLS enabled on every table; policies `to authenticated` with `(select auth.uid())` predicates — owner-only until public token surfaces arrive.
+RLS pattern (D-014): RLS is enabled on every application table; internal policies are `to authenticated` with `(select auth.uid())` predicates. Public quote/contract access is implemented only through the narrow hashed-token security-definer functions in `0006`; no broad anonymous table policies are used. A fresh project applies `0001` through `0007` in numeric order.

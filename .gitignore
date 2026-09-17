@@ -20,6 +20,14 @@
 # production
 /build
 
+# Cloudflare / OpenNext generated output
+/.open-next/
+/.wrangler/
+
+# Cloudflare local secrets
+.dev.vars
+.dev.vars.*
+
 # misc
 .DS_Store
 *.pem

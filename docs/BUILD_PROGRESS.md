@@ -98,6 +98,15 @@ Goal: get paid.
 - [x] Manual external payments with method, reference, note, and payment history
 - [x] Revenue and outstanding-balance tracking; Stripe remains deferred
 
+### Deployment readiness pass `DONE` — external setup remains with the owner
+
+- [x] Audited migrations `0001` through `0007` for numeric order, fresh-project dependencies, RLS coverage, Storage setup, and the narrow public RPC boundary; the Supabase CLI config now supports recorded migration history.
+- [x] Audited environment usage; `.env.example` contains the three required application variables and no secrets are committed.
+- [x] Added current Cloudflare OpenNext configuration: `open-next.config.ts`, `wrangler.jsonc`, generated `cloudflare-env.d.ts`, package scripts, and ignored build/local-secret output.
+- [x] Verified the Next.js `16.3.5` OpenNext build and local Workers preview without Supabase credentials; no deployment or external account creation was attempted.
+- [x] Documented production Auth URL/sign-up settings and exact Cloudflare build/runtime variable setup in `docs/DEPLOYMENT.md` and `supabase/README.md`.
+- [ ] Owner applies the migrations, configures the Supabase project and Auth, supplies the three production variables to Cloudflare, deploys, and exercises real owner/customer flows.
+
 ### Phase 6 — AI Assistant v1 `NOT STARTED`
 
 Goal: the assistant earns its place. (Respects D-008: never silently performs high-impact actions.)
@@ -162,3 +171,4 @@ Goal: AI on top of marketing data (respects the §4.10/§4.12 safety rules).
 | 2026-09-17 | **Phase 1 built:** Next.js 16 + TypeScript + Tailwind v4 scaffold; Supabase Auth (owner login, session proxy, sign-out, callback); monochrome design system; responsive app shell with all 11 nav sections; honest empty/loading/error states. Initial migrations 0001–0004 (profiles, settings, clients, projects, tasks) with RLS — clients/projects/tasks schema pulled forward from Phases 2–3 per owner instruction (D-017). Lint, typecheck, and build pass. Remaining: apply migrations to a live Supabase project + first real login. |
 | 2026-09-17 | **Phases 2–3 built:** migration `0005_crm_core.sql` adds services, contacts, notes, private files, communications, client services, milestones, task assignment fields, task dependencies, recurring-task architecture, and time entries — all with RLS. Added validated server actions and responsive CRUD/detail routes for clients, projects, milestones, tasks, subtasks, dependencies, and time entries; client files use private Storage with signed links. Dashboard now reads live due-today, overdue, deadline, active-project, waiting-on-client, and recent-activity data. Lint, typecheck, build, and unconfigured smoke tests pass. Remaining: apply migrations to a live Supabase project and exercise CRUD end-to-end. |
 | 2026-09-17 | **Phases 4–5 built:** migrations `0006_sales.sql` and `0007_planning_and_reminders.sql` add owner-only sales, calendar, capacity, and reminder tables plus narrow hashed-token public quote/contract functions. Added validated sales CRUD/detail routes, customer quote acceptance/rejection, quote-to-project conversion, electronic contract signing with immutable versions and snapshots, manual invoice payments and derived balances, daily/weekly/monthly calendar views, workload capacity/overload calculations, task rescheduling, and dynamic/custom reminders. Added `/q/[token]` and `/c/[token]` public surfaces without fake integrations. Lint, typecheck, build, and unconfigured smoke tests pass. Remaining: apply migrations to a live Supabase project and exercise owner/customer flows end-to-end. |
+| 2026-09-17 | **Deployment readiness pass:** audited fresh-project migration order/dependencies and RLS coverage; added Supabase CLI config, `.env.example` coverage, Cloudflare OpenNext/Wrangler configuration for Next.js `16.3.5`, generated binding types, and exact production Auth/Cloudflare setup docs. `npx opennextjs-cloudflare build` and a no-credentials Workers preview pass; no deployment or external account creation was attempted. |

@@ -24,12 +24,19 @@ The app now includes the CRM core plus quotes, line items, secure public quote a
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY
+cp .env.example .env.local   # fill in all three variables
 ```
 
-1. Create a Supabase project and apply the SQL files in `supabase/migrations/` (in order) — full instructions in [`supabase/README.md`](supabase/README.md).
-2. Create the owner account in Supabase (Authentication → Users → Add user) — there is **no sign-up page by design**.
+1. Create a Supabase project, configure Auth URLs, and apply migrations
+   `0001` through `0007` in order — full instructions are in
+   [`supabase/README.md`](supabase/README.md).
+2. Create the owner account in Supabase (Authentication → Users → Add user) —
+   there is **no sign-up page by design**.
 3. `npm run dev` and sign in at `/login`.
+
+For the Cloudflare Workers live-test setup, including exact build/runtime
+variables and OpenNext configuration, read
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ### Scripts
 
@@ -40,16 +47,20 @@ cp .env.example .env.local   # fill in NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SU
 | `npm run start` | Serve the production build |
 | `npm run lint` | ESLint |
 | `npx tsc --noEmit` | Type check |
+| `npm run cf-typegen` | Generate Wrangler binding types |
+| `npm run preview` | Build with OpenNext and run the local Workers runtime |
+| `npm run deploy` | Build and deploy to Cloudflare (run only after setup) |
 
 ## Project structure
 
 ```
 docs/            Requirements, decisions, roadmap, database plan (read these first)
-supabase/        SQL migrations + setup guide
+supabase/        SQL migrations, CLI config + setup guide
 src/app/         Routes: (app)/ dashboard + sections, login/, auth/callback
 src/components/  App shell, icons, shared states
 src/lib/         Supabase clients (server/browser/config), navigation
 src/proxy.ts     Next.js 16 proxy (auth session + route protection)
+open-next.config.ts / wrangler.jsonc  Cloudflare OpenNext Worker configuration
 ```
 
 ## Documentation
