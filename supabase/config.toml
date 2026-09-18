@@ -1,0 +1,10 @@
+# Supabase CLI project configuration.
+# `supabase link --project-ref <project-ref>` replaces project_id for a hosted project.
+project_id = "agency-zero"
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+enabled = false

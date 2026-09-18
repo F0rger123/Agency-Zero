@@ -1,0 +1,11 @@
+"use client";
+
+import { useActionState } from "react";
+import type { ActionState } from "@/lib/forms";
+import { deleteDateCapacityAction, saveDateCapacityAction, saveWeeklyCapacityAction } from "./actions";
+import { FieldLabel, FormMessage, SubmitButton, TextInput } from "@/components/form-controls";
+const initialState: ActionState = {};
+const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+export function WeeklyCapacityForm({ values }: { values: number[] }) { const [state, action] = useActionState(saveWeeklyCapacityAction, initialState); return <form action={action} className="space-y-4"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{days.map((day, index) => <div key={day}><FieldLabel label={day} htmlFor={`capacity-${index}`} hint="hours" /><TextInput id={`capacity-${index}`} name={`capacity_${index}`} type="number" min={0} max={24} step={0.25} required defaultValue={Math.round((values[index] / 60) * 100) / 100} /></div>)}</div><div className="flex flex-wrap items-center gap-4"><SubmitButton>Save weekly capacity</SubmitButton><FormMessage {...state} /></div></form>; }
+export function DateCapacityForm() { const [state, action] = useActionState(saveDateCapacityAction, initialState); return <form action={action} className="space-y-4"><div className="grid gap-4 sm:grid-cols-2"><div><FieldLabel label="Date" htmlFor="capacity-date" required /><TextInput id="capacity-date" name="date" type="date" required /></div><div><FieldLabel label="Available" htmlFor="capacity-hours" required hint="hours" /><TextInput id="capacity-hours" name="hours" type="number" min={0} max={24} step={0.25} required /></div></div><div className="flex flex-wrap items-center gap-4"><SubmitButton>Save date override</SubmitButton><FormMessage {...state} /></div></form>; }
+export function DeleteDateCapacityForm({ date }: { date: string }) { const [state, action] = useActionState(deleteDateCapacityAction, initialState); return <form action={action} className="flex flex-wrap gap-3"><input type="hidden" name="date" value={date} /><SubmitButton pendingLabel="Removing…" className="bg-background px-0 py-0 text-xs font-normal text-muted-foreground ring-0">Remove override</SubmitButton><FormMessage {...state} /></form>; }
