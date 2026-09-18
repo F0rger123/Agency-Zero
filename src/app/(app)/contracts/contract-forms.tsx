@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import type { ReactNode } from "react";
 import type { ActionState } from "@/lib/forms";
-import { createContractAction, createTemplateAction, deleteContractAction, deleteTemplateAction, updateContractAction, updateTemplateAction } from "./actions";
+import { createContractAction, createTemplateAction, deleteContractAction, deleteTemplateAction, regenerateContractTokenAction, updateContractAction, updateTemplateAction } from "./actions";
 import { FieldLabel, FormMessage, SelectInput, SubmitButton, TextArea, TextInput } from "@/components/form-controls";
 
 const initialState: ActionState = {};
@@ -12,11 +12,77 @@ type Contract = { id: string; client_id: string; quote_id: string | null; projec
 type Template = { id: string; name: string; body: string; active: boolean };
 function Shell({ title, children }: { title: string; children: ReactNode }) { return <div className="border-t border-border pt-6"><h2 className="text-sm font-medium">{title}</h2><div className="mt-4">{children}</div></div>; }
 
-function ContractFields({ clients, quotes, projects, templates, contract }: { clients: Option[]; quotes: Option[]; projects: Option[]; templates: Option[]; contract?: Contract }) { return <div className="space-y-5"><div className="grid gap-4 sm:grid-cols-2"><div><FieldLabel label="Title" htmlFor="contract-title" required /><TextInput id="contract-title" name="title" required defaultValue={contract?.title} placeholder="Services agreement" /></div><div><FieldLabel label="Status" htmlFor="contract-status" required /><SelectInput id="contract-status" name="status" required defaultValue={contract?.status ?? "draft"}><option value="draft">Draft</option><option value="sent">Sent</option><option value="signed">Signed</option><option value="void">Void</option></SelectInput></div><div><FieldLabel label="Client" htmlFor="contract-client" required /><SelectInput id="contract-client" name="client_id" required defaultValue={contract?.client_id}><option value="">Choose a client</option>{clients.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</SelectInput></div><div><FieldLabel label="Template" htmlFor="contract-template" hint="optional" /><SelectInput id="contract-template" name="template_id" defaultValue={contract?.template_id}><option value="">No template</option>{templates.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</SelectInput></div><div><FieldLabel label="Quote" htmlFor="contract-quote" hint="optional" /><SelectInput id="contract-quote" name="quote_id" defaultValue={contract?.quote_id}><option value="">No linked quote</option>{quotes.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</SelectInput></div><div><FieldLabel label="Project" htmlFor="contract-project" hint="optional" /><SelectInput id="contract-project" name="project_id" defaultValue={contract?.project_id}><option value="">No linked project</option>{projects.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</SelectInput></div><div><FieldLabel label="Link expires" htmlFor="contract-expires" hint="optional" /><TextInput id="contract-expires" name="token_expires_at" type="date" defaultValue={contract?.token_expires_at?.slice(0, 10)} /></div></div><div><FieldLabel label="Contract body" htmlFor="contract-body" required hint="plain text or markdown" /><TextArea id="contract-body" name="body" required defaultValue={contract?.body} rows={18} placeholder="Write the terms of the agreement…" /></div></div>; }
+export const PLACEHOLDER_LEGEND = "Placeholders rendered when a contract is saved: {{business_name}}, {{client_name}}, {{client_company}}, {{contract_title}}, {{quote_number}}, {{date}}.";
 
-export function NewContractForm({ clients, quotes, projects, templates }: { clients: Option[]; quotes: Option[]; projects: Option[]; templates: Option[] }) { const [state, action] = useActionState(createContractAction, initialState); return <Shell title="Create contract"><form action={action} className="space-y-5"><ContractFields clients={clients} quotes={quotes} projects={projects} templates={templates} /><div className="flex flex-wrap items-center gap-4"><SubmitButton>Create contract</SubmitButton><FormMessage {...state} /></div></form></Shell>; }
-export function EditContractForm({ clients, quotes, projects, templates, contract }: { clients: Option[]; quotes: Option[]; projects: Option[]; templates: Option[]; contract: Contract }) { const [state, action] = useActionState(updateContractAction, initialState); return <Shell title="Edit contract"><form action={action} className="space-y-5"><input type="hidden" name="id" value={contract.id} /><ContractFields clients={clients} quotes={quotes} projects={projects} templates={templates} contract={contract} /><div className="flex flex-wrap items-center gap-4"><SubmitButton>Save new version</SubmitButton><FormMessage {...state} /></div></form></Shell>; }
+function ContractFields({ clients, quotes, projects, templates, contract }: { clients: Option[]; quotes: Option[]; projects: Option[]; templates: Option[]; contract?: Contract }) {
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div><FieldLabel label="Title" htmlFor="contract-title" required /><TextInput id="contract-title" name="title" required defaultValue={contract?.title} placeholder="Services agreement" /></div>
+        <div><FieldLabel label="Status" htmlFor="contract-status" required /><SelectInput id="contract-status" name="status" required defaultValue={contract?.status ?? "draft"}><option value="draft">Draft</option><option value="sent">Sent</option><option value="signed">Signed</option><option value="void">Void</option></SelectInput></div>
+        <div><FieldLabel label="Client" htmlFor="contract-client" required /><SelectInput id="contract-client" name="client_id" required defaultValue={contract?.client_id}><option value="">Choose a client</option>{clients.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</SelectInput></div>
+        <div><FieldLabel label="Template" htmlFor="contract-template" hint="optional; used when the body is empty" /><SelectInput id="contract-template" name="template_id" defaultValue={contract?.template_id}><option value="">No template</option>{templates.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</SelectInput></div>
+        <div><FieldLabel label="Quote" htmlFor="contract-quote" hint="optional" /><SelectInput id="contract-quote" name="quote_id" defaultValue={contract?.quote_id}><option value="">No linked quote</option>{quotes.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</SelectInput></div>
+        <div><FieldLabel label="Project" htmlFor="contract-project" hint="optional" /><SelectInput id="contract-project" name="project_id" defaultValue={contract?.project_id}><option value="">No linked project</option>{projects.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</SelectInput></div>
+        <div><FieldLabel label="Link expires" htmlFor="contract-expires" hint="optional" /><TextInput id="contract-expires" name="token_expires_at" type="date" defaultValue={contract?.token_expires_at?.slice(0, 10)} /></div></div>
+      <div>
+        <FieldLabel label="Contract body" htmlFor="contract-body" hint="plain text; optional if a template is selected" />
+        <TextArea id="contract-body" name="body" defaultValue={contract?.body} rows={18} placeholder="Write the terms of the agreement…" />
+        <p className="mt-2 text-xs text-muted-foreground">
+          {PLACEHOLDER_LEGEND} Saving an unsigned contract always creates a new
+          version; signed contracts and their history are immutable.
+        </p>
+      </div>
+    </div>
+  );
+}
 
-export function TemplateForm({ template }: { template?: Template }) { const [state, action] = useActionState(template ? updateTemplateAction : createTemplateAction, initialState); return <form action={action} className="space-y-4">{template ? <input type="hidden" name="id" value={template.id} /> : null}<div><FieldLabel label="Template name" htmlFor={`template-name-${template?.id ?? "new"}`} required /><TextInput id={`template-name-${template?.id ?? "new"}`} name="name" required defaultValue={template?.name} placeholder="Standard services agreement" /></div><div><FieldLabel label="Template body" htmlFor={`template-body-${template?.id ?? "new"}`} required /><TextArea id={`template-body-${template?.id ?? "new"}`} name="body" required defaultValue={template?.body} rows={8} /></div><label className="flex items-center gap-2 text-sm text-muted-foreground"><input type="checkbox" name="active" defaultChecked={template?.active ?? true} className="size-4 accent-black" /> Active</label><div className="flex flex-wrap items-center gap-4"><SubmitButton>{template ? "Save template" : "Add template"}</SubmitButton><FormMessage {...state} /></div></form>; }
-export function DeleteTemplateForm({ id }: { id: string }) { const [state, action] = useActionState(deleteTemplateAction, initialState); return <form action={action} className="flex flex-wrap gap-3"><input type="hidden" name="id" value={id} /><SubmitButton pendingLabel="Removing…" className="bg-background px-0 py-0 text-xs font-normal text-muted-foreground ring-0 hover:text-foreground">Remove</SubmitButton><FormMessage {...state} /></form>; }
-export function DeleteContractForm({ id }: { id: string }) { const [state, action] = useActionState(deleteContractAction, initialState); return <form action={action} className="flex flex-wrap gap-3"><input type="hidden" name="id" value={id} /><SubmitButton pendingLabel="Deleting…" className="bg-background px-0 py-0 text-sm font-normal text-muted-foreground ring-0 hover:text-foreground">Delete contract</SubmitButton><FormMessage {...state} /></form>; }
+export function NewContractForm({ clients, quotes, projects, templates }: { clients: Option[]; quotes: Option[]; projects: Option[]; templates: Option[] }) {
+  const [state, action] = useActionState(createContractAction, initialState);
+  return <Shell title="Create contract"><form action={action} className="space-y-5"><ContractFields clients={clients} quotes={quotes} projects={projects} templates={templates} /><div className="flex flex-wrap items-center gap-4"><SubmitButton>Create contract</SubmitButton><FormMessage {...state} /></div></form></Shell>;
+}
+
+export function EditContractForm({ clients, quotes, projects, templates, contract }: { clients: Option[]; quotes: Option[]; projects: Option[]; templates: Option[]; contract: Contract }) {
+  const [state, action] = useActionState(updateContractAction, initialState);
+  return <Shell title="Edit contract"><form action={action} className="space-y-5"><input type="hidden" name="id" value={contract.id} /><ContractFields clients={clients} quotes={quotes} projects={projects} templates={templates} contract={contract} /><div className="flex flex-wrap items-center gap-4"><SubmitButton>Save new version</SubmitButton><FormMessage {...state} /></div></form></Shell>;
+}
+
+export function TemplateForm({ template }: { template?: Template }) {
+  const [state, action] = useActionState(template ? updateTemplateAction : createTemplateAction, initialState);
+  return (
+    <form action={action} className="space-y-4">
+      {template ? <input type="hidden" name="id" value={template.id} /> : null}
+      <div><FieldLabel label="Template name" htmlFor={`template-name-${template?.id ?? "new"}`} required /><TextInput id={`template-name-${template?.id ?? "new"}`} name="name" required defaultValue={template?.name} placeholder="Standard services agreement" /></div>
+      <div>
+        <FieldLabel label="Template body" htmlFor={`template-body-${template?.id ?? "new"}`} required hint="placeholders render on save" />
+        <TextArea id={`template-body-${template?.id ?? "new"}`} name="body" required defaultValue={template?.body} rows={8} />
+        <p className="mt-2 text-xs text-muted-foreground">{PLACEHOLDER_LEGEND}</p>
+      </div>
+      <label className="flex items-center gap-2 text-sm text-muted-foreground"><input type="checkbox" name="active" defaultChecked={template?.active ?? true} className="size-4 accent-black" /> Active</label>
+      <div className="flex flex-wrap items-center gap-4"><SubmitButton>{template ? "Save template" : "Add template"}</SubmitButton><FormMessage {...state} /></div>
+    </form>
+  );
+}
+
+export function DeleteTemplateForm({ id }: { id: string }) {
+  const [state, action] = useActionState(deleteTemplateAction, initialState);
+  return <form action={action} className="flex flex-wrap gap-3"><input type="hidden" name="id" value={id} /><SubmitButton pendingLabel="Removing…" className="bg-background px-0 py-0 text-xs font-normal text-muted-foreground ring-0 hover:text-foreground">Remove</SubmitButton><FormMessage {...state} /></form>;
+}
+
+export function DeleteContractForm({ id }: { id: string }) {
+  const [state, action] = useActionState(deleteContractAction, initialState);
+  return <form action={action} className="flex flex-wrap gap-3"><input type="hidden" name="id" value={id} /><SubmitButton pendingLabel="Deleting…" className="bg-background px-0 py-0 text-sm font-normal text-muted-foreground ring-0 hover:text-foreground">Delete contract</SubmitButton><FormMessage {...state} /></form>;
+}
+
+export function RegenerateContractLinkForm({ id }: { id: string }) {
+  const [state, action] = useActionState(regenerateContractTokenAction, initialState);
+  return (
+    <form action={action} className="mt-3 flex flex-wrap items-center gap-4">
+      <input type="hidden" name="id" value={id} />
+      <button type="submit" className="text-xs font-medium text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground">
+        Generate a new signing link (revokes the old one)
+      </button>
+      <FormMessage {...state} />
+    </form>
+  );
+}

@@ -31,7 +31,7 @@ required by the current application. Do not add one just to deploy this phase.
 ## Supabase production configuration
 
 1. Create a new Supabase project.
-2. Apply migrations `0001` through `0007` in numeric order. The preferred
+2. Apply migrations `0001` through `0008` in numeric order. The preferred
    repeatable path is:
 
    ```bash
@@ -48,7 +48,8 @@ required by the current application. Do not add one just to deploy this phase.
 3. If the dashboard SQL editor is used instead, run each file exactly once in
    this order: `0001_profiles_and_settings.sql`, `0002_clients.sql`,
    `0003_projects.sql`, `0004_tasks.sql`, `0005_crm_core.sql`,
-   `0006_sales.sql`, and `0007_planning_and_reminders.sql`. Do not mix a
+   `0006_sales.sql`, `0007_planning_and_reminders.sql`, and
+   `0008_security_hardening.sql`. Do not mix a
    manually applied set with `db push` until the Supabase migration history has
    been reconciled.
 4. In Authentication → URL Configuration, set **Site URL** to the exact value
@@ -73,7 +74,8 @@ required by the current application. Do not add one just to deploy this phase.
 
 Every application table has RLS enabled. Internal policies are authenticated
 owner policies; public quote and contract access is limited to hashed-token
-security-definer functions in migration `0006`. The private `client-files`
+security-definer functions created in migration `0006` and extended in `0008`
+(with immutable acceptance/signature protection). The private `client-files`
 Storage bucket and its authenticated policies are created in migration `0005`.
 
 ## Cloudflare Workers / OpenNext

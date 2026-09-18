@@ -7,6 +7,13 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "12mb",
     },
+    // Faster sidebar navigation (D-031): nav routes are prefetched on hover,
+    // focus, and idle; 30s of router-cache staleness for dynamic pages keeps
+    // those prefetches useful while staying acceptably fresh. Server actions
+    // revalidate their own paths after every mutation.
+    staleTimes: {
+      dynamic: 30,
+    },
   },
 };
 

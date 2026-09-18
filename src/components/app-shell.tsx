@@ -1,23 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState, type ReactNode } from "react";
 import { navItems } from "@/lib/nav";
 import { Icon } from "@/components/icons";
 import { signOut } from "@/app/actions/auth";
 
 function Wordmark() {
   return (
-    <Link href="/" className="flex items-center gap-2.5 px-3">
-      <span aria-hidden className="block size-2.5 rounded-[3px] bg-foreground" />
-      <span className="text-sm font-semibold tracking-tight">Agency Zero</span>
+    <Link href="/" className="flex items-center gap-3 px-3">
+      <span aria-hidden className="block size-3 rounded-[3px] bg-foreground" />
+      <span
+        className="wordmark text-xl font-bold tracking-tight"
+        data-text="Agency Zero"
+      >
+        Agency Zero
+      </span>
     </Link>
   );
 }
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Faster navigation (D-031): prefetch nav routes on hover/focus, and warm
+  // every route once on mount during idle time so first visits are instant.
+  // Dynamic pages benefit because staleTimes.dynamic keeps the prefetched
+  // response for 30 seconds; server actions still revalidate after mutations.
+  useEffect(() => {
+    const timers = navItems.map((item, index) =>
+      window.setTimeout(() => router.prefetch(item.href), 400 + index * 150)
+    );
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [router]);
 
   return (
     <nav aria-label="Main" className="flex flex-col gap-0.5 px-3">
@@ -29,6 +46,8 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
             key={item.href}
             href={item.href}
             onClick={onNavigate}
+            onMouseEnter={() => router.prefetch(item.href)}
+            onFocus={() => router.prefetch(item.href)}
             aria-current={active ? "page" : undefined}
             className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
               active
@@ -85,7 +104,7 @@ export function AppShell({
   return (
     <div className="min-h-screen">
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background px-4 lg:hidden">
+      <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-border bg-background px-4 lg:hidden">
         <button
           type="button"
           aria-label="Open menu"
@@ -99,8 +118,8 @@ export function AppShell({
       </header>
 
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-border bg-background lg:flex">
-        <div className="flex h-16 items-center">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-background lg:flex">
+        <div className="flex h-20 items-center">
           <Wordmark />
         </div>
         <NavList />
@@ -121,8 +140,8 @@ export function AppShell({
             onClick={() => setOpen(false)}
             className="absolute inset-0 bg-inverted/40"
           />
-          <div className="absolute inset-y-0 left-0 flex w-64 flex-col border-r border-border bg-background">
-            <div className="flex h-14 items-center justify-between pl-0 pr-3">
+          <div className="absolute inset-y-0 left-0 flex w-68 flex-col border-r border-border bg-background">
+            <div className="flex h-16 items-center justify-between pl-0 pr-3">
               <Wordmark />
               <button
                 type="button"
@@ -139,7 +158,7 @@ export function AppShell({
         </div>
       ) : null}
 
-      <main className="lg:pl-60">
+      <main className="lg:pl-64">
         <div className="mx-auto w-full max-w-5xl px-6 py-10 lg:px-10 lg:py-12">
           {children}
         </div>

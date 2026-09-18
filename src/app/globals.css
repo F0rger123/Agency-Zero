@@ -32,3 +32,98 @@ body {
   background: var(--color-inverted);
   color: var(--color-inverted-foreground);
 }
+
+/*
+ * Wordmark: large, weight-led, with a subtle monochrome glitch.
+ * Two grayscale ghost layers (before/after) stay invisible for most of a
+ * 7-second cycle and "tear" the wordmark for a fraction of a second using
+ * clip-path slices and small offsets. Grayscale only — no hue, no gradient;
+ * motion is disabled entirely under prefers-reduced-motion.
+ */
+.wordmark {
+  position: relative;
+  display: inline-block;
+}
+
+.wordmark::before,
+.wordmark::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.wordmark::before {
+  color: var(--color-muted-foreground);
+  animation: wordmark-glitch-a 7s linear infinite;
+}
+
+.wordmark::after {
+  color: var(--color-faint-foreground);
+  animation: wordmark-glitch-b 7s linear infinite;
+}
+
+@keyframes wordmark-glitch-a {
+  0%,
+  90.9%,
+  96%,
+  100% {
+    opacity: 0;
+    transform: translate(0, 0);
+    clip-path: inset(0 0 0 0);
+  }
+  91% {
+    opacity: 0.85;
+    transform: translate(-2px, 0);
+    clip-path: inset(12% 0 58% 0);
+  }
+  92.5% {
+    opacity: 0.85;
+    transform: translate(2px, -1px);
+    clip-path: inset(64% 0 6% 0);
+  }
+  94% {
+    opacity: 0.7;
+    transform: translate(-1px, 1px);
+    clip-path: inset(38% 0 34% 0);
+  }
+  95% {
+    opacity: 0.85;
+    transform: translate(1px, 0);
+    clip-path: inset(80% 0 4% 0);
+  }
+}
+
+@keyframes wordmark-glitch-b {
+  0%,
+  90.9%,
+  96%,
+  100% {
+    opacity: 0;
+    transform: translate(0, 0);
+    clip-path: inset(0 0 0 0);
+  }
+  91.5% {
+    opacity: 0.8;
+    transform: translate(2px, 1px);
+    clip-path: inset(70% 0 12% 0);
+  }
+  93% {
+    opacity: 0.8;
+    transform: translate(-2px, 0);
+    clip-path: inset(4% 0 76% 0);
+  }
+  94.5% {
+    opacity: 0.65;
+    transform: translate(1px, -1px);
+    clip-path: inset(48% 0 26% 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wordmark::before,
+  .wordmark::after {
+    animation: none;
+  }
+}

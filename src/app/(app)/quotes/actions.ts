@@ -14,8 +14,20 @@ async function getUserClient(): Promise<{ supabase: Awaited<ReturnType<typeof cr
 }
 
 const statuses = ["draft", "sent", "viewed", "accepted", "rejected", "expired"];
+const selectionKinds = ["fixed", "optional", "choice"];
 
-type ParsedLine = { description: string; qty: number; unit_amount_cents: number; is_recurring: boolean; billing_period: string | null; amount_cents: number; sort_order: number };
+type ParsedLine = {
+  description: string;
+  details: string | null;
+  qty: number;
+  unit_amount_cents: number;
+  is_recurring: boolean;
+  billing_period: string | null;
+  amount_cents: number;
+  selection: string;
+  option_group: string | null;
+  sort_order: number;
+};
 
 function parseMoney(value: string, label: string): number | ActionState {
   if (!value) return 0;
@@ -24,6 +36,12 @@ function parseMoney(value: string, label: string): number | ActionState {
   return Math.round(amount * 100);
 }
 
+/**
+ * Line items are serialized by the editor as JSON. Selection semantics
+ * (D-028, migration 0008): fixed = always included; optional = add-on the
+ * customer toggles; choice = mutually exclusive pick-one within an
+ * option_group (packages).
+ */
 function parseLines(formData: FormData): ParsedLine[] | ActionState {
   const raw = field(formData, "line_items");
   if (!raw) return { error: "Add at least one line item." };
@@ -35,16 +53,34 @@ function parseLines(formData: FormData): ParsedLine[] | ActionState {
     if (!item || typeof item !== "object") return { error: `Line item ${index + 1} is invalid.` };
     const row = item as Record<string, unknown>;
     const description = String(row.description ?? "").trim();
+    const detailsRaw = String(row.details ?? "").trim();
+    const groupRaw = String(row.option_group ?? "").trim();
     const qty = Number(row.qty);
     const unit = Number(row.unit_amount);
+    const selection = String(row.selection ?? "fixed");
     if (!description || description.length > 500) return { error: `Line item ${index + 1} needs a description.` };
+    if (detailsRaw.length > 1000) return { error: `Line item ${index + 1} details must be 1000 characters or fewer.` };
+    if (groupRaw.length > 120) return { error: `Line item ${index + 1} option group must be 120 characters or fewer.` };
     if (!Number.isFinite(qty) || qty <= 0 || qty > 1000000) return { error: `Line item ${index + 1} quantity is invalid.` };
     if (!Number.isFinite(unit) || unit < 0 || unit > 100000000) return { error: `Line item ${index + 1} price is invalid.` };
+    if (!selectionKinds.includes(selection)) return { error: `Line item ${index + 1} selection type is invalid.` };
+    if (selection === "choice" && !groupRaw) return { error: `Package choice "${description}" needs an option group so customers can pick one per group.` };
     const unitCents = Math.round(unit * 100);
     const amountCents = Math.round(qty * unitCents);
     const recurring = row.is_recurring === true;
     const billing = recurring && ["month", "quarter", "year"].includes(String(row.billing_period)) ? String(row.billing_period) : null;
-    lines.push({ description, qty, unit_amount_cents: unitCents, is_recurring: recurring, billing_period: billing, amount_cents: amountCents, sort_order: index });
+    lines.push({
+      description,
+      details: detailsRaw || null,
+      qty,
+      unit_amount_cents: unitCents,
+      is_recurring: recurring,
+      billing_period: billing,
+      amount_cents: amountCents,
+      selection,
+      option_group: groupRaw || null,
+      sort_order: index,
+    });
   }
   return lines;
 }
@@ -93,9 +129,14 @@ async function replaceLines(supabase: Awaited<ReturnType<typeof createSupabaseCl
 export async function createQuoteAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = quoteValues(formData);
   if (!("values" in parsed)) return parsed;
-  const auth = await getUserClient(); if ("error" in auth) return auth;
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
   const token = createPublicToken();
-  const { data, error } = await auth.supabase.from("quotes").insert({ ...parsed.values, public_token: token.token, public_token_hash: token.hash }).select("id").single();
+  const { data, error } = await auth.supabase
+    .from("quotes")
+    .insert({ ...parsed.values, public_token: token.token, public_token_hash: token.hash })
+    .select("id")
+    .single();
   if (error) return { error: readableError(error.message) };
   const lineError = await replaceLines(auth.supabase, data.id, parsed.lines);
   if (lineError) return { error: readableError(lineError) };
@@ -107,6 +148,11 @@ export async function updateQuoteAction(_previous: ActionState, formData: FormDa
   const id = field(formData, "id"); if (!id) return { error: "Quote ID is missing." };
   const parsed = quoteValues(formData); if (!("values" in parsed)) return parsed;
   const auth = await getUserClient(); if ("error" in auth) return auth;
+  // Accepted quotes are frozen by migration 0008 triggers; fail politely here.
+  const current = await auth.supabase.from("quotes").select("status").eq("id", id).maybeSingle();
+  if (current.error) return { error: readableError(current.error.message) };
+  if (!current.data) return { error: "Quote not found." };
+  if (current.data.status === "accepted") return { error: "Accepted quotes are immutable. Create a new quote instead." };
   const { error } = await auth.supabase.from("quotes").update(parsed.values).eq("id", id);
   if (error) return { error: readableError(error.message) };
   const lineError = await replaceLines(auth.supabase, id, parsed.lines);
@@ -118,10 +164,27 @@ export async function updateQuoteAction(_previous: ActionState, formData: FormDa
 export async function deleteQuoteAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const id = field(formData, "id"); if (!id) return { error: "Quote ID is missing." };
   const auth = await getUserClient(); if ("error" in auth) return auth;
+  const current = await auth.supabase.from("quotes").select("status").eq("id", id).maybeSingle();
+  if (current.error) return { error: readableError(current.error.message) };
+  if (current.data?.status === "accepted") return { error: "Accepted quotes cannot be deleted; they are a permanent record." };
   const { error } = await auth.supabase.from("quotes").delete().eq("id", id);
   if (error) return { error: readableError(error.message) };
   revalidatePath("/quotes"); revalidatePath("/");
   return { success: "Quote deleted." };
+}
+
+/** Rotate the public link: revokes the old token and issues a fresh one. */
+export async function regenerateQuoteTokenAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const id = field(formData, "id"); if (!id) return { error: "Quote ID is missing." };
+  const auth = await getUserClient(); if ("error" in auth) return auth;
+  const token = createPublicToken();
+  const { error } = await auth.supabase
+    .from("quotes")
+    .update({ public_token: token.token, public_token_hash: token.hash, token_expires_at: null })
+    .eq("id", id);
+  if (error) return { error: readableError(error.message) };
+  revalidatePath("/quotes"); revalidatePath(`/quotes/${id}`);
+  return { success: "New public link generated — the previous link no longer works." };
 }
 
 export async function convertQuoteAction(_previous: ActionState, formData: FormData): Promise<ActionState> {

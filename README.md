@@ -8,10 +8,10 @@ Agency Zero manages the full lifecycle in one place: clients, projects, tasks, w
 
 ## Status
 
-🚧 **Phases 4–5 — Sales, scheduling, workload & reminders (code complete; pending live Supabase verification).**
-The app now includes the CRM core plus quotes, line items, secure public quote acceptance, contract templates/versioning/signing, invoices, manual payments, revenue tracking, daily/weekly/monthly calendar views, capacity planning, overload detection, task rescheduling, and live/custom reminders. All internal tables use row-level security, tokenized public surfaces use narrow RPCs, and no mock data or Stripe/Google Calendar integrations are used.
+🚧 **Phases 4–5 + production hardening pass — Sales, scheduling, workload & reminders (code complete; pending live Supabase verification).**
+The app now includes the CRM core plus quotes with packages/options and customer selection, secure public quote acceptance with frozen snapshots, contract templates/placeholders/versioning/signing, immutable accepted-quote and signed-contract protection, invoices, manual payments, revenue tracking, daily/weekly/monthly calendar views, capacity planning, overload detection, task rescheduling, and live/custom reminders. All internal tables use row-level security, tokenized public surfaces use narrow RPCs, and no mock data or Stripe/Google Calendar integrations are used.
 
-**Remaining before the built phases are fully verified:** provision a Supabase project, apply `supabase/migrations/0001` through `0007`, create the owner user, and exercise the owner/customer sales and planning flows (see `supabase/README.md`).
+**Remaining before the built phases are fully verified:** provision a Supabase project, apply `supabase/migrations/0001` through `0008`, create the owner user, and exercise the owner/customer sales and planning flows (see `supabase/README.md`).
 
 ## Tech stack
 
@@ -28,7 +28,7 @@ cp .env.example .env.local   # fill in all three variables
 ```
 
 1. Create a Supabase project, configure Auth URLs, and apply migrations
-   `0001` through `0007` in order — full instructions are in
+   `0001` through `0008` in order — full instructions are in
    [`supabase/README.md`](supabase/README.md).
 2. Create the owner account in Supabase (Authentication → Users → Add user) —
    there is **no sign-up page by design**.
