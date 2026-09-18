@@ -12,9 +12,9 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 | | |
 |---|---|
-| **Current phase** | Phases 4–5 — Sales, Scheduling, Workload & Reminders *(code complete — pending live Supabase verification)* |
+| **Current phase** | Phases 4–5 + production UX/sales hardening pass *(code complete — pending live Supabase verification)* |
 | **Next up** | Phase 6 — AI Assistant v1 |
-| **Blocked by** | Nothing in code. Owner action: provision a Supabase project, apply migrations `0001`–`0007`, create the owner user, and verify the core CRUD/public-link flows (see `supabase/README.md`). |
+| **Blocked by** | Nothing in code. Owner action: provision a Supabase project, apply migrations `0001`–`0008`, create the owner user, and verify the core CRUD/public-link flows (see `supabase/README.md`). |
 
 ---
 
@@ -105,7 +105,21 @@ Goal: get paid.
 - [x] Added current Cloudflare OpenNext configuration: `open-next.config.ts`, `wrangler.jsonc`, generated `cloudflare-env.d.ts`, package scripts, and ignored build/local-secret output.
 - [x] Verified the Next.js `16.3.5` OpenNext build and local Workers preview without Supabase credentials; no deployment or external account creation was attempted.
 - [x] Documented production Auth URL/sign-up settings and exact Cloudflare build/runtime variable setup in `docs/DEPLOYMENT.md` and `supabase/README.md`.
-- [ ] Owner applies the migrations, configures the Supabase project and Auth, supplies the three production variables to Cloudflare, deploys, and exercises real owner/customer flows.
+- [ ] Owner applies migrations `0001`–`0008`, configures the Supabase project and Auth, supplies the three production variables to Cloudflare, deploys, and exercises real owner/customer flows.
+
+### Production UX & sales hardening pass `DONE` — code complete, apply migration `0008`
+
+Goal: close the remaining production blockers in Settings, navigation speed, and the client-facing sales documents; harden the database functions. (D-028 … D-032.)
+
+- [x] Editable, persistent Settings: owner profile (name, timezone, currency, daily capacity) and workspace defaults (business name, address, tax ID, currency/tax defaults, quote/invoice prefixes) now save to `profiles` / `settings` through validated server actions.
+- [x] Faster sidebar/page navigation: nav routes prefetched on hover/focus and during idle time after mount; client router cache holds dynamic pages for 30s (`staleTimes.dynamic`); server actions still revalidate after every mutation.
+- [x] Larger Agency Zero wordmark (bold `text-xl`) with a subtle, pure-CSS monochrome glitch (two grayscale tear layers on a 7s cycle; disabled under `prefers-reduced-motion`).
+- [x] Client-ready quotes: line items gain `details`, `option_group`, and `selection` (`fixed` included scope · `optional` add-on checkboxes · `choice` mutually exclusive package picks per option group); recurring pricing stays line-level with public per-period totals; proposal notes are shown publicly; public links can be rotated (old token revoked); customers select options and accept/reject with their name, with server-computed accepted totals.
+- [x] Working editable contract templates: placeholder rendering on save (`{{business_name}}`, `{{client_name}}`, `{{client_company}}`, `{{contract_title}}`, `{{quote_number}}`, `{{date}}`), empty-body template fill, seeded "Standard services agreement", contract view tracking via `mark_public_contract_viewed`, signing-link rotation; the public signing flow records signer, timestamp, and immutable snapshot.
+- [x] Immutability (migration `0008` triggers): accepted quotes, their line items, signed contracts, and `contract_versions` rows cannot be edited or deleted by any role; only bookkeeping columns (token rotation, `converted_project_id`, association links, `updated_at`) stay writable.
+- [x] Migration `0008_security_hardening.sql`: pins `public.set_updated_at()` to `search_path = public`; revokes EXECUTE on `public.handle_new_user()` and `public.recalculate_invoice_payment()` from `public`, `anon`, `authenticated` (trigger invocation is unaffected); ships everything above. Migrations `0001`–`0007` are untouched.
+- [x] Migration `0001`–`0008` apply cleanly against a fresh PostgreSQL instance, and the new triggers/RPCs were behaviourally verified (selection validation, accepted totals, immutability, token rotation, revokes).
+- [x] `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npx opennextjs-cloudflare build`, `npx wrangler deploy --dry-run`, and `git diff --check` all pass.
 
 ### Phase 6 — AI Assistant v1 `NOT STARTED`
 
@@ -172,3 +186,4 @@ Goal: AI on top of marketing data (respects the §4.10/§4.12 safety rules).
 | 2026-09-17 | **Phases 2–3 built:** migration `0005_crm_core.sql` adds services, contacts, notes, private files, communications, client services, milestones, task assignment fields, task dependencies, recurring-task architecture, and time entries — all with RLS. Added validated server actions and responsive CRUD/detail routes for clients, projects, milestones, tasks, subtasks, dependencies, and time entries; client files use private Storage with signed links. Dashboard now reads live due-today, overdue, deadline, active-project, waiting-on-client, and recent-activity data. Lint, typecheck, build, and unconfigured smoke tests pass. Remaining: apply migrations to a live Supabase project and exercise CRUD end-to-end. |
 | 2026-09-17 | **Phases 4–5 built:** migrations `0006_sales.sql` and `0007_planning_and_reminders.sql` add owner-only sales, calendar, capacity, and reminder tables plus narrow hashed-token public quote/contract functions. Added validated sales CRUD/detail routes, customer quote acceptance/rejection, quote-to-project conversion, electronic contract signing with immutable versions and snapshots, manual invoice payments and derived balances, daily/weekly/monthly calendar views, workload capacity/overload calculations, task rescheduling, and dynamic/custom reminders. Added `/q/[token]` and `/c/[token]` public surfaces without fake integrations. Lint, typecheck, build, and unconfigured smoke tests pass. Remaining: apply migrations to a live Supabase project and exercise owner/customer flows end-to-end. |
 | 2026-09-17 | **Deployment readiness pass:** audited fresh-project migration order/dependencies and RLS coverage; added Supabase CLI config, `.env.example` coverage, Cloudflare OpenNext/Wrangler configuration for Next.js `16.3.5`, generated binding types, and exact production Auth/Cloudflare setup docs. `npx opennextjs-cloudflare build` and a no-credentials Workers preview pass; no deployment or external account creation was attempted. |
+| 2026-09-18 | **Production UX & sales hardening pass:** editable persistent Settings; prefetched navigation with a 30s dynamic router cache; larger wordmark with a CSS-only monochrome glitch; client-ready quotes (packages/options, optional add-ons, recurring pricing, link rotation, customer selection + accept/reject with server-computed snapshots); placeholder-rendering contract templates plus a seeded standard agreement, contract view tracking, and signing-link rotation; trigger-enforced immutability for accepted quotes, their line items, signed contracts, and contract versions; migration `0008_security_hardening.sql` (pinned `set_updated_at()` search_path, EXECUTE revocations on trigger functions) verified against a fresh PostgreSQL instance together with `0001`–`0007`. Lint, typecheck, build, OpenNext build, Wrangler dry-run, and diff checks pass. Remaining: owner applies `0001`–`0008` and exercises the flows live. |

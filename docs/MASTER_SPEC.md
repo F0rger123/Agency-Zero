@@ -140,13 +140,23 @@ The calendar shows:
 
 - Create quotes / proposals.
 - Line items.
+- Packages / options: line items can be organized into option groups where
+  items are mutually exclusive choices (e.g. Basic / Standard / Premium
+  packages), plus optional add-on items the customer can toggle.
+- Customer **selects their options (packages and optional add-ons) as part of
+  accepting** the quote; the accepted selection and its server-computed totals
+  are recorded as an immutable snapshot.
 - Discounts.
-- Recurring services (recurring line items).
+- Recurring services (recurring line items), with recurring pricing shown
+  per billing period.
 - Taxes if needed.
-- Send the customer a **public secure link** to view the quote.
+- Send the customer a **public secure link** to view the quote. (Links are
+  rotatable by the owner, revoking the previous token.)
 - Customer can view the quote via that link (no account needed).
 - Customer can **accept or reject** the quote.
 - Track viewed / accepted dates.
+- Accepted quotes are **immutable**: content, totals, and line items cannot be
+  edited or deleted after acceptance (enforced at the database level).
 - Convert an accepted quote into a project.
 
 ### 4.7 Contracts — `Core`
@@ -154,8 +164,13 @@ The calendar shows:
 - Contracts linked to quotes and/or projects.
 - Customer can view and **electronically sign** the contract via a secure link.
 - Store the **signed timestamp** and the **signed document**.
-- Contract templates.
-- Version history of contracts.
+- Signed contracts are **immutable**: body, parties, signature, snapshot, and
+  version history cannot be edited or deleted after signing (enforced at the
+  database level).
+- Contract templates, editable, with placeholders (business name, client,
+  linked quote, date, title) rendered when a contract is created from or saved
+  with a body.
+- Version history of contracts (append-only).
 
 ### 4.8 Payments / Invoices — `Core` (manual) + `Future integration` (Stripe)
 
@@ -297,3 +312,4 @@ Architectural guidance (how to honor the requirement above):
 | Date | Change |
 |---|---|
 | 2026-09-17 | Initial specification created from the founding requirements. |
+| 2026-09-18 | Merged production-pass requirements: quote packages/options with customer selection on acceptance, recurring per-period pricing display, link rotation, immutable accepted quotes (§4.6); editable placeholder contract templates, append-only version history, immutable signed contracts (§4.7). |

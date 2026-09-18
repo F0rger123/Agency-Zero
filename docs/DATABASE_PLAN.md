@@ -140,13 +140,16 @@ Polymorphic reminder engine powering MASTER_SPEC §4.13.
 - `id`, `client_id → clients`, `number text unique`, `title`, `notes`, `status quote_status` (draft | sent | viewed | accepted | rejected | expired)
 - `issued_on date`, `valid_until date null`
 - `subtotal_cents`, `discount_cents` (or `discount_pct`), `tax_cents` / `tax_rate numeric`, `total_cents`
-- `public_token text unique`, `public_token_hash text unique` (secure public link), `token_expires_at null`
-- `viewed_at timestamptz null`, `accepted_at null`, `rejected_at null`
+- `public_token text unique`, `public_token_hash text unique` (secure public link, rotatable via owner action), `token_expires_at null`
+- `viewed_at timestamptz null`, `accepted_at null`, `rejected_at null`, `responded_by text null` *(0008, optional customer name recorded with the response)*
+- `selected_item_ids uuid[]` *(0008)*, `accepted_subtotal_cents int null`, `accepted_total_cents int null` *(0008 — frozen snapshot of the customer's accepted selection, computed server-side)*
 - `converted_project_id → projects null` (set when accepted quote becomes a project)
 
-### `quote_line_items` ✅ migrated (0006)
-- `id`, `quote_id → quotes`, `sort_order int`, `description text`
+### `quote_line_items` ✅ migrated (0006; extended in 0008)
+- `id`, `quote_id → quotes`, `sort_order int`, `description text`, `details text null` *(0008)*
 - `qty numeric`, `unit_amount_cents int`, `is_recurring bool`, `billing_period month | quarter | year null`, `amount_cents int`
+- `selection text` *(0008)*: `fixed` (always included) · `optional` (customer checkbox add-on) · `choice` (mutually exclusive pick-one inside `option_group`, i.e. packages). `choice` requires `option_group`.
+- `option_group text null` *(0008)* — package/option group label shared by competing `choice` items.
 
 ### `contracts` ✅ migrated (0006)
 - `id`, `client_id → clients`, `quote_id null`, `project_id null`
@@ -305,5 +308,6 @@ Applied-state record. Migrations in `supabase/migrations/` are the source of tru
 | `0005_crm_core.sql` | `services`, `contacts`, `client_notes`, `client_files`, `communications`, `client_services`, `milestones`; task client/milestone assignment; `task_dependencies`, `recurring_tasks`, `time_entries`; private `client-files` Storage bucket and policies; RLS/triggers | ✅ Written (Phases 2–3) |
 | `0006_sales.sql` | Quotes and quote line items; hashed public quote functions and acceptance/rejection; contract templates, contracts, immutable versions, hashed public signing functions; invoices, invoice line items, payments, payment totals/status triggers; RLS | ✅ Written (Phase 5) |
 | `0007_planning_and_reminders.sql` | Task planned dates; weekly/date-specific capacity; calendar events; reminder rows; enums, indexes, updated-at triggers, RLS | ✅ Written (Phase 4) |
+| `0008_security_hardening.sql` | `set_updated_at()` pinned to `search_path = public`; EXECUTE revoked on `handle_new_user()` and `recalculate_invoice_payment()`; quote line-item `details`/`option_group`/`selection` (packages/options/optional add-ons); quote selection snapshot columns (`responded_by`, `selected_item_ids`, accepted totals); extended `get_public_quote` + replacement `respond_public_quote` (validated selection, server-computed accepted totals); `mark_public_contract_viewed`; immutability triggers for accepted quotes, their line items, signed contracts, and contract versions; seeded "Standard services agreement" template | ✅ Written (production hardening pass) |
 
-RLS pattern (D-014): RLS is enabled on every application table; internal policies are `to authenticated` with `(select auth.uid())` predicates. Public quote/contract access is implemented only through the narrow hashed-token security-definer functions in `0006`; no broad anonymous table policies are used. A fresh project applies `0001` through `0007` in numeric order.
+RLS pattern (D-014): RLS is enabled on every application table; internal policies are `to authenticated` with `(select auth.uid())` predicates. Public quote/contract access is implemented only through the narrow hashed-token security-definer functions in `0006` (extended in `0008`); no broad anonymous table policies are used. A fresh project applies `0001` through `0008` in numeric order.

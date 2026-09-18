@@ -2,17 +2,15 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { PageHeader } from "@/components/page-header";
-import { EmptyState } from "@/components/empty-state";
+import { FormSection } from "@/components/form-controls";
 import { MigrationsRequired, SetupRequired } from "@/components/states";
+import { isMissingTable } from "@/lib/forms";
+import { ProfileForm, WorkspaceForm } from "./settings-forms";
 
 export const metadata: Metadata = { title: "Settings" };
 
 // Live database reads — always render per request, never prerender.
 export const dynamic = "force-dynamic";
-
-function isMissingTable(message: string): boolean {
-  return message.includes("does not exist") || message.includes("schema cache");
-}
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -33,15 +31,13 @@ export default async function SettingsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Read-only views of the profile and workspace rows created by the
-  // migrations. Editing arrives with Phase 2 — no fake forms here.
   const profile = await supabase
     .from("profiles")
     .select("full_name, timezone, currency, default_daily_capacity_minutes")
     .maybeSingle();
   const settings = await supabase
     .from("settings")
-    .select("business_name, default_currency, default_tax_rate, quote_prefix, invoice_prefix")
+    .select("business_name, address, tax_id, default_currency, default_tax_rate, quote_prefix, invoice_prefix")
     .eq("id", 1)
     .maybeSingle();
 
@@ -49,75 +45,92 @@ export default async function SettingsPage() {
     (profile.error && isMissingTable(profile.error.message)) ||
     (settings.error && isMissingTable(settings.error.message));
 
-  const capacity = profile.data?.default_daily_capacity_minutes;
-  const capacityHours =
-    typeof capacity === "number" ? `${Math.round((capacity / 60) * 10) / 10} h / day` : "";
+  if (schemaMissing) {
+    return (
+      <>
+        <PageHeader
+          title="Settings"
+          description="Owner account and workspace defaults used across quotes, contracts, invoices, and workload planning."
+        />
+        <MigrationsRequired />
+      </>
+    );
+  }
+
+  const profileError = profile.error && !isMissingTable(profile.error.message);
+  const settingsError = settings.error && !isMissingTable(settings.error.message);
+  if (profileError) throw new Error(profile.error!.message);
+  if (settingsError) throw new Error(settings.error!.message);
 
   return (
     <>
       <PageHeader
         title="Settings"
-        description="Owner account and workspace defaults. Values are created by the database migrations; editing is Phase 2+ work."
+        description="Owner account and workspace defaults. Changes persist to the database and apply to new documents."
       />
 
-      {schemaMissing ? (
-        <MigrationsRequired />
-      ) : (
-        <>
-          <section className="mt-2">
-            <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              Account
-            </h2>
-            <dl className="mt-2 divide-y divide-border border-t border-border">
-              <Row label="Email" value={user?.email ?? ""} />
-              <Row label="User ID" value={user?.id ?? ""} />
-            </dl>
-          </section>
+      <section className="mt-2">
+        <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+          Account
+        </h2>
+        <dl className="mt-2 divide-y divide-border border-t border-border">
+          <Row label="Email" value={user?.email ?? ""} />
+          <Row label="User ID" value={user?.id ?? ""} />
+        </dl>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Sign-in security (password reset, email confirmation) is managed in your
+          Supabase project — see supabase/README.md.
+        </p>
+      </section>
 
-          <section className="mt-12">
-            <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              Owner profile
-            </h2>
-            <dl className="mt-2 divide-y divide-border border-t border-border">
-              <Row label="Name" value={profile.data?.full_name ?? ""} />
-              <Row label="Timezone" value={profile.data?.timezone ?? ""} />
-              <Row label="Currency" value={profile.data?.currency ?? ""} />
-              <Row label="Default capacity" value={capacityHours} />
-            </dl>
-          </section>
+      <div className="mt-12">
+        <FormSection
+          title="Owner profile"
+          description="Your name, timezone, currency, and default daily work capacity. Capacity feeds the workload planner."
+        >
+          {profile.data ? (
+            <ProfileForm
+              profile={{
+                full_name: profile.data.full_name,
+                timezone: profile.data.timezone,
+                currency: profile.data.currency,
+                default_daily_capacity_minutes: profile.data.default_daily_capacity_minutes,
+              }}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No profile row exists yet. Sign out and back in, or re-create the owner
+              user so the sign-up trigger creates it.
+            </p>
+          )}
+        </FormSection>
+      </div>
 
-          <section className="mt-12">
-            <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              Workspace
-            </h2>
-            <dl className="mt-2 divide-y divide-border border-t border-border">
-              <Row label="Business name" value={settings.data?.business_name ?? ""} />
-              <Row label="Default currency" value={settings.data?.default_currency ?? ""} />
-              <Row
-                label="Default tax rate"
-                value={
-                  settings.data?.default_tax_rate != null
-                    ? `${settings.data.default_tax_rate}%`
-                    : ""
-                }
-              />
-              <Row label="Quote prefix" value={settings.data?.quote_prefix ?? ""} />
-              <Row label="Invoice prefix" value={settings.data?.invoice_prefix ?? ""} />
-            </dl>
-          </section>
-
-          <div className="mt-14">
-            <EmptyState tag="Phase 2+" title="Editing settings arrives with later phases">
-              <p>
-                Profile, workspace values, and workload defaults become editable
-                alongside client management in Phase 2. Sign-in security settings
-                (email confirmation, password reset) are managed in your Supabase
-                project — see supabase/README.md.
-              </p>
-            </EmptyState>
-          </div>
-        </>
-      )}
+      <div className="mt-12">
+        <FormSection
+          title="Workspace"
+          description="Name, address, tax defaults, and document prefixes used on quotes, contracts, and invoices."
+        >
+          {settings.data ? (
+            <WorkspaceForm
+              settings={{
+                business_name: settings.data.business_name,
+                address: settings.data.address,
+                tax_id: settings.data.tax_id,
+                default_currency: settings.data.default_currency,
+                default_tax_rate: settings.data.default_tax_rate,
+                quote_prefix: settings.data.quote_prefix,
+                invoice_prefix: settings.data.invoice_prefix,
+              }}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No settings row exists yet. The database trigger creates it with the
+              first owner account.
+            </p>
+          )}
+        </FormSection>
+      </div>
     </>
   );
 }
