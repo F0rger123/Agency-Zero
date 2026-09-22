@@ -6,7 +6,6 @@ import { isMissingTable } from "@/lib/forms";
 import { MigrationsRequired, SetupRequired } from "@/components/states";
 import { QuoteDocument, type PublicLine } from "./quote-response-form";
 
-export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Proposal" };
 
 type Quote = {

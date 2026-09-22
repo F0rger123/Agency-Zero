@@ -31,9 +31,23 @@ npx supabase db push --linked
 ```
 
 The dashboard SQL editor is a fallback: paste and run the files one at a time,
-from `0001` through `0008`. A manually applied set does not automatically
-reconcile the CLI migration history, so do not run `db push` afterward until
-that history has been reconciled. Never run the same migration twice.
+from `0001` through `0008`, then `0010` through `0013`. A manually applied set
+does not automatically reconcile the CLI migration history, so do not run
+`db push` afterward until that history has been reconciled. Never run the same
+migration twice.
+
+> **Migration numbering.** There is intentionally **no `0009`** file in this
+> repository. The production project already has an out-of-band migration
+> `0009_sync_client_ready_sales` that was applied directly to the live database
+> (client/service sync used by the sales flow) and was never committed here.
+> Reusing that version number would collide with the live migration history and
+> could cause `supabase db push` to skip or duplicate work, so the next
+> committed migration is `0010`. Production schema sync: if the live database
+> already contains the objects from `0010`–`0013` (service catalogue columns,
+> `project_notes`, `project_files`, and the read-model functions), do not re-run
+> those files; reconcile `supabase_migrations.schema_migrations` instead and
+> record the applied versions there. A fresh project applies `0001`–`0008` and
+> then `0010`–`0013` in numeric order.
 
 For a local Docker-backed verification environment, run `npx supabase start`
 then `npx supabase db reset --local --no-seed`; `npx supabase db lint --local`
@@ -52,6 +66,20 @@ What gets created:
 | `0006_sales.sql` | Quotes, quote line items, secure public quote RPCs, contract templates/contracts/version history/signing RPCs, invoices, invoice line items, payments, derived balances/statuses |
 | `0007_planning_and_reminders.sql` | Planned task dates, weekly/date-specific capacity, calendar events, and custom reminder rows |
 | `0008_security_hardening.sql` | Function hardening (pinned `set_updated_at()` search path, EXECUTE revocations on trigger functions), quote packages/options + customer selection snapshots, contract view marking, a seeded "Standard services agreement" template, and immutable accepted-quote / signed-contract / version-history triggers |
+| `0010_services_catalog.sql` | Custom service catalogue: `services.default_price_cents`, `services.billing_interval` (`monthly`/`quarterly`/`yearly`), `services.default_estimated_minutes`; `client_services.billing_interval` + `amount_cents` (backfilled from `monthly_amount_cents`); `public.normalized_monthly_cents(amount, interval)`; `quote_line_items.service_id`; `public.get_service_directory()` |
+| `0011_dashboard_summary.sql` | `public.get_dashboard_summary(p_today date default null)` — one read for every dashboard number: tasks due today, overdue tasks, active projects, clients, waiting-on-client tasks, upcoming deadlines, recent activity, and the recurring-revenue block (MRR, ARR, recurring clients/services, per-service breakdown) |
+| `0012_client_workspace.sql` | `public.get_client_directory()` (services, MRR, outstanding balance, active projects, waiting tasks, last activity per client) and `public.get_client_workspace(p_client_id uuid)` (client + contacts, projects, tasks, services, catalogue, quotes, contracts, invoices, payments, notes, communications, files) |
+| `0013_project_workspace.sql` | `project_notes` and `project_files` (owner-only RLS, updated-at triggers) plus `public.get_project_workspace(p_project_id uuid)` (project, client, totals, tasks, milestones, time entries, notes, files, quotes, contracts, invoices, payments, services, activity) |
+
+Migrations `0010`–`0013` are additive read models plus the service/project
+columns and tables the redesigned UI needs. Every function is `security
+invoker` (so RLS still applies to the owner), pins `search_path = public`, and
+revokes EXECUTE from `public`/`anon` while granting it to `authenticated`. The
+overdue state of an unpaid invoice is now **derived at read time** (see
+`docs/DECISIONS.md` D-033) instead of being written during page render;
+`public.refresh_invoice_statuses()` is kept for scheduled/back-office use, for
+example a Supabase scheduled query running
+`select public.refresh_invoice_statuses();` once a day.
 
 Migration `0005` also seeds the seven Agency Zero services (software development, custom CRMs/software, websites, SEO, Meta ads, social media management, and social video creation). Client files are private and are served by expiring signed URLs. Migration `0006` creates the public `/q/[token]` and `/c/[token]` surfaces; those links use random tokens and narrow security-definer functions, not broad anonymous table access. Migration `0008` extends those functions (selection-aware quote responses, contract view marking) and freezes accepted quotes and signed contracts at the database level. Stripe and Google Calendar remain intentionally unconnected.
 

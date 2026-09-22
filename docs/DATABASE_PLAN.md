@@ -21,7 +21,7 @@ Status labels: `Phase 1–8` = core build · `Later` = client portal phase · `F
 
 ---
 
-## 2. Identity & Settings — `profiles` + `settings` ✅ migrated (0001); `services` ✅ migrated (0005)
+## 2. Identity & Settings — `profiles` + `settings` ✅ migrated (0001); `services` ✅ migrated (0005), extended (0010)
 
 ### `profiles` — Phase 1
 The agency owner (extends Supabase Auth user).
@@ -34,7 +34,14 @@ The agency owner (extends Supabase Auth user).
 - `business_name text`, `address text`, `tax_id text`
 - `default_currency text`, `default_tax_rate numeric`, `quote_prefix text`, `invoice_prefix text`
 
-### `services` — Phase 2 ✅ migrated (0005)
+### `services` — Phase 2 ✅ migrated (0005), extended (0010)
+
+Custom-services pass adds `default_price_cents` (integer cents, D-012),
+`billing_interval` (`monthly` | `quarterly` | `yearly`, default `monthly`) for
+recurring services, and `default_estimated_minutes` (minutes, D-015) as the
+default estimate a task or assignment inherits. Services are archived with
+`active = false`, never deleted, so historical assignments and quote lines keep
+their meaning.
 Catalog of agency services (software dev, custom CRMs, websites, SEO, Meta ads, social media management, social video creation).
 
 - `id`, `name text`, `description text`, `default_billing text` (one_off | recurring), `active bool`
@@ -70,6 +77,14 @@ Which services the agency provides to which client.
 - `id`, `client_id → clients`, `service_id → services`, `billing one_off | recurring`, `monthly_amount_cents int null`, `started_on date`
 
 ---
+
+### `project_notes` / `project_files` — Phase 3 ✅ migrated (0013)
+
+Per-project notes (`body`, `pinned`) and file metadata (`file_name`,
+`storage_path`, `mime_type`, `size_bytes`) for the project workspace. Files live
+in the private `client-files` bucket under `projects/<project_id>/…` and are
+served by the same expiring signed URLs as client files; both tables cascade on
+project delete and are owner-only under RLS (D-014).
 
 ## 4. Projects & Tasks — Phase 3 (`projects` ✅ migrated in 0003; `tasks` ✅ migrated in 0004; milestones / dependencies / recurring / time entries ✅ migrated in 0005)
 
@@ -308,6 +323,21 @@ Applied-state record. Migrations in `supabase/migrations/` are the source of tru
 | `0005_crm_core.sql` | `services`, `contacts`, `client_notes`, `client_files`, `communications`, `client_services`, `milestones`; task client/milestone assignment; `task_dependencies`, `recurring_tasks`, `time_entries`; private `client-files` Storage bucket and policies; RLS/triggers | ✅ Written (Phases 2–3) |
 | `0006_sales.sql` | Quotes and quote line items; hashed public quote functions and acceptance/rejection; contract templates, contracts, immutable versions, hashed public signing functions; invoices, invoice line items, payments, payment totals/status triggers; RLS | ✅ Written (Phase 5) |
 | `0007_planning_and_reminders.sql` | Task planned dates; weekly/date-specific capacity; calendar events; reminder rows; enums, indexes, updated-at triggers, RLS | ✅ Written (Phase 4) |
+| `0009_sync_client_ready_sales` | **Not in this repository — live database only.** Applied out of band to the production project before this pass and never committed, so `0009` is intentionally skipped here to avoid a version collision. | ⚠️ Production-only (not in repo) |
+| `0010_services_catalog.sql` | Custom service catalogue: `services.default_price_cents`, `services.billing_interval` (`monthly`/`quarterly`/`yearly`), `services.default_estimated_minutes`; `client_services.billing_interval` + `amount_cents` (backfilled from `monthly_amount_cents`); `public.normalized_monthly_cents(amount_cents, interval)` as the single MRR conversion; `quote_line_items.service_id`; `public.get_service_directory()` (assigned/recurring/one-off counts + normalized MRR per service) | ✅ Written (services pass) |
+| `0011_dashboard_summary.sql` | `public.get_dashboard_summary(p_today date default null)` — one `security invoker` read for the whole dashboard: tasks due today, overdue tasks, open tasks, active projects, clients, waiting-on-client tasks (+ rows), upcoming deadlines (projects and incomplete milestones, 30 days), recent activity, and the recurring-revenue block (MRR, ARR = 12 × MRR, recurring client count, recurring service count, per-service breakdown) | ✅ Written (dashboard pass) |
+| `0012_client_workspace.sql` | `public.get_client_directory()` (per client: assigned/recurring services, MRR, outstanding invoice balance, active/total projects, waiting/open tasks, last activity) and `public.get_client_workspace(p_client_id uuid)` (client + stats + contacts, projects, tasks, services, service catalogue, quotes, contracts, invoices, payments, notes, communications, files; `null` for an unknown id so the page can 404) | ✅ Written (clients redesign pass) |
+| `0013_project_workspace.sql` | `project_notes` + `project_files` (owner-only RLS, updated-at triggers, cascade on project delete) and `public.get_project_workspace(p_project_id uuid)` (project, client, totals incl. actual vs estimated time and invoiced/paid/outstanding, tasks with parent/milestone names, milestones, time entries, notes, files, quotes, contracts, invoices, payments, client services, recent activity; `null` for an unknown id) | ✅ Written (project workspace pass) |
 | `0008_security_hardening.sql` | `set_updated_at()` pinned to `search_path = public`; EXECUTE revoked on `handle_new_user()` and `recalculate_invoice_payment()`; quote line-item `details`/`option_group`/`selection` (packages/options/optional add-ons); quote selection snapshot columns (`responded_by`, `selected_item_ids`, accepted totals); extended `get_public_quote` + replacement `respond_public_quote` (validated selection, server-computed accepted totals); `mark_public_contract_viewed`; immutability triggers for accepted quotes, their line items, signed contracts, and contract versions; seeded "Standard services agreement" template | ✅ Written (production hardening pass) |
 
-RLS pattern (D-014): RLS is enabled on every application table; internal policies are `to authenticated` with `(select auth.uid())` predicates. Public quote/contract access is implemented only through the narrow hashed-token security-definer functions in `0006` (extended in `0008`); no broad anonymous table policies are used. A fresh project applies `0001` through `0008` in numeric order.
+RLS pattern (D-014): RLS is enabled on every application table; internal policies are `to authenticated` with `(select auth.uid())` predicates. Public quote/contract access is implemented only through the narrow hashed-token security-definer functions in `0006` (extended in `0008`); no broad anonymous table policies are used. A fresh project applies `0001`
+through `0008` and then `0010` through `0013` in numeric order (`0009` is
+reserved for the production-only sync described above). Every function added in
+`0010`–`0013` is `security invoker`, pins `search_path = public`, and has
+EXECUTE revoked from `public`/`anon` and granted to `authenticated`.
+
+Invoice overdue state (D-033): the stored `invoices.status` column is maintained
+by the payments trigger, while the time-based `overdue` state is derived at read
+time (`src/lib/invoice-status.ts`, and the read models above) so that rendering
+a page never writes to the database. `public.refresh_invoice_statuses()` remains
+available for a scheduled/back-office sweep.

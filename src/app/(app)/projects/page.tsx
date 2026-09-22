@@ -8,7 +8,6 @@ import { MigrationsRequired, SetupRequired } from "@/components/states";
 import { NewProjectForm } from "./project-forms";
 
 export const metadata: Metadata = { title: "Projects" };
-export const dynamic = "force-dynamic";
 
 export default async function ProjectsPage() {
   if (!isSupabaseConfigured()) return <SetupRequired />;

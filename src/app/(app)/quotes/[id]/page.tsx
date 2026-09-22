@@ -10,7 +10,6 @@ import { MigrationsRequired, SetupRequired } from "@/components/states";
 import { ConvertQuoteForm, DeleteQuoteForm, EditQuoteForm, RegenerateQuoteLinkForm } from "../quote-forms";
 
 export const metadata: Metadata = { title: "Quote" };
-export const dynamic = "force-dynamic";
 
 type LineRow = {
   id: string;
@@ -24,6 +23,7 @@ type LineRow = {
   selection: string;
   option_group: string | null;
   sort_order: number;
+  service_id: string | null;
 };
 
 function selectionLabel(line: LineRow): string {
@@ -36,16 +36,18 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
   if (!isSupabaseConfigured()) return <SetupRequired />;
   const { id } = await params;
   const supabase = await createClient();
-  const [quoteResponse, linesResponse, clientsResponse] = await Promise.all([
+  const [quoteResponse, linesResponse, clientsResponse, servicesResponse] = await Promise.all([
     supabase.from("quotes").select("*").eq("id", id).maybeSingle(),
     supabase
       .from("quote_line_items")
-      .select("id, description, details, qty, unit_amount_cents, is_recurring, billing_period, amount_cents, selection, option_group, sort_order")
+      .select("id, description, details, qty, unit_amount_cents, is_recurring, billing_period, amount_cents, selection, option_group, sort_order, service_id")
       .eq("quote_id", id)
       .order("sort_order"),
     supabase.from("clients").select("id, name, company").is("deleted_at", null).order("name"),
+    // Catalogue defaults used to prefill quote lines (migration 0010).
+    supabase.from("services").select("id, name, default_billing, default_price_cents, billing_interval").eq("active", true).order("name"),
   ]);
-  const responses = [quoteResponse, linesResponse, clientsResponse];
+  const responses = [quoteResponse, linesResponse, clientsResponse, servicesResponse];
   if (responses.some((response) => response.error && isMissingTable(response.error.message))) return <MigrationsRequired />;
   const failed = responses.find((response) => response.error);
   if (failed?.error) throw new Error(failed.error.message);
@@ -62,10 +64,12 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
   };
   const lineItems = (linesResponse.data ?? []) as LineRow[];
   const clients = (clientsResponse.data ?? []) as { id: string; name: string; company: string | null }[];
+  const services = (servicesResponse.data ?? []) as { id: string; name: string; default_billing: string; default_price_cents: number | null; billing_interval: string }[];
 
   const quote = {
     ...raw,
     line_items: lineItems.map((line) => ({
+      service_id: line.service_id ?? "",
       description: line.description,
       details: line.details ?? "",
       qty: line.qty,
@@ -187,7 +191,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
         </FormSection>
       ) : (
         <FormSection title="Quote record">
-          <EditQuoteForm clients={clients.map((client) => ({ id: client.id, label: `${client.name}${client.company ? ` · ${client.company}` : ""}` }))} quote={quote} />
+          <EditQuoteForm clients={clients.map((client) => ({ id: client.id, label: `${client.name}${client.company ? ` · ${client.company}` : ""}` }))} services={services} quote={quote} />
           <div className="mt-8 border-t border-border pt-6"><DeleteQuoteForm id={raw.id} /></div>
         </FormSection>
       )}

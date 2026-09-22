@@ -9,7 +9,6 @@ import { MigrationsRequired, SetupRequired } from "@/components/states";
 import { DeleteEventForm, EditEventForm, NewEventForm, ScheduleTaskForm } from "./calendar-forms";
 
 export const metadata: Metadata = { title: "Calendar" };
-export const dynamic = "force-dynamic";
 function validDate(value: string | undefined): string { return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : new Date().toISOString().slice(0, 10); }
 function shift(date: string, days: number): string { const result = new Date(`${date}T00:00:00Z`); result.setUTCDate(result.getUTCDate() + days); return result.toISOString().slice(0, 10); }
 function monday(date: string): string { const day = new Date(`${date}T00:00:00Z`).getUTCDay(); return shift(date, -(day === 0 ? 6 : day - 1)); }

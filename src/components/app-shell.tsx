@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { navItems } from "@/lib/nav";
 import { Icon } from "@/components/icons";
 import { signOut } from "@/app/actions/auth";
@@ -21,20 +21,66 @@ function Wordmark() {
   );
 }
 
+/**
+ * Pending indicator for a single nav link (D-034).
+ *
+ * `useLinkStatus()` reports the pending state of the enclosing `<Link>`; it is
+ * rendered INSIDE the link, so feedback appears exactly where the owner
+ * clicked. It is a 6px dot — never a skeleton, so nothing in the page is
+ * replaced and there is no white flash while the next route streams in.
+ */
+function NavPendingDot() {
+  const { pending } = useLinkStatus();
+  return (
+    <span
+      aria-hidden
+      className={`ml-auto size-1.5 shrink-0 rounded-full transition-opacity ${
+        pending ? "bg-foreground opacity-70" : "opacity-0"
+      }`}
+    />
+  );
+}
+
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Faster navigation (D-031): prefetch nav routes on hover/focus, and warm
-  // every route once on mount during idle time so first visits are instant.
-  // Dynamic pages benefit because staleTimes.dynamic keeps the prefetched
-  // response for 30 seconds; server actions still revalidate after mutations.
+  /**
+   * Warm every sidebar route once the browser is idle (D-031/D-034).
+   *
+   * `router.prefetch()` on idle means the first click on any section already
+   * has its RSC payload in the router cache (kept fresh by
+   * `experimental.staleTimes.dynamic` in next.config.ts). Hover and focus
+   * prefetch the hovered route immediately, which covers the case where the
+   * idle warm-up has not finished yet.
+   */
   useEffect(() => {
-    const timers = navItems.map((item, index) =>
-      window.setTimeout(() => router.prefetch(item.href), 400 + index * 150)
-    );
-    return () => timers.forEach((timer) => window.clearTimeout(timer));
-  }, [router]);
+    const targets = navItems
+      .map((item) => item.href)
+      .filter((href) => href !== pathname);
+
+    const prefetchAll = () => targets.forEach((href) => router.prefetch(href));
+
+    const idleWindow = window as Window & {
+      requestIdleCallback?: (cb: () => void) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+
+    if (typeof idleWindow.requestIdleCallback === "function") {
+      const id = idleWindow.requestIdleCallback(prefetchAll);
+      return () => idleWindow.cancelIdleCallback?.(id);
+    }
+
+    const timer = window.setTimeout(prefetchAll, 300);
+    return () => window.clearTimeout(timer);
+  }, [router, pathname]);
+
+  const prefetch = useCallback(
+    (href: string) => {
+      if (href !== pathname) router.prefetch(href);
+    },
+    [router, pathname]
+  );
 
   return (
     <nav aria-label="Main" className="flex flex-col gap-0.5 px-3">
@@ -45,9 +91,10 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
           <Link
             key={item.href}
             href={item.href}
+            prefetch
             onClick={onNavigate}
-            onMouseEnter={() => router.prefetch(item.href)}
-            onFocus={() => router.prefetch(item.href)}
+            onMouseEnter={() => prefetch(item.href)}
+            onFocus={() => prefetch(item.href)}
             aria-current={active ? "page" : undefined}
             className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
               active
@@ -57,6 +104,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
           >
             <Icon name={item.icon} className="size-4 shrink-0" />
             {item.label}
+            <NavPendingDot />
           </Link>
         );
       })}
@@ -91,6 +139,10 @@ function SidebarFooter({ email }: { email: string }) {
  * Dashboard shell: fixed sidebar on desktop, slide-over drawer on mobile.
  * Layout rules from MASTER_SPEC §3 — generous spacing, hairline borders,
  * no cards, no color.
+ *
+ * Rendered by `(app)/layout.tsx`, which Next.js keeps mounted across
+ * navigations inside the group: the sidebar, wordmark, and sign-out never
+ * remount, so section changes cannot flash the shell away.
  */
 export function AppShell({
   email,

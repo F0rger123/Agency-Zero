@@ -10,7 +10,6 @@ import { MigrationsRequired, SetupRequired } from "@/components/states";
 import { CompleteTaskForm, DeleteTaskForm, DeleteTimeEntryForm, EditTaskForm, TimeEntryForm } from "../task-forms";
 
 export const metadata: Metadata = { title: "Task" };
-export const dynamic = "force-dynamic";
 
 function dateLabel(date: string | null, time = false): string {
   if (!date) return "—";

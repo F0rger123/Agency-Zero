@@ -46,6 +46,14 @@ const paths: Record<string, JSX.Element> = {
       <path d="M10 20h4" />
     </>
   ),
+  services: (
+    <>
+      <path d="M4 8.5h16M4 15.5h16" />
+      <path d="M7.5 5v7M16.5 12v7" />
+      <circle cx="7.5" cy="15.5" r="2.5" />
+      <circle cx="16.5" cy="8.5" r="2.5" />
+    </>
+  ),
   quotes: (
     <>
       <path d="M14 3.5H7C6.2 3.5 5.5 4.2 5.5 5v14c0 .8.7 1.5 1.5 1.5h10c.8 0 1.5-.7 1.5-1.5V8z" />

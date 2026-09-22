@@ -9,8 +9,6 @@ import { ProfileForm, WorkspaceForm } from "./settings-forms";
 
 export const metadata: Metadata = { title: "Settings" };
 
-// Live database reads — always render per request, never prerender.
-export const dynamic = "force-dynamic";
 
 function Row({ label, value }: { label: string; value: string }) {
   return (

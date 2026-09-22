@@ -9,11 +9,10 @@ import { MigrationsRequired, SetupRequired } from "@/components/states";
 import { CompleteReminderForm, DeleteReminderForm, ReminderForm } from "./reminder-forms";
 
 export const metadata: Metadata = { title: "Reminders" };
-export const dynamic = "force-dynamic";
 function shift(date: string, days: number): string { const result = new Date(`${date}T00:00:00Z`); result.setUTCDate(result.getUTCDate() + days); return result.toISOString().slice(0, 10); }
 type SystemReminder = { id: string; kind: string; message: string; due: string; href: string };
 export default async function RemindersPage() {
-  if (!isSupabaseConfigured()) return <SetupRequired />; const supabase = await createClient(); await supabase.rpc("refresh_invoice_statuses"); const today = new Date().toISOString().slice(0, 10); const soon = shift(today, 3); const deadline = shift(today, 14);
+  if (!isSupabaseConfigured()) return <SetupRequired />; const supabase = await createClient(); const today = new Date().toISOString().slice(0, 10); const soon = shift(today, 3); const deadline = shift(today, 14);
   const [tasksResponse, overdueTasksResponse, waitingResponse, quotesResponse, contractsResponse, invoicesResponse, projectsResponse, customResponse, weeklyResponse, overridesResponse, scheduledTasksResponse, workBlocksResponse, clientsResponse, communicationsResponse] = await Promise.all([
     supabase.from("tasks").select("id, title, due_date, status").in("status", ["todo", "in_progress", "blocked_other"]).gte("due_date", today).lt("due_date", soon).order("due_date"),
     supabase.from("tasks").select("id, title, due_date").in("status", ["todo", "in_progress", "blocked_waiting_client", "blocked_other"]).lt("due_date", today).order("due_date", { ascending: true, nullsFirst: false }),

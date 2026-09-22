@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type { ReactNode } from "react";
 import {
   assignServiceAction,
@@ -251,41 +251,115 @@ export function CommunicationForm({
   );
 }
 
+export type CatalogService = {
+  id: string;
+  name: string;
+  default_billing: string;
+  default_price_cents?: number | null;
+  billing_interval?: string;
+  default_estimated_minutes?: number | null;
+};
+
+/**
+ * Assign a catalogue service to a client. Choosing a service prefills the
+ * billing type, interval, and amount from the catalogue defaults (migration
+ * 0010), so the owner can accept the defaults or override them per client.
+ * Re-assigning the same service edits the existing assignment (the action
+ * upserts on `client_id, service_id`).
+ */
 export function ServiceForm({
   clientId,
   services,
+  compact = false,
 }: {
   clientId: string;
-  services: { id: string; name: string; default_billing: string }[];
+  services: CatalogService[];
+  compact?: boolean;
 }) {
   const [state, action] = useActionState(assignServiceAction, initialState);
+  const [selected, setSelected] = useState("");
+  const service = services.find((item) => item.id === selected);
+  const defaultBilling = service?.default_billing ?? "one_off";
+  const defaultInterval = service?.billing_interval ?? "monthly";
+  const defaultAmount =
+    service?.default_price_cents != null ? service.default_price_cents / 100 : "";
+  const key = service?.id ?? "none";
+
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="client_id" value={clientId} />
-      <TwoColumns>
-        <div>
-          <FieldLabel label="Service" htmlFor="client-service" required />
-          <SelectInput id="client-service" name="service_id" required>
-            <option value="">Choose a service</option>
-            {services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}
-          </SelectInput>
-        </div>
-        <div>
-          <FieldLabel label="Billing" htmlFor="client-billing" required />
-          <SelectInput id="client-billing" name="billing" defaultValue="one_off" required>
-            <option value="one_off">One-off</option>
-            <option value="recurring">Recurring</option>
-          </SelectInput>
-        </div>
-        <div>
-          <FieldLabel label="Monthly amount" htmlFor="client-monthly-amount" hint="dollars, recurring only" />
-          <TextInput id="client-monthly-amount" name="monthly_amount" type="number" min={0} step={0.01} />
-        </div>
-        <div>
-          <FieldLabel label="Started on" htmlFor="client-started-on" hint="optional" />
-          <TextInput id="client-started-on" name="started_on" type="date" />
-        </div>
-      </TwoColumns>
+      <div className={compact ? "space-y-4" : undefined}>
+        <TwoColumns>
+          <div className={compact ? "sm:col-span-2" : undefined}>
+            <FieldLabel label="Service" htmlFor="client-service" required />
+            <SelectInput
+              id="client-service"
+              name="service_id"
+              required
+              onChange={(event) => setSelected(event.target.value)}
+            >
+              <option value="">Choose a service</option>
+              {services.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </SelectInput>
+          </div>
+          <div key={`billing-${key}`}>
+            <FieldLabel label="Billing" htmlFor="client-billing" required />
+            <SelectInput
+              id="client-billing"
+              name="billing"
+              defaultValue={defaultBilling}
+              required
+            >
+              <option value="one_off">One-off</option>
+              <option value="recurring">Recurring</option>
+            </SelectInput>
+          </div>
+          <div key={`interval-${key}`}>
+            <FieldLabel label="Billing interval" htmlFor="client-interval" />
+            <SelectInput
+              id="client-interval"
+              name="billing_interval"
+              defaultValue={defaultInterval}
+            >
+              <option value="monthly">Monthly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="yearly">Yearly</option>
+            </SelectInput>
+          </div>
+          <div key={`amount-${key}`}>
+            <FieldLabel
+              label="Amount per interval"
+              htmlFor="client-amount"
+              hint="currency units, recurring only"
+            />
+            <TextInput
+              id="client-amount"
+              name="amount"
+              type="number"
+              min={0}
+              step={0.01}
+              defaultValue={defaultAmount === "" ? null : defaultAmount}
+            />
+          </div>
+          <div>
+            <FieldLabel label="Started on" htmlFor="client-started-on" hint="optional" />
+            <TextInput id="client-started-on" name="started_on" type="date" />
+          </div>
+        </TwoColumns>
+        {service ? (
+          <p className="text-xs text-muted-foreground">
+            Catalogue defaults: {service.default_billing === "recurring" ? "recurring" : "one-off"}
+            {service.default_estimated_minutes
+              ? ` · ${Math.round((service.default_estimated_minutes / 60) * 10) / 10} h estimated`
+              : ""}
+            . Re-assigning an existing service updates it.
+          </p>
+        ) : null}
+      </div>
       <div className="flex flex-wrap items-center gap-4">
         <SubmitButton>Assign service</SubmitButton>
         <FormMessage {...state} />

@@ -226,6 +226,16 @@ export async function deleteCommunicationAction(
   return { success: "Activity removed." };
 }
 
+const BILLING_INTERVALS = ["monthly", "quarterly", "yearly"];
+
+/**
+ * Assign (or re-assign) a catalogue service to a client.
+ *
+ * Since migration 0010 an assignment stores the amount as billed together with
+ * its interval; MRR is derived from that pair with the same rule the database
+ * uses (`normalized_monthly_cents`): quarterly ÷ 3, yearly ÷ 12. The legacy
+ * `monthly_amount_cents` column is kept in sync so older screens stay correct.
+ */
 export async function assignServiceAction(
   _previous: ActionState,
   formData: FormData
@@ -233,13 +243,29 @@ export async function assignServiceAction(
   const clientId = field(formData, "client_id");
   const serviceId = field(formData, "service_id");
   if (!clientId || !serviceId) return { error: "Choose a service." };
-  const rawAmount = field(formData, "monthly_amount");
-  const amount = rawAmount ? Number(rawAmount) : null;
-  if (amount !== null && (!Number.isFinite(amount) || amount < 0 || amount > 100000000)) {
-    return { error: "Monthly amount must be a valid positive amount." };
-  }
+
   const billing = field(formData, "billing") || "one_off";
   if (!["one_off", "recurring"].includes(billing)) return { error: "Choose a valid billing type." };
+
+  const interval = field(formData, "billing_interval") || "monthly";
+  if (!BILLING_INTERVALS.includes(interval)) return { error: "Choose a valid billing interval." };
+
+  const rawAmount = field(formData, "amount");
+  const amount = rawAmount ? Number(rawAmount) : null;
+  if (amount !== null && (!Number.isFinite(amount) || amount < 0 || amount > 100000000)) {
+    return { error: "Amount must be a valid non-negative number." };
+  }
+
+  const amountCents = billing === "recurring" && amount !== null ? Math.round(amount * 100) : null;
+  const monthlyCents =
+    amountCents === null
+      ? null
+      : interval === "quarterly"
+        ? Math.round(amountCents / 3)
+        : interval === "yearly"
+          ? Math.round(amountCents / 12)
+          : amountCents;
+
   const auth = await getUserClient();
   if ("error" in auth) return auth;
   const { error } = await auth.supabase.from("client_services").upsert(
@@ -247,13 +273,18 @@ export async function assignServiceAction(
       client_id: clientId,
       service_id: serviceId,
       billing,
-      monthly_amount_cents: billing === "recurring" && amount !== null ? Math.round(amount * 100) : null,
+      billing_interval: interval,
+      amount_cents: amountCents,
+      monthly_amount_cents: monthlyCents,
       started_on: optionalDate(formData, "started_on"),
     },
     { onConflict: "client_id,service_id" }
   );
   if (error) return { error: readableError(error.message) };
   revalidatePath(`/clients/${clientId}`);
+  revalidatePath("/clients");
+  revalidatePath("/services");
+  revalidatePath("/");
   return { success: "Service saved." };
 }
 
@@ -269,6 +300,9 @@ export async function removeServiceAction(
   const { error } = await auth.supabase.from("client_services").delete().eq("id", id);
   if (error) return { error: readableError(error.message) };
   revalidatePath(`/clients/${clientId}`);
+  revalidatePath("/clients");
+  revalidatePath("/services");
+  revalidatePath("/");
   return { success: "Service removed." };
 }
 

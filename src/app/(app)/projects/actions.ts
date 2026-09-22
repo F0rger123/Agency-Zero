@@ -154,3 +154,137 @@ export async function deleteMilestoneAction(_previous: ActionState, formData: Fo
   revalidatePath(`/projects/${projectId}`); revalidatePath("/tasks");
   return { success: "Milestone removed." };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Project workspace (migration 0013): notes, files, and milestone completion.
+// Everything here is scoped to one project so the workspace never needs to
+// leave the page to record work.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function revalidateProjectPaths(projectId: string) {
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath("/projects");
+  revalidatePath("/");
+}
+
+export async function createProjectNoteAction(
+  _previous: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const projectId = field(formData, "project_id");
+  const body = requiredText(formData, "body", "Note", 5000);
+  if (!projectId) return { error: "Project ID is missing." };
+  if (typeof body !== "string") return body;
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error } = await auth.supabase.from("project_notes").insert({
+    project_id: projectId,
+    body,
+    pinned: formData.get("pinned") === "on",
+  });
+  if (error) return { error: readableError(error.message) };
+  revalidateProjectPaths(projectId);
+  return { success: "Note added." };
+}
+
+export async function deleteProjectNoteAction(
+  _previous: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const id = field(formData, "id");
+  const projectId = field(formData, "project_id");
+  if (!id || !projectId) return { error: "Note details are missing." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error } = await auth.supabase.from("project_notes").delete().eq("id", id);
+  if (error) return { error: readableError(error.message) };
+  revalidateProjectPaths(projectId);
+  return { success: "Note removed." };
+}
+
+/**
+ * Project files reuse the private `client-files` bucket under a
+ * `projects/<project_id>/…` prefix (D-021 / migration 0013): the storage
+ * policies from 0005 apply unchanged, and downloads are one-hour signed URLs.
+ */
+export async function uploadProjectFileAction(
+  _previous: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const projectId = field(formData, "project_id");
+  const fileValue = formData.get("file");
+  if (!projectId) return { error: "Project ID is missing." };
+  if (!(fileValue instanceof File) || fileValue.size === 0) {
+    return { error: "Choose a file to upload." };
+  }
+  if (fileValue.size > 10 * 1024 * 1024) return { error: "Files must be 10 MB or smaller." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+
+  const safeName = fileValue.name.replace(/[^a-zA-Z0-9._-]/g, "-").slice(0, 160);
+  const path = `projects/${projectId}/${crypto.randomUUID()}-${safeName}`;
+  const upload = await auth.supabase.storage.from("client-files").upload(path, fileValue, {
+    contentType: fileValue.type || "application/octet-stream",
+    upsert: false,
+  });
+  if (upload.error) return { error: readableError(upload.error.message) };
+
+  const { error } = await auth.supabase.from("project_files").insert({
+    project_id: projectId,
+    file_name: fileValue.name,
+    storage_path: path,
+    mime_type: fileValue.type || null,
+    size_bytes: fileValue.size,
+  });
+  if (error) {
+    await auth.supabase.storage.from("client-files").remove([path]);
+    return { error: readableError(error.message) };
+  }
+  revalidateProjectPaths(projectId);
+  return { success: "File uploaded." };
+}
+
+export async function deleteProjectFileAction(
+  _previous: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const id = field(formData, "id");
+  const projectId = field(formData, "project_id");
+  const path = field(formData, "storage_path");
+  if (!id || !projectId || !path) return { error: "File details are missing." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const removed = await auth.supabase.storage.from("client-files").remove([path]);
+  if (removed.error) return { error: readableError(removed.error.message) };
+  const { error } = await auth.supabase.from("project_files").delete().eq("id", id);
+  if (error) return { error: readableError(error.message) };
+  revalidateProjectPaths(projectId);
+  return { success: "File removed." };
+}
+
+/**
+ * Mark a milestone complete (or reopen it) straight from the project — the
+ * owner never has to leave the page to move delivery forward.
+ */
+export async function setMilestoneCompletedAction(
+  _previous: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const id = field(formData, "id");
+  const projectId = field(formData, "project_id");
+  const completedRaw = field(formData, "completed");
+  if (!id || !projectId) return { error: "Milestone details are missing." };
+  if (!["true", "false"].includes(completedRaw)) {
+    return { error: "Choose a valid milestone state." };
+  }
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error } = await auth.supabase
+    .from("milestones")
+    .update({ completed_at: completedRaw === "true" ? new Date().toISOString() : null })
+    .eq("id", id);
+  if (error) return { error: readableError(error.message) };
+  revalidateProjectPaths(projectId);
+  revalidatePath("/tasks");
+  return { success: completedRaw === "true" ? "Milestone completed." : "Milestone reopened." };
+}
