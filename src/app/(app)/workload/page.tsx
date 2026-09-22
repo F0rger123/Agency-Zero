@@ -9,7 +9,6 @@ import { MigrationsRequired, SetupRequired } from "@/components/states";
 import { DateCapacityForm, DeleteDateCapacityForm, WeeklyCapacityForm } from "./workload-forms";
 
 export const metadata: Metadata = { title: "Workload" };
-export const dynamic = "force-dynamic";
 function shift(date: string, days: number): string { const result = new Date(`${date}T00:00:00Z`); result.setUTCDate(result.getUTCDate() + days); return result.toISOString().slice(0, 10); }
 export default async function WorkloadPage() {
   if (!isSupabaseConfigured()) return <SetupRequired />; const supabase = await createClient(); const today = new Date().toISOString().slice(0, 10); const end = shift(today, 14);

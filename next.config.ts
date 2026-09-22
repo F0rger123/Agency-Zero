@@ -7,12 +7,15 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "12mb",
     },
-    // Faster sidebar navigation (D-031): nav routes are prefetched on hover,
-    // focus, and idle; 30s of router-cache staleness for dynamic pages keeps
-    // those prefetches useful while staying acceptably fresh. Server actions
-    // revalidate their own paths after every mutation.
+    // Sidebar navigation (D-031/D-034): every app route is dynamic because it
+    // reads the auth cookie, so the router cache is what makes repeat
+    // navigations instant. `dynamic: 30` keeps a prefetched section valid for
+    // 30 seconds; server actions call `revalidatePath` after every mutation, so
+    // a permanent staleness window is never created. Static assets get the
+    // framework default extended to three minutes.
     staleTimes: {
       dynamic: 30,
+      static: 180,
     },
   },
 };

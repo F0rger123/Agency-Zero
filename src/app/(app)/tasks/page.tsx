@@ -8,7 +8,6 @@ import { MigrationsRequired, SetupRequired } from "@/components/states";
 import { NewTaskForm } from "./task-forms";
 
 export const metadata: Metadata = { title: "Tasks" };
-export const dynamic = "force-dynamic";
 
 export default async function TasksPage() {
   if (!isSupabaseConfigured()) return <SetupRequired />;

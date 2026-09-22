@@ -31,7 +31,7 @@ required by the current application. Do not add one just to deploy this phase.
 ## Supabase production configuration
 
 1. Create a new Supabase project.
-2. Apply migrations `0001` through `0008` in numeric order. The preferred
+2. Apply migrations `0001` through `0008` and `0010` through `0013` in numeric order (`0009` is a production-only out-of-band sync; see `supabase/README.md`). The preferred
    repeatable path is:
 
    ```bash

@@ -17,6 +17,7 @@ const statuses = ["draft", "sent", "viewed", "accepted", "rejected", "expired"];
 const selectionKinds = ["fixed", "optional", "choice"];
 
 type ParsedLine = {
+  service_id: string | null;
   description: string;
   details: string | null;
   qty: number;
@@ -58,6 +59,8 @@ function parseLines(formData: FormData): ParsedLine[] | ActionState {
     const qty = Number(row.qty);
     const unit = Number(row.unit_amount);
     const selection = String(row.selection ?? "fixed");
+    const serviceIdRaw = String(row.service_id ?? "").trim();
+    const serviceId = /^[0-9a-fA-F-]{36}$/.test(serviceIdRaw) ? serviceIdRaw : null;
     if (!description || description.length > 500) return { error: `Line item ${index + 1} needs a description.` };
     if (detailsRaw.length > 1000) return { error: `Line item ${index + 1} details must be 1000 characters or fewer.` };
     if (groupRaw.length > 120) return { error: `Line item ${index + 1} option group must be 120 characters or fewer.` };
@@ -70,6 +73,7 @@ function parseLines(formData: FormData): ParsedLine[] | ActionState {
     const recurring = row.is_recurring === true;
     const billing = recurring && ["month", "quarter", "year"].includes(String(row.billing_period)) ? String(row.billing_period) : null;
     lines.push({
+      service_id: serviceId,
       description,
       details: detailsRaw || null,
       qty,

@@ -8,7 +8,15 @@ import { FieldLabel, FormMessage, SelectInput, SubmitButton, TextArea, TextInput
 
 const initialState: ActionState = {};
 type Option = { id: string; label: string };
+type ServiceOption = {
+  id: string;
+  name: string;
+  default_billing: string;
+  default_price_cents: number | null;
+  billing_interval: string;
+};
 type Line = {
+  service_id: string;
   description: string;
   details: string;
   qty: number;
@@ -34,6 +42,7 @@ type Quote = {
 };
 
 const blankLine = (): Line => ({
+  service_id: "",
   description: "",
   details: "",
   qty: 1,
@@ -60,10 +69,47 @@ function Shell({ title, children }: { title: string; children: ReactNode }) {
  *  - choice: one of several exclusive alternatives inside an option group
  *    (packages, e.g. "Package selection" = Basic / Standard / Premium)
  */
-function LineItemsEditor({ initial = [] }: { initial?: Line[] }) {
+const periodForKey: Record<string, string> = {
+  monthly: "month",
+  quarterly: "quarter",
+  yearly: "year",
+};
+
+function LineItemsEditor({
+  initial = [],
+  services = [],
+}: {
+  initial?: Line[];
+  services?: ServiceOption[];
+}) {
   const [lines, setLines] = useState<Line[]>(initial.length ? initial : [blankLine()]);
   const update = (index: number, patch: Partial<Line>) =>
     setLines((current) => current.map((line, i) => (i === index ? { ...line, ...patch } : line)));
+
+  /**
+   * Picking a catalogue service prefills the line from its defaults: price,
+   * one-off vs recurring, and the billing interval (monthly / quarterly /
+   * yearly → month / quarter / year). Everything stays editable, and the line
+   * keeps the service link so a quote can be traced back to the catalogue.
+   */
+  const applyService = (index: number, serviceId: string) => {
+    const service = services.find((item) => item.id === serviceId);
+    if (!service) {
+      update(index, { service_id: "" });
+      return;
+    }
+    const recurring = service.default_billing === "recurring";
+    update(index, {
+      service_id: service.id,
+      description: lines[index]?.description ? lines[index].description : service.name,
+      unit_amount:
+        service.default_price_cents != null ? service.default_price_cents / 100 : lines[index]?.unit_amount ?? 0,
+      is_recurring: recurring,
+      billing_period: recurring
+        ? periodForKey[service.billing_interval] ?? "month"
+        : (lines[index]?.billing_period ?? "month"),
+    });
+  };
 
   return (
     <div>
@@ -81,6 +127,35 @@ function LineItemsEditor({ initial = [] }: { initial?: Line[] }) {
       <div className="mt-3 space-y-6">
         {lines.map((line, index) => (
           <div key={index} className="space-y-3 border-b border-border pb-6">
+            {services.length > 0 ? (
+              <div className="grid gap-3 sm:grid-cols-[1fr_240px]">
+                <div>
+                  <label htmlFor={`quote-service-${index}`} className="sr-only">
+                    Catalogue service
+                  </label>
+                  <SelectInput
+                    id={`quote-service-${index}`}
+                    name={`line_service_${index}`}
+                    defaultValue={line.service_id}
+                    onChange={(event) => applyService(index, event.target.value)}
+                  >
+                    <option value="">Custom line (no catalogue service)</option>
+                    {services.map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.name}
+                        {service.default_price_cents != null
+                          ? ` · ${(service.default_price_cents / 100).toFixed(2)}`
+                          : ""}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </div>
+                <p className="self-center text-xs text-muted-foreground">
+                  Picking a service fills the description, price, and billing
+                  interval — you can still change any of them.
+                </p>
+              </div>
+            ) : null}
             <div className="grid gap-3 sm:grid-cols-[1fr_70px_90px_120px_auto]">
               <div>
                 <label htmlFor={`quote-line-${index}`} className="sr-only">Description</label>
@@ -205,7 +280,15 @@ function LineItemsEditor({ initial = [] }: { initial?: Line[] }) {
   );
 }
 
-function Fields({ clients, quote }: { clients: Option[]; quote?: Quote }) {
+function Fields({
+  clients,
+  services,
+  quote,
+}: {
+  clients: Option[];
+  services: ServiceOption[];
+  quote?: Quote;
+}) {
   return (
     <div className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -250,7 +333,7 @@ function Fields({ clients, quote }: { clients: Option[]; quote?: Quote }) {
           <TextInput id="quote-currency" name="currency" required defaultValue={quote?.currency ?? "USD"} />
         </div>
       </div>
-      <LineItemsEditor initial={quote?.line_items} />
+      <LineItemsEditor initial={quote?.line_items} services={services} />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <FieldLabel label="Discount" htmlFor="quote-discount" hint="currency units, capped at the accepted subtotal" />
@@ -275,12 +358,18 @@ function Fields({ clients, quote }: { clients: Option[]; quote?: Quote }) {
   );
 }
 
-export function NewQuoteForm({ clients }: { clients: Option[] }) {
+export function NewQuoteForm({
+  clients,
+  services = [],
+}: {
+  clients: Option[];
+  services?: ServiceOption[];
+}) {
   const [state, action] = useActionState(createQuoteAction, initialState);
   return (
     <Shell title="Create quote">
       <form action={action} className="space-y-5">
-        <Fields clients={clients} />
+        <Fields clients={clients} services={services} />
         <div className="flex flex-wrap items-center gap-4">
           <SubmitButton>Create quote</SubmitButton>
           <FormMessage {...state} />
@@ -290,13 +379,21 @@ export function NewQuoteForm({ clients }: { clients: Option[] }) {
   );
 }
 
-export function EditQuoteForm({ clients, quote }: { clients: Option[]; quote: Quote }) {
+export function EditQuoteForm({
+  clients,
+  services = [],
+  quote,
+}: {
+  clients: Option[];
+  services?: ServiceOption[];
+  quote: Quote;
+}) {
   const [state, action] = useActionState(updateQuoteAction, initialState);
   return (
     <Shell title="Edit quote">
       <form action={action} className="space-y-5">
         <input type="hidden" name="id" value={quote.id} />
-        <Fields clients={clients} quote={quote} />
+        <Fields clients={clients} services={services} quote={quote} />
         <div className="flex flex-wrap items-center gap-4">
           <SubmitButton>Save quote</SubmitButton>
           <FormMessage {...state} />

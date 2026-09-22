@@ -9,7 +9,6 @@ import { MigrationsRequired, SetupRequired } from "@/components/states";
 import { DeleteTemplateForm, NewContractForm, TemplateForm } from "./contract-forms";
 
 export const metadata: Metadata = { title: "Contracts" };
-export const dynamic = "force-dynamic";
 export default async function ContractsPage() {
   if (!isSupabaseConfigured()) return <SetupRequired />; const supabase = await createClient();
   const [contractsResponse, templatesResponse, clientsResponse, quotesResponse, projectsResponse] = await Promise.all([

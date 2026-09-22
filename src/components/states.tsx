@@ -54,6 +54,59 @@ export function MigrationsRequired({ detail }: { detail?: string }) {
   );
 }
 
+/**
+ * Honest data-error state for a section that failed to load.
+ *
+ * Nothing is swallowed: the page renders the real database message instead of
+ * a generic "something went wrong" screen, so a missing migration, a broken
+ * RPC, or an RLS problem is diagnosable from the UI. The surrounding shell,
+ * navigation, and page header stay mounted.
+ */
+export function DataFailure({
+  title,
+  message,
+  hint,
+}: {
+  title: string;
+  message: string;
+  hint?: string;
+}) {
+  return (
+    <div role="alert" className="border-t border-border pt-8">
+      <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+        Data error
+      </p>
+      <h2 className="mt-3 text-base font-medium tracking-tight">
+        {title} could not load
+      </h2>
+      <p className="mt-2 max-w-prose text-sm leading-6 text-muted-foreground">
+        {hint ??
+          "The database returned an error. The exact message is shown below — nothing is hidden."}
+      </p>
+      <pre className="mt-4 overflow-x-auto rounded-md border border-border bg-muted/60 p-4 font-mono text-xs leading-5">
+        {message}
+      </pre>
+    </div>
+  );
+}
+
+/**
+ * Small inline pending state used inside `<Suspense>` boundaries. It replaces
+ * only the section that is still streaming — never the shell or the whole page.
+ */
+export function InlinePending({ label = "Loading…" }: { label?: string }) {
+  return (
+    <div
+      aria-busy="true"
+      aria-live="polite"
+      className="flex items-center gap-3 border-t border-border py-6 text-sm text-muted-foreground"
+    >
+      <span aria-hidden className="inline-block size-1.5 animate-pulse rounded-full bg-faint-foreground" />
+      {label}
+    </div>
+  );
+}
+
 /** Grayscale loading skeleton — communicates shape without color. */
 export function Skeleton({ className }: { className?: string }) {
   return <div aria-hidden className={`rounded bg-muted ${className ?? ""}`} />;

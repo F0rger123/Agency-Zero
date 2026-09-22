@@ -10,7 +10,6 @@ import { MigrationsRequired, SetupRequired } from "@/components/states";
 import { DeleteContractForm, EditContractForm, RegenerateContractLinkForm } from "../contract-forms";
 
 export const metadata: Metadata = { title: "Contract" };
-export const dynamic = "force-dynamic";
 
 export default async function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
   if (!isSupabaseConfigured()) return <SetupRequired />;

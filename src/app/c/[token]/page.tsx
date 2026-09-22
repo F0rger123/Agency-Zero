@@ -6,7 +6,6 @@ import { isMissingTable } from "@/lib/forms";
 import { MigrationsRequired, SetupRequired } from "@/components/states";
 import { SignContractForm } from "./sign-form";
 
-export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Contract" };
 
 export default async function PublicContractPage({ params }: { params: Promise<{ token: string }> }) {
