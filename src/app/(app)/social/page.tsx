@@ -15,7 +15,7 @@ export default function SocialPage() {
         <p>
           Each piece of content will move through the seven pipeline stages with
           client approval tracking and a scheduled/published calendar. Analytics
-          per platform stays a deferred idea (docs/IDEAS_BACKLOG.md §3).
+          per platform stays a deferred idea (docs/development/IDEAS.md §3).
         </p>
       </EmptyState>
     </>

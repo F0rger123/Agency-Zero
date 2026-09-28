@@ -1,4 +1,4 @@
-# Agency Zero — Ideas Backlog
+# Agency Zero — Ideas
 
 Parking lot for **future, incomplete, or unscheduled ideas**. Nothing here is a commitment —
 items graduate into [MASTER_SPEC.md](./MASTER_SPEC.md) (or a phase in [BUILD_PROGRESS.md](./BUILD_PROGRESS.md))

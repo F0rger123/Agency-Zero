@@ -217,7 +217,7 @@ One pipeline row per content piece: ideas → scripts → filming → editing �
 - `asset_paths text[]` (Supabase Storage: raw footage, edits, captions)
 - `approval_status` (not_requested | pending | approved | changes_requested), `approved_at null`
 - `scheduled_for timestamptz null`, `published_at null`, `post_url text null`
-- (Analytics fields deferred — `Future`, see IDEAS_BACKLOG §3)
+- (Analytics fields deferred — `Future`, see development/IDEAS.md §3)
 
 ---
 

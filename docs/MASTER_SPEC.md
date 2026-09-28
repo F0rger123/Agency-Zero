@@ -6,7 +6,7 @@
 >
 > Companion documents:
 > - [DECISIONS.md](./DECISIONS.md) — decision log (why things are the way they are)
-> - [IDEAS_BACKLOG.md](./IDEAS_BACKLOG.md) — future / incomplete ideas
+> - [development/IDEAS.md](./development/IDEAS.md) — future / incomplete ideas
 > - [BUILD_PROGRESS.md](./BUILD_PROGRESS.md) — phased roadmap and build status
 > - [DATABASE_PLAN.md](./DATABASE_PLAN.md) — preliminary database entity plan
 
@@ -19,7 +19,7 @@ Rules for any AI agent or developer editing this repo:
 1. **MASTER_SPEC.md is the source of truth.** If code and this document disagree, the document wins until the document is updated.
 2. **Never remove an existing requirement** unless the user explicitly says to remove it.
 3. When the user gives new ideas, **merge them into the matching section** below instead of replacing older requirements.
-4. Requirements that are **not yet scheduled** belong in IDEAS_BACKLOG.md; move them into a section here only when the user confirms them as requirements.
+4. Requirements that are **not yet scheduled** belong in development/IDEAS.md; move them into a section here only when the user confirms them as requirements.
 5. Record every meaningful choice (stack, pattern, scope cut) in DECISIONS.md with a date.
 6. Keep BUILD_PROGRESS.md updated as work completes — it is the record of what is actually built.
 

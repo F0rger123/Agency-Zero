@@ -1,5 +1,7 @@
 # Agency Zero — Build Progress & Roadmap
 
+> **Status note (2026-09-28):** this file is now a *historical change log*. The live plan is [`development/ROADMAP.md`](development/ROADMAP.md); start from `/AGENTS.md`. The "Blocked by" row below is stale (a production Supabase project exists).
+
 Tracks **what is built, what is being built, and what comes next**.
 Update the phase tables and the change log as work completes. Requirements live in
 [MASTER_SPEC.md](./MASTER_SPEC.md); this file tracks execution.

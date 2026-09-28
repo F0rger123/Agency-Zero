@@ -65,13 +65,13 @@ open-next.config.ts / wrangler.jsonc  Cloudflare OpenNext Worker configuration
 
 ## Documentation
 
-The docs in [`/docs`](docs/) are the permanent record — future AI agents and developers must read these first:
+Agents: start with [`AGENTS.md`](AGENTS.md) (session protocol) and [`docs/development/`](docs/development/) (VISION, ROADMAP, ACTIVE, BUGS, IDEAS, HANDOFF, AUDIT). The docs in [`/docs`](docs/) are the permanent record:
 
 | Document | Purpose |
 |---|---|
 | [`docs/MASTER_SPEC.md`](docs/MASTER_SPEC.md) | **Source of truth.** All requirements. Never remove a requirement unless the owner explicitly says so; new ideas are merged into existing sections. |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | Decision log — what was decided, when, and why. |
-| [`docs/IDEAS_BACKLOG.md`](docs/IDEAS_BACKLOG.md) | Future / incomplete ideas, waiting to be confirmed. |
+| [`docs/development/IDEAS.md`](docs/development/IDEAS.md) | Future / incomplete ideas, waiting to be confirmed. |
 | [`docs/BUILD_PROGRESS.md`](docs/BUILD_PROGRESS.md) | Phased roadmap and current build status. |
 | [`docs/DATABASE_PLAN.md`](docs/DATABASE_PLAN.md) | Database entity plan + migration log. |
 
