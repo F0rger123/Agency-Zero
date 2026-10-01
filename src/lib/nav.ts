@@ -19,10 +19,11 @@ export const navItems = [
   { label: "Quotes", href: "/quotes", icon: "quotes" },
   { label: "Contracts", href: "/contracts", icon: "contracts" },
   { label: "Invoices", href: "/invoices", icon: "invoices" },
-  { label: "Social", href: "/social", icon: "social" },
-  { label: "Marketing", href: "/marketing", icon: "marketing" },
+  { label: "Social", href: "/social", icon: "social", planned: true },
+  { label: "Marketing", href: "/marketing", icon: "marketing", planned: true },
   { label: "Settings", href: "/settings", icon: "settings" },
 ] as const;
 
-export type NavItem = (typeof navItems)[number];
-export type IconName = NavItem["icon"] | "menu" | "close";
+/** A nav entry; `planned` sections are placeholders shown in a separate, muted group. */
+export type NavItem = { label: string; href: string; icon: string; planned?: boolean };
+export type IconName = (typeof navItems)[number]["icon"] | "menu" | "close";

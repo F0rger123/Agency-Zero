@@ -14,15 +14,16 @@ export type SessionState = {
 /**
  * Request-level session lookup (navigation speed, D-034).
  *
- * Before this helper, the authenticated layout, the dashboard, and every other
- * page each called `supabase.auth.getUser()` — a network round trip to the
- * Supabase Auth server on every navigation. React `cache()` deduplicates the
- * call for the lifetime of one server request, so the layout and the page it
- * wraps share a single verification.
+ * React `cache()` deduplicates the call for one server request, so the layout
+ * and the page it wraps share a single verification.
  *
- * `getUser()` (not `getSession()`) is kept: the JWT is revalidated against the
- * Auth server rather than trusted from the cookie. Server actions create their
- * own request, so they still verify ownership independently.
+ * `getClaims()` verifies the JWT signature locally (cached signing keys), so a
+ * navigation costs no Auth-server round trip when the project uses asymmetric
+ * JWT signing keys (legacy symmetric projects fall back to a server check).
+ * The trade-off: a session revoked on the server stays valid for rendering
+ * until its access token expires (≤ 1 h by default). Writes are unaffected —
+ * server actions call `getUser()` (src/lib/actions.ts) and Postgres RLS
+ * (`is_owner()`) still gates every row.
  */
 export const getSession = cache(async (): Promise<SessionState> => {
   if (!isSupabaseConfigured()) {
@@ -30,15 +31,16 @@ export const getSession = cache(async (): Promise<SessionState> => {
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getClaims();
 
   if (error) {
     return { configured: true, user: null, error: error.message };
   }
 
+  const claims = data?.claims;
   return {
     configured: true,
-    user: data.user ? { id: data.user.id, email: data.user.email ?? "" } : null,
+    user: claims?.sub ? { id: claims.sub, email: typeof claims.email === "string" ? claims.email : "" } : null,
     error: null,
   };
 });

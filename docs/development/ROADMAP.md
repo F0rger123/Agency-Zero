@@ -26,7 +26,7 @@ handoff per AGENTS.md.
    inside client/project workspaces with client/project prefilled.
 9. **Activity log** table (who/what/when, entity refs) feeding workspaces and, later, AI.
 10. Meetings + checklists; video shoots (calendar event subtypes with checklist template).
-11. Performance: local JWT verification, bound/paginate lists, searchable pickers.
+11. ✅ Performance (local JWT verification, bounded lists/pickers). Still later: searchable async pickers, pagination UI.
 
 ## P2 — Money
 12. Installment plans, recurring invoice generation (from client_services), deposits.

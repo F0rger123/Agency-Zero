@@ -1,7 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getUserClient, notFoundWhenNoRows, wholeNumberField as numberField, hoursToMinutesField as hoursField, moneyToCentsField as moneyField } from "@/lib/actions";
+import {
+  getUserClient,
+  notFoundWhenNoRows,
+  wholeNumberField as numberField,
+  hoursToMinutesField as hoursField,
+  moneyToCentsField as moneyField,
+} from "@/lib/actions";
 import { field, optionalDate, optionalField, readableError, requiredText, type ActionState } from "@/lib/forms";
 
 function projectFields(formData: FormData): ActionState | Record<string, string | number | null> {
@@ -73,7 +79,10 @@ export async function archiveProjectAction(_previous: ActionState, formData: For
   if (!id) return { error: "Project ID is missing." };
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error, count } = await auth.supabase.from("projects").update({ deleted_at: new Date().toISOString() }, { count: "exact" }).eq("id", id);
+  const { error, count } = await auth.supabase
+    .from("projects")
+    .update({ deleted_at: new Date().toISOString() }, { count: "exact" })
+    .eq("id", id);
   if (error) return { error: readableError(error.message) };
   const missing = notFoundWhenNoRows(count, "Project");
   if (missing) return missing;
@@ -113,11 +122,14 @@ export async function updateMilestoneAction(_previous: ActionState, formData: Fo
   const completed = formData.get("completed") === "on";
   const { error, count } = await auth.supabase
     .from("milestones")
-    .update({
-      name,
-      due_date: optionalDate(formData, "due_date"),
-      completed_at: completed ? new Date().toISOString() : null,
-    }, { count: "exact" })
+    .update(
+      {
+        name,
+        due_date: optionalDate(formData, "due_date"),
+        completed_at: completed ? new Date().toISOString() : null,
+      },
+      { count: "exact" },
+    )
     .eq("id", id);
   if (error) return { error: readableError(error.message) };
   const missing = notFoundWhenNoRows(count, "Milestone");

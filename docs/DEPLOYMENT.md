@@ -31,7 +31,7 @@ required by the current application. Do not add one just to deploy this phase.
 ## Supabase production configuration
 
 1. Create a new Supabase project.
-2. Apply migrations `0001` through `0008` and `0010` through `0015` in numeric order (`0009` is a production-only out-of-band sync; see `supabase/README.md`). The preferred
+2. Apply migrations `0001` through `0008` and `0010` through `0017` in numeric order (`0009` is a production-only out-of-band sync; see `supabase/README.md`). The preferred
    repeatable path is:
 
    ```bash
@@ -139,3 +139,32 @@ After the local checks pass:
 - [Cloudflare Workers environment variables](https://developers.cloudflare.com/workers/configuration/environment-variables/)
 - [Supabase CLI migrations](https://supabase.com/docs/guides/deployment/database-migrations)
 - [Supabase Auth URL configuration](https://supabase.com/docs/guides/auth/redirect-urls)
+
+## Public-link abuse protection (audit S5)
+
+The customer-facing pages (`/q/<token>`, `/c/<token>`) call anonymous Postgres
+functions. Tokens are 256-bit random values, so guessing is infeasible; the
+remaining risk is request flooding. Rate limiting belongs at the edge, not in
+the app, so configure it once in Cloudflare (dashboard → Security → WAF → Rate
+limiting rules):
+
+| Rule | Match | Limit | Action |
+|---|---|---|---|
+| Public links | URI path starts with `/q/` or `/c/` | 60 requests / 1 min per IP | Block 10 min |
+| Login | URI path equals `/login` and method POST | 10 requests / 1 min per IP | Block 10 min |
+
+Also keep Supabase Auth → "Allow new users to sign up" **off**. Since migration
+`0014` data is owner-only even if it were on, but there is no reason to allow it.
+
+## Security model summary
+
+- Owner identity: `public.app_owner` (one row) and `public.is_owner()`; every RLS
+  and Storage policy requires it (0014).
+- Page rendering trusts a locally verified JWT (`getClaims()`); every server
+  action re-checks the session with `getUser()` against the Auth server.
+- `public_token` is stored next to `public_token_hash` on quotes/contracts so the
+  owner can re-copy a link. Both are readable only by the owner (RLS). If that
+  is not acceptable later, switch to show-once links (rotate to view).
+- `cloudflare-env.d.ts` is a generated file (`npm run cf-typegen`); it is kept
+  in the repo because Cloudflare builds do not run `cf-typegen`.
+

@@ -109,3 +109,13 @@ deduplicated onto `src/lib/actions.ts` · tests: 14 vitest tests + SQL suite (ow
 anon, atomic saves, invoice protection) · CI runs both.
 **Still open:** B-002 (needs prod schema dump), S3 (signature evidence), S5, performance
 items (B-008), B-011. 0014/0015 are **not yet applied to any database but the scratch test DB**.
+
+## 11. Remediation log, pass 2 (2026-10-01)
+S3 → migration `0016` (IP/UA/consent/SHA-256, immutable) · B-011 → void-only payment ledger (`0016`) ·
+B-008 → `getClaims()` in proxy/layout/settings, bounded lists + pickers + `LimitNotice`, `get_invoice_summary()` (`0017`) ·
+UI → Social/Marketing grouped under "Planned"; `client-workspace` 809→146 lines and `project-workspace` 852→134 lines,
+tabs split into `client-tabs/` and `project-tabs/`, remaining minified one-liners in pages/forms reformatted ·
+S5 → edge rate-limit rules documented (cannot be done in code; owner must configure) · S4 → accepted, documented ·
+latent bug found+fixed: void invoice balances were counted as outstanding.
+**Still open:** B-002 (needs prod schema dump); stale branch `recovery/sidebar-payments-quotes-20260922` (delete on GitHub);
+P1 customer-first model work (bugs/feature requests/phases, create-in-context).

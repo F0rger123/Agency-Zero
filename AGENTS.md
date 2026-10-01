@@ -43,7 +43,7 @@ records what was verified and when.
 - **Customer-first**: work belongs inside `Client → Project → …` workspaces. Global
   pages (`/tasks`, `/invoices`…) are cross-cutting views, not the primary place to work.
 - **Migrations are append-only.** Never edit an applied migration. Next number is
-  **0016**. `0009` is intentionally missing (see AUDIT.md §Migrations).
+  **0018**. `0009` is intentionally missing (see AUDIT.md §Migrations).
 - **RLS on every table.** Policies must use the owner check, not just "authenticated"
   (see ROADMAP P0). New `security definer` functions need `set search_path`, an
   explicit `revoke ... from public` and targeted grants.

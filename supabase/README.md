@@ -31,7 +31,7 @@ npx supabase db push --linked
 ```
 
 The dashboard SQL editor is a fallback: paste and run the files one at a time,
-from `0001` through `0008`, then `0010` through `0015`. A manually applied set
+from `0001` through `0008`, then `0010` through `0017`. A manually applied set
 does not automatically reconcile the CLI migration history, so do not run
 `db push` afterward until that history has been reconciled. Never run the same
 migration twice.
@@ -43,11 +43,11 @@ migration twice.
 > Reusing that version number would collide with the live migration history and
 > could cause `supabase db push` to skip or duplicate work, so the next
 > committed migration is `0010`. Production schema sync: if the live database
-> already contains the objects from `0010`–`0015` (service catalogue columns,
+> already contains the objects from `0010`–`0017` (service catalogue columns,
 > `project_notes`, `project_files`, and the read-model functions), do not re-run
 > those files; reconcile `supabase_migrations.schema_migrations` instead and
 > record the applied versions there. A fresh project applies `0001`–`0008` and
-> then `0010`–`0015` in numeric order.
+> then `0010`–`0017` in numeric order.
 
 **Before applying `0014` to production**, confirm the owner's profile is the oldest
 row (`select id, full_name, created_at from public.profiles order by created_at;`).
@@ -84,7 +84,7 @@ What gets created:
 | `0012_client_workspace.sql` | `public.get_client_directory()` (services, MRR, outstanding balance, active projects, waiting tasks, last activity per client) and `public.get_client_workspace(p_client_id uuid)` (client + contacts, projects, tasks, services, catalogue, quotes, contracts, invoices, payments, notes, communications, files) |
 | `0013_project_workspace.sql` | `project_notes` and `project_files` (owner-only RLS, updated-at triggers) plus `public.get_project_workspace(p_project_id uuid)` (project, client, totals, tasks, milestones, time entries, notes, files, quotes, contracts, invoices, payments, services, activity) |
 
-Migrations `0010`–`0015` are additive read models plus the service/project
+Migrations `0010`–`0017` are additive read models plus the service/project
 columns and tables the redesigned UI needs. Every function is `security
 invoker` (so RLS still applies to the owner), pins `search_path = public`, and
 revokes EXECUTE from `public`/`anon` while granting it to `authenticated`. The

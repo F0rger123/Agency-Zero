@@ -1,5 +1,23 @@
 # Handoff log (newest first)
 
+## 2026-10-01 (2) — Claude — audit remediation pass 2
+**Did**: migration `0016` (payments become a void-only ledger — trigger blocks delete/edit/un-void, void needs a
+reason; invoice status un-sticks after a void; workspace read models expose `voided_at`; contract signature
+evidence: IP, user agent, consent text, SHA-256, immutable) and `0017` (`get_invoice_summary()`; fixes void/draft
+balances counted as outstanding). App: `voidPaymentAction` + Void UI (replaces delete), voided payments shown struck
+through in invoice/client/project views, signature capture in `signContractAction`, evidence panel on the contract
+page, `getClaims()` in proxy/layout/settings (one fewer Auth round trip per navigation), bounded lists/pickers with
+`LimitNotice`, nav "Planned" group, workspace components split per tab, minified page/form files reformatted.
+**Verified**: lint, tsc, `npm test`, `next build`, `supabase/tests/run.sh` (adds ledger, evidence and summary cases).
+NOT verified: real Supabase, browser (void form, signing a contract, tab switching after the split, list notices).
+**Migration/deploy requirements**: apply `0014`, `0015`, `0016`, `0017` in order, THEN deploy the app. App code calls
+`save_*`, `sign_public_contract` (5 args), `get_invoice_summary` and reads `payments.voided_at`, so deploying first breaks
+those flows. `0016` patches `get_client_workspace`/`get_project_workspace` in place and aborts loudly if the payments
+projection text differs from the repo's (e.g. if the missing `0009` redefined them) — send me that error if it happens.
+**Owner to-do (cannot be done in code)**: Cloudflare WAF rate-limit rules (docs/DEPLOYMENT.md), delete the stale
+`recovery/sidebar-payments-quotes-20260922` branch, prod schema dump for `0009`, keep sign-ups off.
+**Next**: P1 starting at migration `0018`.
+
 ## 2026-10-01 — Claude — P0 hardening
 **Did**: migrations `0014` (owner-only RLS via `app_owner`/`is_owner()`, incl. Storage) and `0015`
 (`save_quote`/`save_invoice` atomic RPCs, payments RESTRICT, non-draft invoices undeletable);

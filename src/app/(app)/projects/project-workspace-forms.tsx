@@ -2,14 +2,7 @@
 
 import { useActionState } from "react";
 import type { ActionState } from "@/lib/forms";
-import {
-  FieldLabel,
-  FormMessage,
-  SelectInput,
-  SubmitButton,
-  TextArea,
-  TextInput,
-} from "@/components/form-controls";
+import { FieldLabel, FormMessage, SelectInput, SubmitButton, TextArea, TextInput } from "@/components/form-controls";
 import { createTaskAction, updateTaskAction } from "../tasks/actions";
 import { MilestoneForm } from "./project-forms";
 import {
@@ -80,10 +73,7 @@ export function ProjectTaskForm({
   tasks: Option[];
   task?: WorkspaceTask;
 }) {
-  const [state, action] = useActionState(
-    task ? updateTaskAction : createTaskAction,
-    initialState
-  );
+  const [state, action] = useActionState(task ? updateTaskAction : createTaskAction, initialState);
   const key = task?.id ?? "new";
 
   return (
@@ -146,11 +136,7 @@ export function ProjectTaskForm({
         </div>
         <div>
           <FieldLabel label="Milestone" htmlFor={`pw-milestone-${key}`} hint="link to a goal" />
-          <SelectInput
-            id={`pw-milestone-${key}`}
-            name="milestone_id"
-            defaultValue={task?.milestone_id ?? ""}
-          >
+          <SelectInput id={`pw-milestone-${key}`} name="milestone_id" defaultValue={task?.milestone_id ?? ""}>
             <option value="">No milestone</option>
             {milestones.map((milestone) => (
               <option key={milestone.id} value={milestone.id}>
@@ -161,11 +147,7 @@ export function ProjectTaskForm({
         </div>
         <div>
           <FieldLabel label="Parent task" htmlFor={`pw-parent-${key}`} hint="for subtasks" />
-          <SelectInput
-            id={`pw-parent-${key}`}
-            name="parent_task_id"
-            defaultValue={task?.parent_task_id ?? ""}
-          >
+          <SelectInput id={`pw-parent-${key}`} name="parent_task_id" defaultValue={task?.parent_task_id ?? ""}>
             <option value="">No parent</option>
             {tasks
               .filter((option) => option.id !== task?.id)
@@ -221,13 +203,7 @@ export function ProjectTaskForm({
   );
 }
 
-export function MilestoneBlock({
-  projectId,
-  milestone,
-}: {
-  projectId: string;
-  milestone: WorkspaceMilestone;
-}) {
+export function MilestoneBlock({ projectId, milestone }: { projectId: string; milestone: WorkspaceMilestone }) {
   const completed = Boolean(milestone.completed_at);
   return (
     <div className="border-b border-border pb-6">
@@ -240,11 +216,7 @@ export function MilestoneBlock({
             {completed ? " · completed" : ""}
           </p>
         </div>
-        <SetMilestoneCompletedForm
-          projectId={projectId}
-          milestoneId={milestone.id}
-          completed={completed}
-        />
+        <SetMilestoneCompletedForm projectId={projectId} milestoneId={milestone.id} completed={completed} />
       </div>
       <div className="mt-4">
         <MilestoneForm
@@ -295,7 +267,13 @@ export function ProjectNoteForm({ projectId }: { projectId: string }) {
       <input type="hidden" name="project_id" value={projectId} />
       <div>
         <FieldLabel label="Note" htmlFor="project-note" required />
-        <TextArea id="project-note" name="body" rows={4} required placeholder="Decision, risk, or context for this project" />
+        <TextArea
+          id="project-note"
+          name="body"
+          rows={4}
+          required
+          placeholder="Decision, risk, or context for this project"
+        />
       </div>
       <label className="flex items-center gap-2 text-sm text-muted-foreground">
         <input type="checkbox" name="pinned" className="size-4 accent-black" />
@@ -309,13 +287,7 @@ export function ProjectNoteForm({ projectId }: { projectId: string }) {
   );
 }
 
-export function DeleteProjectNoteForm({
-  projectId,
-  noteId,
-}: {
-  projectId: string;
-  noteId: string;
-}) {
+export function DeleteProjectNoteForm({ projectId, noteId }: { projectId: string; noteId: string }) {
   const [state, action] = useActionState(deleteProjectNoteAction, initialState);
   return (
     <form action={action} className="flex flex-wrap items-center gap-3">

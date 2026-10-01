@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isMissingTable } from "@/lib/forms";
+import { PICKER_LIMIT } from "@/lib/limits";
 import { PageHeader } from "@/components/page-header";
 import { FormSection } from "@/components/form-controls";
 import { MigrationsRequired, SetupRequired } from "@/components/states";
@@ -40,31 +41,60 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
     supabase.from("quotes").select("*").eq("id", id).maybeSingle(),
     supabase
       .from("quote_line_items")
-      .select("id, description, details, qty, unit_amount_cents, is_recurring, billing_period, amount_cents, selection, option_group, sort_order, service_id")
+      .select(
+        "id, description, details, qty, unit_amount_cents, is_recurring, billing_period, amount_cents, selection, option_group, sort_order, service_id",
+      )
       .eq("quote_id", id)
       .order("sort_order"),
-    supabase.from("clients").select("id, name, company").is("deleted_at", null).order("name"),
+    supabase.from("clients").select("id, name, company").is("deleted_at", null).order("name").limit(PICKER_LIMIT),
     // Catalogue defaults used to prefill quote lines (migration 0010).
-    supabase.from("services").select("id, name, default_billing, default_price_cents, billing_interval").eq("active", true).order("name"),
+    supabase
+      .from("services")
+      .select("id, name, default_billing, default_price_cents, billing_interval")
+      .eq("active", true)
+      .order("name"),
   ]);
   const responses = [quoteResponse, linesResponse, clientsResponse, servicesResponse];
-  if (responses.some((response) => response.error && isMissingTable(response.error.message))) return <MigrationsRequired />;
+  if (responses.some((response) => response.error && isMissingTable(response.error.message)))
+    return <MigrationsRequired />;
   const failed = responses.find((response) => response.error);
   if (failed?.error) throw new Error(failed.error.message);
   if (!quoteResponse.data) notFound();
 
   const raw = quoteResponse.data as {
-    id: string; client_id: string; number: string; title: string; notes: string | null;
-    status: string; issued_on: string; valid_until: string | null; currency: string;
-    subtotal_cents: number; discount_cents: number; tax_rate: number; tax_cents: number; total_cents: number;
-    public_token: string; viewed_at: string | null; accepted_at: string | null; rejected_at: string | null;
-    responded_by: string | null; selected_item_ids: string[] | null;
-    accepted_subtotal_cents: number | null; accepted_total_cents: number | null;
+    id: string;
+    client_id: string;
+    number: string;
+    title: string;
+    notes: string | null;
+    status: string;
+    issued_on: string;
+    valid_until: string | null;
+    currency: string;
+    subtotal_cents: number;
+    discount_cents: number;
+    tax_rate: number;
+    tax_cents: number;
+    total_cents: number;
+    public_token: string;
+    viewed_at: string | null;
+    accepted_at: string | null;
+    rejected_at: string | null;
+    responded_by: string | null;
+    selected_item_ids: string[] | null;
+    accepted_subtotal_cents: number | null;
+    accepted_total_cents: number | null;
     converted_project_id: string | null;
   };
   const lineItems = (linesResponse.data ?? []) as LineRow[];
   const clients = (clientsResponse.data ?? []) as { id: string; name: string; company: string | null }[];
-  const services = (servicesResponse.data ?? []) as { id: string; name: string; default_billing: string; default_price_cents: number | null; billing_interval: string }[];
+  const services = (servicesResponse.data ?? []) as {
+    id: string;
+    name: string;
+    default_billing: string;
+    default_price_cents: number | null;
+    billing_interval: string;
+  }[];
 
   const quote = {
     ...raw,
@@ -80,7 +110,8 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
       option_group: line.option_group ?? "",
     })),
   };
-  const money = (cents: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: raw.currency }).format(cents / 100);
+  const money = (cents: number) =>
+    new Intl.NumberFormat("en-US", { style: "currency", currency: raw.currency }).format(cents / 100);
   const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
   const publicLink = `${site || ""}/q/${raw.public_token}`;
   const isAccepted = raw.status === "accepted";
@@ -89,17 +120,33 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
 
   return (
     <>
-      <Link href="/quotes" className="text-sm text-muted-foreground underline decoration-border underline-offset-4">← All quotes</Link>
+      <Link href="/quotes" className="text-sm text-muted-foreground underline decoration-border underline-offset-4">
+        ← All quotes
+      </Link>
       <PageHeader
         title={`${raw.number}: ${raw.title}`}
         description={`Status: ${raw.status} · Issued ${new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(`${raw.issued_on}T00:00:00Z`))}`}
       />
 
       <div className="flex flex-wrap items-center gap-3 border-y border-border py-4">
-        <span className="rounded-full border border-border px-2.5 py-1 text-[11px] font-medium uppercase tracking-widest">{raw.status}</span>
-        {datetime(raw.viewed_at) ? <span className="text-sm text-muted-foreground">Viewed {datetime(raw.viewed_at)}</span> : null}
-        {datetime(raw.accepted_at) ? <span className="text-sm text-muted-foreground">Accepted {datetime(raw.accepted_at)}{raw.responded_by ? ` by ${raw.responded_by}` : ""}</span> : null}
-        {datetime(raw.rejected_at) ? <span className="text-sm text-muted-foreground">Rejected {datetime(raw.rejected_at)}{raw.responded_by ? ` by ${raw.responded_by}` : ""}</span> : null}
+        <span className="rounded-full border border-border px-2.5 py-1 text-[11px] font-medium uppercase tracking-widest">
+          {raw.status}
+        </span>
+        {datetime(raw.viewed_at) ? (
+          <span className="text-sm text-muted-foreground">Viewed {datetime(raw.viewed_at)}</span>
+        ) : null}
+        {datetime(raw.accepted_at) ? (
+          <span className="text-sm text-muted-foreground">
+            Accepted {datetime(raw.accepted_at)}
+            {raw.responded_by ? ` by ${raw.responded_by}` : ""}
+          </span>
+        ) : null}
+        {datetime(raw.rejected_at) ? (
+          <span className="text-sm text-muted-foreground">
+            Rejected {datetime(raw.rejected_at)}
+            {raw.responded_by ? ` by ${raw.responded_by}` : ""}
+          </span>
+        ) : null}
       </div>
 
       {isAccepted ? (
@@ -125,12 +172,14 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
           </dl>
           {selectedIds.size > 0 ? (
             <ul className="mt-4 divide-y divide-border border-y border-border text-sm">
-              {lineItems.filter((line) => selectedIds.has(line.id)).map((line) => (
-                <li key={line.id} className="flex flex-wrap justify-between gap-4 py-3">
-                  <span className="text-muted-foreground">{line.description}</span>
-                  <span>{money(line.amount_cents)}</span>
-                </li>
-              ))}
+              {lineItems
+                .filter((line) => selectedIds.has(line.id))
+                .map((line) => (
+                  <li key={line.id} className="flex flex-wrap justify-between gap-4 py-3">
+                    <span className="text-muted-foreground">{line.description}</span>
+                    <span>{money(line.amount_cents)}</span>
+                  </li>
+                ))}
             </ul>
           ) : (
             <p className="mt-4 text-sm text-muted-foreground">No optional add-ons or package choices were accepted.</p>
@@ -138,20 +187,30 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
         </FormSection>
       ) : null}
 
-      <FormSection title="Customer link" description="Share this secure link with the customer. The token is random and only exposes this quote.">
+      <FormSection
+        title="Customer link"
+        description="Share this secure link with the customer. The token is random and only exposes this quote."
+      >
         <div className="break-all border-y border-border py-4 font-mono text-sm">{publicLink}</div>
-        <p className="mt-2 text-xs text-muted-foreground">The link is available while the quote is not expired. Customer responses are recorded in the quote status.</p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          The link is available while the quote is not expired. Customer responses are recorded in the quote status.
+        </p>
         <RegenerateQuoteLinkForm id={raw.id} />
       </FormSection>
 
-      <FormSection title="Line items" description="Quote totals assume every option is taken; the accepted total reflects the customer's actual selection.">
+      <FormSection
+        title="Line items"
+        description="Quote totals assume every option is taken; the accepted total reflects the customer's actual selection."
+      >
         <ul className="divide-y divide-border border-y border-border">
           {lineItems.map((line) => (
             <li key={line.id} className="py-4">
               <div className="flex flex-wrap justify-between gap-4">
                 <div>
                   <p className="font-medium">{line.description}</p>
-                  {line.details ? <p className="mt-1 max-w-prose text-sm text-muted-foreground">{line.details}</p> : null}
+                  {line.details ? (
+                    <p className="mt-1 max-w-prose text-sm text-muted-foreground">{line.details}</p>
+                  ) : null}
                   <p className="mt-1 text-xs text-muted-foreground">
                     {line.qty} × {money(line.unit_amount_cents)}
                     {line.is_recurring ? ` · recurring ${line.billing_period}` : ""} · {selectionLabel(line)}
@@ -163,36 +222,65 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
           ))}
         </ul>
         <dl className="ml-auto mt-6 max-w-sm divide-y divide-border border-y border-border text-sm">
-          <div className="flex justify-between gap-4 py-3"><dt className="text-muted-foreground">Subtotal</dt><dd>{money(raw.subtotal_cents)}</dd></div>
-          <div className="flex justify-between gap-4 py-3"><dt className="text-muted-foreground">Discount</dt><dd>−{money(raw.discount_cents)}</dd></div>
-          <div className="flex justify-between gap-4 py-3"><dt className="text-muted-foreground">Tax ({raw.tax_rate}%)</dt><dd>{money(raw.tax_cents)}</dd></div>
-          <div className="flex justify-between gap-4 py-3 font-medium"><dt>Total</dt><dd>{money(raw.total_cents)}</dd></div>
+          <div className="flex justify-between gap-4 py-3">
+            <dt className="text-muted-foreground">Subtotal</dt>
+            <dd>{money(raw.subtotal_cents)}</dd>
+          </div>
+          <div className="flex justify-between gap-4 py-3">
+            <dt className="text-muted-foreground">Discount</dt>
+            <dd>−{money(raw.discount_cents)}</dd>
+          </div>
+          <div className="flex justify-between gap-4 py-3">
+            <dt className="text-muted-foreground">Tax ({raw.tax_rate}%)</dt>
+            <dd>{money(raw.tax_cents)}</dd>
+          </div>
+          <div className="flex justify-between gap-4 py-3 font-medium">
+            <dt>Total</dt>
+            <dd>{money(raw.total_cents)}</dd>
+          </div>
         </dl>
       </FormSection>
 
       {isAccepted && !raw.converted_project_id ? (
         <FormSection title="Delivery">
-          <p className="text-sm text-muted-foreground">This accepted quote can become a planning project with the quote total as its value.</p>
-          <div className="mt-4"><ConvertQuoteForm id={raw.id} /></div>
+          <p className="text-sm text-muted-foreground">
+            This accepted quote can become a planning project with the quote total as its value.
+          </p>
+          <div className="mt-4">
+            <ConvertQuoteForm id={raw.id} />
+          </div>
         </FormSection>
       ) : null}
       {raw.converted_project_id ? (
         <FormSection title="Converted project">
-          <Link href={`/projects/${raw.converted_project_id}`} className="font-medium underline decoration-border underline-offset-4">Open created project →</Link>
+          <Link
+            href={`/projects/${raw.converted_project_id}`}
+            className="font-medium underline decoration-border underline-offset-4"
+          >
+            Open created project →
+          </Link>
         </FormSection>
       ) : null}
 
       {isAccepted ? (
         <FormSection title="Quote record">
           <p className="text-sm text-muted-foreground">
-            This quote has been accepted by the customer and is now immutable.
-            Create a new quote if the scope changes.
+            This quote has been accepted by the customer and is now immutable. Create a new quote if the scope changes.
           </p>
         </FormSection>
       ) : (
         <FormSection title="Quote record">
-          <EditQuoteForm clients={clients.map((client) => ({ id: client.id, label: `${client.name}${client.company ? ` · ${client.company}` : ""}` }))} services={services} quote={quote} />
-          <div className="mt-8 border-t border-border pt-6"><DeleteQuoteForm id={raw.id} /></div>
+          <EditQuoteForm
+            clients={clients.map((client) => ({
+              id: client.id,
+              label: `${client.name}${client.company ? ` · ${client.company}` : ""}`,
+            }))}
+            services={services}
+            quote={quote}
+          />
+          <div className="mt-8 border-t border-border pt-6">
+            <DeleteQuoteForm id={raw.id} />
+          </div>
         </FormSection>
       )}
     </>

@@ -111,3 +111,13 @@ export function InlinePending({ label = "Loading…" }: { label?: string }) {
 export function Skeleton({ className }: { className?: string }) {
   return <div aria-hidden className={`rounded bg-muted ${className ?? ""}`} />;
 }
+
+/** Shown when a list hit its row bound so the owner knows it is truncated. */
+export function LimitNotice({ shown, limit, hint }: { shown: number; limit: number; hint: string }) {
+  if (shown < limit) return null;
+  return (
+    <p className="mt-4 border-y border-border py-3 text-xs text-muted-foreground">
+      Showing the first {limit} records. {hint}
+    </p>
+  );
+}

@@ -39,11 +39,14 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  // IMPORTANT: getUser() (not getSession()) — it revalidates the JWT
-  // against the Supabase Auth server on every request.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() verifies the JWT signature locally against the project's cached
+  // signing keys (no Auth-server round trip on every navigation) and still
+  // refreshes an expired session. Projects on a legacy symmetric JWT secret
+  // transparently fall back to a server check, so this is never less safe than
+  // before for rendering. Every server action still calls getUser() (see
+  // src/lib/actions.ts), so writes are authorised against live session state.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const user = claimsData?.claims?.sub ? { id: claimsData.claims.sub } : null;
 
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some(

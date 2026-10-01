@@ -63,6 +63,22 @@ select pg_temp.expect_error(format('delete from public.invoices where id = %L', 
 update public.invoices set status = 'draft';
 select pg_temp.expect_error('delete from public.invoices', 'violates foreign key');
 
+-- ── payment ledger (0016) ──────────────────────────────────────────────────
+update public.invoices set status = 'sent';   -- back from the draft used above
+select id as pay_id from public.payments limit 1 \gset
+select pg_temp.expect_error('delete from public.payments', 'permanent records');
+select pg_temp.expect_error(format('update public.payments set amount_cents = 1 where id = %L', :'pay_id'), 'cannot be edited');
+select pg_temp.expect_error(format('update public.payments set voided_at = now() where id = %L', :'pay_id'), 'payments_void_reason_check');
+update public.payments set voided_at = now(), void_reason = 'entered twice' where id = :'pay_id';
+do $$ begin
+  assert (select paid_cents from public.invoices) = 0, 'voided payment excluded from paid';
+  assert (select balance_cents from public.invoices) = 1000, 'balance restored after void';
+  assert (select status from public.invoices) = 'sent', 'status un-sticks after void';
+  assert (select count(*) from public.payments) = 1, 'voided payment stays in ledger';
+  assert (public.get_client_workspace('10000000-0000-0000-0000-000000000001') -> 'payments' -> 0 ->> 'voided_at') is not null, 'workspace exposes voided_at';
+end $$;
+select pg_temp.expect_error(format('update public.payments set voided_at = null where id = %L', :'pay_id'), 'cannot be changed');
+
 -- ── stranger sees and does nothing ─────────────────────────────────────────
 set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';
 do $$ begin
@@ -83,4 +99,44 @@ do $$ begin
   assert public.get_public_quote('nope') is null, 'unknown public token yields nothing';
 end $$;
 select pg_temp.expect_error($q$select public.refresh_invoice_statuses()$q$, 'Authentication required');
+reset role;
+
+-- ── contract signature evidence (0016) ─────────────────────────────────────
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';
+insert into public.contracts (client_id, title, status, body, public_token, public_token_hash)
+values ('10000000-0000-0000-0000-000000000001', 'MSA', 'sent', 'Terms v1', 'ctok', 'ctokhash');
+reset request.jwt.claim.sub;
+set role anon;
+select public.sign_public_contract('ctokhash', 'Jane Doe', '203.0.113.9', 'UA/1.0', 'I agree') is not null as signed;
+reset role;
+do $$ begin
+  assert (select signer_ip from public.contracts) = '203.0.113.9', 'ip recorded';
+  assert (select signer_user_agent from public.contracts) = 'UA/1.0', 'ua recorded';
+  assert (select consent_text from public.contracts) = 'I agree', 'consent recorded';
+  assert (select signed_body_sha256 from public.contracts) = encode(sha256('Terms v1'::bytea), 'hex'), 'body hash recorded';
+end $$;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';
+select pg_temp.expect_error($q$update public.contracts set signer_ip = '1.1.1.1'$q$, 'immutable');
+reset role;
+
+-- ── invoice summary (0017) ─────────────────────────────────────────────────
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';
+do $$
+declare s jsonb := public.get_invoice_summary('2026-12-01');
+begin
+  assert (s ->> 'invoice_count')::int = 1, 'one invoice';
+  assert (s ->> 'revenue_cents')::int = 0, 'voided payment is not revenue';
+  assert (s ->> 'outstanding_cents')::int = 1000, 'sent invoice outstanding';
+  assert (s ->> 'overdue_count')::int = 1, 'past-due invoice counted overdue';
+end $$;
+update public.invoices set status = 'void';
+do $$
+declare s jsonb := public.get_invoice_summary('2026-12-01');
+begin
+  assert (s ->> 'outstanding_cents')::int = 0, 'void invoice is not outstanding';
+  assert (s ->> 'overdue_count')::int = 0, 'void invoice is not overdue';
+end $$;
 reset role;

@@ -24,13 +24,7 @@ export function SubmitButton({
   );
 }
 
-export function FormMessage({
-  error,
-  success,
-}: {
-  error?: string;
-  success?: string;
-}) {
+export function FormMessage({ error, success }: { error?: string; success?: string }) {
   if (!error && !success) return null;
   return (
     <p

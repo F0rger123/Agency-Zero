@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isMissingTable } from "@/lib/forms";
 import { billingIntervalLabel, hoursLabel, moneyLabel } from "@/lib/format";
+import { PICKER_LIMIT } from "@/lib/limits";
 import { PageHeader } from "@/components/page-header";
 import { DataFailure, MigrationsRequired, SetupRequired } from "@/components/states";
 import {
@@ -39,7 +40,7 @@ export default async function ServicesPage() {
   const supabase = await createClient();
   const [directoryResponse, clientsResponse] = await Promise.all([
     supabase.rpc("get_service_directory"),
-    supabase.from("clients").select("id, name").is("deleted_at", null).order("name"),
+    supabase.from("clients").select("id, name").is("deleted_at", null).order("name").limit(PICKER_LIMIT),
   ]);
 
   const header = (
@@ -93,29 +94,21 @@ export default async function ServicesPage() {
           <p className="text-2xl font-semibold tracking-tight">
             {services.reduce((sum, service) => sum + service.recurring_clients, 0)}
           </p>
-          <p className="mt-1 text-[11px] uppercase tracking-widest text-muted-foreground">
-            Recurring assignments
-          </p>
+          <p className="mt-1 text-[11px] uppercase tracking-widest text-muted-foreground">Recurring assignments</p>
         </div>
         <div className="bg-background p-5">
           <p className="text-2xl font-semibold tracking-tight">{moneyLabel(totalMrr)}</p>
-          <p className="mt-1 text-[11px] uppercase tracking-widest text-muted-foreground">
-            Catalogue MRR
-          </p>
+          <p className="mt-1 text-[11px] uppercase tracking-widest text-muted-foreground">Catalogue MRR</p>
         </div>
       </div>
 
       <section aria-labelledby="service-list-heading" className="mt-12">
-        <h2
-          id="service-list-heading"
-          className="text-xs font-medium uppercase tracking-widest text-muted-foreground"
-        >
+        <h2 id="service-list-heading" className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
           Catalogue
         </h2>
         {services.length === 0 ? (
           <p className="mt-4 border-t border-border py-8 text-sm text-muted-foreground">
-            No services yet. Add the first one below — services populate the
-            assignment and quote line pickers.
+            No services yet. Add the first one below — services populate the assignment and quote line pickers.
           </p>
         ) : (
           <div className="mt-4 space-y-10">
@@ -140,9 +133,7 @@ export default async function ServicesPage() {
 
                 <dl className="mt-4 grid gap-px border border-border bg-border sm:grid-cols-4">
                   <div className="bg-background p-4">
-                    <dt className="text-[11px] uppercase tracking-widest text-muted-foreground">
-                      Billing
-                    </dt>
+                    <dt className="text-[11px] uppercase tracking-widest text-muted-foreground">Billing</dt>
                     <dd className="mt-1 text-sm font-medium">
                       {service.default_billing === "recurring"
                         ? `Recurring · ${billingIntervalLabel(service.billing_interval)}`
@@ -150,30 +141,18 @@ export default async function ServicesPage() {
                     </dd>
                   </div>
                   <div className="bg-background p-4">
-                    <dt className="text-[11px] uppercase tracking-widest text-muted-foreground">
-                      Default price
-                    </dt>
-                    <dd className="mt-1 text-sm font-medium">
-                      {moneyLabel(service.default_price_cents)}
-                    </dd>
+                    <dt className="text-[11px] uppercase tracking-widest text-muted-foreground">Default price</dt>
+                    <dd className="mt-1 text-sm font-medium">{moneyLabel(service.default_price_cents)}</dd>
                   </div>
                   <div className="bg-background p-4">
-                    <dt className="text-[11px] uppercase tracking-widest text-muted-foreground">
-                      Default estimate
-                    </dt>
-                    <dd className="mt-1 text-sm font-medium">
-                      {hoursLabel(service.default_estimated_minutes)}
-                    </dd>
+                    <dt className="text-[11px] uppercase tracking-widest text-muted-foreground">Default estimate</dt>
+                    <dd className="mt-1 text-sm font-medium">{hoursLabel(service.default_estimated_minutes)}</dd>
                   </div>
                   <div className="bg-background p-4">
-                    <dt className="text-[11px] uppercase tracking-widest text-muted-foreground">
-                      Clients / MRR
-                    </dt>
+                    <dt className="text-[11px] uppercase tracking-widest text-muted-foreground">Clients / MRR</dt>
                     <dd className="mt-1 text-sm font-medium">
                       {service.assigned_clients} assigned
-                      <span className="ml-1 text-muted-foreground">
-                        · {moneyLabel(service.mrr_cents)}/mo
-                      </span>
+                      <span className="ml-1 text-muted-foreground">· {moneyLabel(service.mrr_cents)}/mo</span>
                     </dd>
                   </div>
                 </dl>
@@ -193,9 +172,8 @@ export default async function ServicesPage() {
       </div>
 
       <p className="mt-10 border-t border-border pt-6 text-xs text-muted-foreground">
-        Services assigned to a client appear on the client workspace Services
-        tab; recurring assignments feed the dashboard MRR/ARR card. Quote lines
-        can be built from this catalogue in the quote editor.
+        Services assigned to a client appear on the client workspace Services tab; recurring assignments feed the
+        dashboard MRR/ARR card. Quote lines can be built from this catalogue in the quote editor.
       </p>
     </>
   );

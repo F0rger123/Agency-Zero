@@ -198,17 +198,30 @@ export async function recordPaymentAction(_previous: ActionState, formData: Form
   revalidatePath("/");
   return { success: "Payment recorded." };
 }
-export async function deletePaymentAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+/**
+ * Payments are a permanent ledger (migration 0016): they are voided with a
+ * reason, never deleted or edited. A voided payment stays visible and is
+ * excluded from the invoice totals.
+ */
+export async function voidPaymentAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const id = field(formData, "id");
   const invoiceId = field(formData, "invoice_id");
   if (!id || !invoiceId) return { error: "Payment details are missing." };
+  const reason = requiredText(formData, "reason", "Reason for voiding", 300);
+  if (typeof reason !== "string") return reason;
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error, count } = await auth.supabase.from("payments").delete({ count: "exact" }).eq("id", id);
+  const { error, count } = await auth.supabase
+    .from("payments")
+    .update({ voided_at: new Date().toISOString(), void_reason: reason }, { count: "exact" })
+    .eq("id", id)
+    .is("voided_at", null);
   if (error) return { error: readableError(error.message) };
   const missing = notFoundWhenNoRows(count, "Payment");
   if (missing) return missing;
   revalidatePath("/invoices");
   revalidatePath(`/invoices/${invoiceId}`);
-  return { success: "Payment removed." };
+  revalidatePath("/clients");
+  revalidatePath("/");
+  return { success: "Payment voided. It stays in the ledger but no longer counts toward the invoice." };
 }

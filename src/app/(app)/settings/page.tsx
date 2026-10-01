@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { getSession } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { PageHeader } from "@/components/page-header";
 import { FormSection } from "@/components/form-controls";
@@ -25,19 +26,16 @@ export default async function SettingsPage() {
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getSession();
 
-  const profile = await supabase
-    .from("profiles")
-    .select("full_name, timezone, currency, default_daily_capacity_minutes")
-    .maybeSingle();
-  const settings = await supabase
-    .from("settings")
-    .select("business_name, address, tax_id, default_currency, default_tax_rate, quote_prefix, invoice_prefix")
-    .eq("id", 1)
-    .maybeSingle();
+  const [profile, settings] = await Promise.all([
+    supabase.from("profiles").select("full_name, timezone, currency, default_daily_capacity_minutes").maybeSingle(),
+    supabase
+      .from("settings")
+      .select("business_name, address, tax_id, default_currency, default_tax_rate, quote_prefix, invoice_prefix")
+      .eq("id", 1)
+      .maybeSingle(),
+  ]);
 
   const schemaMissing =
     (profile.error && isMissingTable(profile.error.message)) ||
