@@ -4,16 +4,16 @@ Supersedes the phase list in `docs/BUILD_PROGRESS.md` (kept as history). Order r
 "strong foundation before AI, customer-first UX". Each item should end with docs +
 handoff per AGENTS.md.
 
-## P0 — Safety & foundation (before new features)
-1. **Owner-only RLS.** Confirm Supabase sign-ups disabled in prod *now*; migration 0014
+## P0 — Safety & foundation (before new features) — code complete 2026-10-01; 0014/0015 need applying to production
+1. ✅ **Owner-only RLS** (migration 0014). Confirm Supabase sign-ups disabled in prod *now*; migration 0014
    adds `is_owner()` and rewrites all policies + storage policies to use it.
-2. **Reconcile schema drift** (missing `0009`): dump prod schema, diff vs fresh apply,
+2. 🟡 **Reconcile schema drift** (script ready; needs prod dump) (missing `0009`): dump prod schema, diff vs fresh apply,
    commit reconciling migration; add a scripted "apply all + smoke RPC" SQL test.
-3. **CI + tests**: CI added; add unit tests for `lib/*` (forms, invoice-status, tokens)
+3. ✅ **CI + tests**: CI (app + database jobs), vitest unit tests, SQL tests (`npm test`, `npm run test:db`) for `lib/*` (forms, invoice-status, tokens)
    and SQL smoke tests.
-4. **Shared server-action layer**: one auth/validation/affected-rows helper; unminify
+4. ✅ **Shared server-action layer** (`src/lib/actions.ts`): one auth/validation/affected-rows helper; unminify
    invoices/quotes/contracts actions; transactional line-item replace via RPC.
-5. Stop hard-deleting invoices/payments (void instead); make public "viewed" tracking
+5. ✅ Stop hard-deleting invoices/payments (void instead); make public "viewed" tracking
    non-GET-side-effect (explicit client beacon or bot-tolerant).
 
 ## P1 — Customer-first core model

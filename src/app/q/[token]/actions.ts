@@ -44,3 +44,10 @@ export async function respondToQuoteAction(
   revalidatePath(`/q/${token}`);
   return { success: decision === "accepted" ? "Quote accepted. The agency has been notified." : "Quote rejected. The agency has been notified." };
 }
+
+/** Called by <ViewBeacon> from a real browser; never from page render. */
+export async function markQuoteViewedAction(token: string): Promise<void> {
+  if (!isSupabaseConfigured() || !token) return;
+  const supabase = await createClient();
+  await supabase.rpc("mark_public_quote_viewed", { p_token_hash: hashPublicToken(token) });
+}

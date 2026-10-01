@@ -15,9 +15,10 @@ records what was verified and when.
    `docs/DECISIONS.md`.
 2. **Claim work** in `ACTIVE.md` (one line: what, branch, migrations touched).
 3. **Implement** on your designated branch. Small, reviewable commits.
-4. **Test**: `npm run lint && npx tsc --noEmit && npm run build` must pass
-   (CI runs the same). For SQL, apply migrations to a scratch Postgres/Supabase
-   and exercise the RPCs under `authenticated` and `anon` roles.
+4. **Test**: `npm run lint && npx tsc --noEmit && npm test && npm run build` must pass
+   (CI runs the same). For SQL changes also run `npm run test:db`
+   (`supabase/tests/run.sh`, needs local Postgres via PG* env) and add a case to
+   `supabase/tests/*.test.sql` (owner / stranger / anon).
 5. **Update docs**: ACTIVE (move to done), ROADMAP (tick), BUGS/IDEAS (add what you found),
    `docs/DATABASE_PLAN.md` migration table, `docs/DECISIONS.md` for any new decision.
 6. **Leave a handoff** in `HANDOFF.md` (top entry, newest first): what changed,
@@ -42,7 +43,7 @@ records what was verified and when.
 - **Customer-first**: work belongs inside `Client → Project → …` workspaces. Global
   pages (`/tasks`, `/invoices`…) are cross-cutting views, not the primary place to work.
 - **Migrations are append-only.** Never edit an applied migration. Next number is
-  **0014**. `0009` is intentionally missing (see AUDIT.md §Migrations).
+  **0016**. `0009` is intentionally missing (see AUDIT.md §Migrations).
 - **RLS on every table.** Policies must use the owner check, not just "authenticated"
   (see ROADMAP P0). New `security definer` functions need `set search_path`, an
   explicit `revoke ... from public` and targeted grants.
@@ -50,8 +51,9 @@ records what was verified and when.
 - **No writes on render** (including "mark viewed" — see BUGS).
 - **One read model per workspace page** (RPC returning jsonb) instead of N queries;
   always bound list queries (`limit`/pagination).
-- **Server actions**: use the shared helper for auth + validation (do not paste another
-  `getUserClient`), check affected rows, never hard-delete financial records.
+- **Server actions**: import from `src/lib/actions.ts` (`getUserClient`, parsers,
+  `notFoundWhenNoRows` with `{ count: "exact" }`); never paste another `getUserClient`;
+  multi-row writes go through an RPC (atomic); never hard-delete financial records.
 - **No fake UI**: unbuilt features show honest "planned" states.
 - **AI is later.** AI never mutates records without an explicit confirmation step.
 - Match existing code style; no minified one-liners.

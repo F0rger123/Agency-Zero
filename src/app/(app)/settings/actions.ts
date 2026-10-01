@@ -1,21 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient as createSupabaseClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { getUserClient, notFoundWhenNoRows } from "@/lib/actions";
 import { field, optionalField, readableError, type ActionState } from "@/lib/forms";
-
-async function getUserClient(): Promise<
-  | { supabase: Awaited<ReturnType<typeof createSupabaseClient>>; userId: string }
-  | { error: string }
-> {
-  if (!isSupabaseConfigured()) return { error: "Supabase is not configured." };
-  const supabase = await createSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user ? { supabase, userId: user.id } : { error: "Your session has expired. Sign in again." };
-}
 
 const CURRENCY_PATTERN = /^[A-Z]{3}$/;
 const TIMEZONE_PATTERN = /^[A-Za-z0-9/_+-]{1,60}$/;
@@ -53,16 +40,18 @@ export async function updateProfileAction(
 
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error } = await auth.supabase
+  const { error, count } = await auth.supabase
     .from("profiles")
     .update({
       full_name: fullName,
       timezone,
       currency,
       default_daily_capacity_minutes: capacityMinutes,
-    })
+    }, { count: "exact" })
     .eq("id", auth.userId);
   if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Record");
+  if (missing) return missing;
   revalidatePath("/settings");
   revalidatePath("/workload");
   return { success: "Profile saved." };

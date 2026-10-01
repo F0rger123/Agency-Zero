@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 jobs:
-  check:
+  app:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,4 +17,24 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npx tsc --noEmit
+      - run: npm test
       - run: npm run build
+
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply migrations and run SQL tests
+        run: bash supabase/tests/run.sh

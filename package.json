@@ -9,7 +9,9 @@
     "lint": "eslint",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "test": "vitest run",
+    "test:db": "bash supabase/tests/run.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -28,6 +30,7 @@
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "vitest": "^3.2.7",
     "wrangler": "^4.134.0"
   }
 }

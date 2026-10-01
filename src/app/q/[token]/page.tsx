@@ -4,6 +4,8 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { hashPublicToken } from "@/lib/public-tokens";
 import { isMissingTable } from "@/lib/forms";
 import { MigrationsRequired, SetupRequired } from "@/components/states";
+import { ViewBeacon } from "@/components/view-beacon";
+import { markQuoteViewedAction } from "./actions";
 import { QuoteDocument, type PublicLine } from "./quote-response-form";
 
 export const metadata: Metadata = { title: "Proposal" };
@@ -49,7 +51,6 @@ export default async function PublicQuotePage({ params }: { params: Promise<{ to
   const { token } = await params;
   const supabase = await createClient();
   const tokenHash = hashPublicToken(token);
-  await supabase.rpc("mark_public_quote_viewed", { p_token_hash: tokenHash });
   const response = await supabase.rpc("get_public_quote", { p_token_hash: tokenHash });
   if (response.error) {
     if (isMissingTable(response.error.message)) return <MigrationsRequired />;
@@ -65,6 +66,7 @@ export default async function PublicQuotePage({ params }: { params: Promise<{ to
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12 sm:py-20">
+      <ViewBeacon markViewed={markQuoteViewedAction.bind(null, token)} />
       <header className="border-b border-border pb-10">
         <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
           {quote.business_name || "Agency Zero"} · Proposal

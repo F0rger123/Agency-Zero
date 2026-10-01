@@ -1,50 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient as createSupabaseClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
-import {
-  field,
-  optionalDate,
-  optionalField,
-  readableError,
-  requiredText,
-  type ActionState,
-} from "@/lib/forms";
-
-async function getUserClient(): Promise<
-  | { supabase: Awaited<ReturnType<typeof createSupabaseClient>> }
-  | { error: string }
-> {
-  if (!isSupabaseConfigured()) return { error: "Supabase is not configured." };
-  const supabase = await createSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  return user ? { supabase } : { error: "Your session has expired. Sign in again." };
-}
-
-function numberField(formData: FormData, name: string, label: string, max: number): number | null | ActionState {
-  const raw = field(formData, name);
-  if (!raw) return null;
-  const value = Number(raw);
-  if (!Number.isInteger(value) || value < 0 || value > max) return { error: `${label} must be a whole number from 0 to ${max}.` };
-  return value;
-}
-
-function hoursField(formData: FormData, name: string, label: string): number | null | ActionState {
-  const raw = field(formData, name);
-  if (!raw) return null;
-  const hours = Number(raw);
-  if (!Number.isFinite(hours) || hours < 0 || hours > 24000) return { error: `${label} must be zero or a positive number of hours.` };
-  return Math.round(hours * 60);
-}
-
-function moneyField(formData: FormData, name: string, label: string): number | null | ActionState {
-  const raw = field(formData, name);
-  if (!raw) return null;
-  const amount = Number(raw);
-  if (!Number.isFinite(amount) || amount < 0 || amount > 100000000) return { error: `${label} must be a valid positive amount.` };
-  return Math.round(amount * 100);
-}
+import { getUserClient, notFoundWhenNoRows, wholeNumberField as numberField, hoursToMinutesField as hoursField, moneyToCentsField as moneyField } from "@/lib/actions";
+import { field, optionalDate, optionalField, readableError, requiredText, type ActionState } from "@/lib/forms";
 
 function projectFields(formData: FormData): ActionState | Record<string, string | number | null> {
   const name = requiredText(formData, "name", "Project name", 200);
@@ -52,7 +10,8 @@ function projectFields(formData: FormData): ActionState | Record<string, string 
   const clientId = field(formData, "client_id");
   if (!clientId) return { error: "Choose a client." };
   const status = field(formData, "status") || "planning";
-  if (!["planning", "active", "on_hold", "completed", "cancelled"].includes(status)) return { error: "Choose a valid project status." };
+  if (!["planning", "active", "on_hold", "completed", "cancelled"].includes(status))
+    return { error: "Choose a valid project status." };
   const value = moneyField(formData, "value_amount", "Project value");
   if (value !== null && typeof value === "object") return value;
   const estimated = hoursField(formData, "estimated_hours", "Estimated time");
@@ -85,7 +44,9 @@ export async function createProjectAction(_previous: ActionState, formData: Form
   if ("error" in auth) return auth;
   const { error } = await auth.supabase.from("projects").insert(values);
   if (error) return { error: readableError(error.message) };
-  revalidatePath("/projects"); revalidatePath("/clients"); revalidatePath("/");
+  revalidatePath("/projects");
+  revalidatePath("/clients");
+  revalidatePath("/");
   return { success: "Project created." };
 }
 
@@ -96,9 +57,14 @@ export async function updateProjectAction(_previous: ActionState, formData: Form
   if ("error" in values) return values;
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error } = await auth.supabase.from("projects").update(values).eq("id", id);
+  const { error, count } = await auth.supabase.from("projects").update(values, { count: "exact" }).eq("id", id);
   if (error) return { error: readableError(error.message) };
-  revalidatePath("/projects"); revalidatePath(`/projects/${id}`); revalidatePath("/clients"); revalidatePath("/");
+  const missing = notFoundWhenNoRows(count, "Project");
+  if (missing) return missing;
+  revalidatePath("/projects");
+  revalidatePath(`/projects/${id}`);
+  revalidatePath("/clients");
+  revalidatePath("/");
   return { success: "Project saved." };
 }
 
@@ -107,9 +73,13 @@ export async function archiveProjectAction(_previous: ActionState, formData: For
   if (!id) return { error: "Project ID is missing." };
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error } = await auth.supabase.from("projects").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+  const { error, count } = await auth.supabase.from("projects").update({ deleted_at: new Date().toISOString() }, { count: "exact" }).eq("id", id);
   if (error) return { error: readableError(error.message) };
-  revalidatePath("/projects"); revalidatePath(`/projects/${id}`); revalidatePath("/");
+  const missing = notFoundWhenNoRows(count, "Project");
+  if (missing) return missing;
+  revalidatePath("/projects");
+  revalidatePath(`/projects/${id}`);
+  revalidatePath("/");
   return { success: "Project archived." };
 }
 
@@ -122,9 +92,13 @@ export async function createMilestoneAction(_previous: ActionState, formData: Fo
   if (sortOrder !== null && typeof sortOrder === "object") return sortOrder;
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error } = await auth.supabase.from("milestones").insert({ project_id: projectId, name, due_date: optionalDate(formData, "due_date"), sort_order: sortOrder ?? 0 });
+  const { error } = await auth.supabase
+    .from("milestones")
+    .insert({ project_id: projectId, name, due_date: optionalDate(formData, "due_date"), sort_order: sortOrder ?? 0 });
   if (error) return { error: readableError(error.message) };
-  revalidatePath(`/projects/${projectId}`); revalidatePath("/tasks"); revalidatePath("/");
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath("/tasks");
+  revalidatePath("/");
   return { success: "Milestone added." };
 }
 
@@ -137,9 +111,20 @@ export async function updateMilestoneAction(_previous: ActionState, formData: Fo
   const auth = await getUserClient();
   if ("error" in auth) return auth;
   const completed = formData.get("completed") === "on";
-  const { error } = await auth.supabase.from("milestones").update({ name, due_date: optionalDate(formData, "due_date"), completed_at: completed ? new Date().toISOString() : null }).eq("id", id);
+  const { error, count } = await auth.supabase
+    .from("milestones")
+    .update({
+      name,
+      due_date: optionalDate(formData, "due_date"),
+      completed_at: completed ? new Date().toISOString() : null,
+    }, { count: "exact" })
+    .eq("id", id);
   if (error) return { error: readableError(error.message) };
-  revalidatePath(`/projects/${projectId}`); revalidatePath("/tasks"); revalidatePath("/");
+  const missing = notFoundWhenNoRows(count, "Milestone");
+  if (missing) return missing;
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath("/tasks");
+  revalidatePath("/");
   return { success: "Milestone saved." };
 }
 
@@ -149,9 +134,12 @@ export async function deleteMilestoneAction(_previous: ActionState, formData: Fo
   if (!id || !projectId) return { error: "Milestone details are missing." };
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error } = await auth.supabase.from("milestones").delete().eq("id", id);
+  const { error, count } = await auth.supabase.from("milestones").delete({ count: "exact" }).eq("id", id);
   if (error) return { error: readableError(error.message) };
-  revalidatePath(`/projects/${projectId}`); revalidatePath("/tasks");
+  const missing = notFoundWhenNoRows(count, "Milestone");
+  if (missing) return missing;
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath("/tasks");
   return { success: "Milestone removed." };
 }
 
@@ -167,10 +155,7 @@ function revalidateProjectPaths(projectId: string) {
   revalidatePath("/");
 }
 
-export async function createProjectNoteAction(
-  _previous: ActionState,
-  formData: FormData
-): Promise<ActionState> {
+export async function createProjectNoteAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const projectId = field(formData, "project_id");
   const body = requiredText(formData, "body", "Note", 5000);
   if (!projectId) return { error: "Project ID is missing." };
@@ -187,17 +172,16 @@ export async function createProjectNoteAction(
   return { success: "Note added." };
 }
 
-export async function deleteProjectNoteAction(
-  _previous: ActionState,
-  formData: FormData
-): Promise<ActionState> {
+export async function deleteProjectNoteAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const id = field(formData, "id");
   const projectId = field(formData, "project_id");
   if (!id || !projectId) return { error: "Note details are missing." };
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error } = await auth.supabase.from("project_notes").delete().eq("id", id);
+  const { error, count } = await auth.supabase.from("project_notes").delete({ count: "exact" }).eq("id", id);
   if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Note");
+  if (missing) return missing;
   revalidateProjectPaths(projectId);
   return { success: "Note removed." };
 }
@@ -207,10 +191,7 @@ export async function deleteProjectNoteAction(
  * `projects/<project_id>/…` prefix (D-021 / migration 0013): the storage
  * policies from 0005 apply unchanged, and downloads are one-hour signed URLs.
  */
-export async function uploadProjectFileAction(
-  _previous: ActionState,
-  formData: FormData
-): Promise<ActionState> {
+export async function uploadProjectFileAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const projectId = field(formData, "project_id");
   const fileValue = formData.get("file");
   if (!projectId) return { error: "Project ID is missing." };
@@ -244,20 +225,23 @@ export async function uploadProjectFileAction(
   return { success: "File uploaded." };
 }
 
-export async function deleteProjectFileAction(
-  _previous: ActionState,
-  formData: FormData
-): Promise<ActionState> {
+export async function deleteProjectFileAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const id = field(formData, "id");
   const projectId = field(formData, "project_id");
-  const path = field(formData, "storage_path");
-  if (!id || !projectId || !path) return { error: "File details are missing." };
+  if (!id || !projectId) return { error: "File details are missing." };
   const auth = await getUserClient();
   if ("error" in auth) return auth;
+  // Never trust a client-supplied storage path: resolve it from the file row.
+  const row = await auth.supabase.from("project_files").select("storage_path").eq("id", id).maybeSingle();
+  if (row.error) return { error: readableError(row.error.message) };
+  if (!row.data) return { error: "File not found, or it was already removed." };
+  const path = row.data.storage_path;
   const removed = await auth.supabase.storage.from("client-files").remove([path]);
   if (removed.error) return { error: readableError(removed.error.message) };
-  const { error } = await auth.supabase.from("project_files").delete().eq("id", id);
+  const { error, count } = await auth.supabase.from("project_files").delete({ count: "exact" }).eq("id", id);
   if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "File");
+  if (missing) return missing;
   revalidateProjectPaths(projectId);
   return { success: "File removed." };
 }
@@ -266,10 +250,7 @@ export async function deleteProjectFileAction(
  * Mark a milestone complete (or reopen it) straight from the project — the
  * owner never has to leave the page to move delivery forward.
  */
-export async function setMilestoneCompletedAction(
-  _previous: ActionState,
-  formData: FormData
-): Promise<ActionState> {
+export async function setMilestoneCompletedAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const id = field(formData, "id");
   const projectId = field(formData, "project_id");
   const completedRaw = field(formData, "completed");
@@ -279,11 +260,13 @@ export async function setMilestoneCompletedAction(
   }
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error } = await auth.supabase
+  const { error, count } = await auth.supabase
     .from("milestones")
-    .update({ completed_at: completedRaw === "true" ? new Date().toISOString() : null })
+    .update({ completed_at: completedRaw === "true" ? new Date().toISOString() : null }, { count: "exact" })
     .eq("id", id);
   if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Milestone");
+  if (missing) return missing;
   revalidateProjectPaths(projectId);
   revalidatePath("/tasks");
   return { success: completedRaw === "true" ? "Milestone completed." : "Milestone reopened." };

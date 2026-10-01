@@ -1,8 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient as createSupabaseClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { getUserClient, notFoundWhenNoRows } from "@/lib/actions";
 import {
   field,
   optionalDate,
@@ -13,18 +12,6 @@ import {
   validEmail,
   validHttpUrl,
 } from "@/lib/forms";
-
-async function getUserClient(): Promise<
-  | { supabase: Awaited<ReturnType<typeof createSupabaseClient>> }
-  | { error: string }
-> {
-  if (!isSupabaseConfigured()) return { error: "Supabase is not configured." };
-  const supabase = await createSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user ? { supabase } : { error: "Your session has expired. Sign in again." };
-}
 
 function clientFields(formData: FormData): ActionState | Record<string, string | null> {
   const name = requiredText(formData, "name", "Client name", 160);
@@ -74,8 +61,10 @@ export async function updateClientAction(
   if ("error" in values) return values;
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error } = await auth.supabase.from("clients").update(values).eq("id", id);
+  const { error, count } = await auth.supabase.from("clients").update(values, { count: "exact" }).eq("id", id);
   if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Client");
+  if (missing) return missing;
   revalidatePath("/clients");
   revalidatePath(`/clients/${id}`);
   revalidatePath("/projects");
@@ -92,11 +81,13 @@ export async function archiveClientAction(
   if (!id) return { error: "Client ID is missing." };
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error } = await auth.supabase
+  const { error, count } = await auth.supabase
     .from("clients")
-    .update({ status: "archived", deleted_at: new Date().toISOString() })
+    .update({ status: "archived", deleted_at: new Date().toISOString() }, { count: "exact" })
     .eq("id", id);
   if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Client");
+  if (missing) return missing;
   revalidatePath("/clients");
   revalidatePath(`/clients/${id}`);
   revalidatePath("/projects");
@@ -138,8 +129,10 @@ export async function deleteContactAction(
   if (!id || !clientId) return { error: "Contact details are missing." };
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error } = await auth.supabase.from("contacts").delete().eq("id", id);
+  const { error, count } = await auth.supabase.from("contacts").delete({ count: "exact" }).eq("id", id);
   if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Contact");
+  if (missing) return missing;
   revalidatePath(`/clients/${clientId}`);
   return { success: "Contact removed." };
 }
@@ -174,8 +167,10 @@ export async function deleteNoteAction(
   if (!id || !clientId) return { error: "Note details are missing." };
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error } = await auth.supabase.from("client_notes").delete().eq("id", id);
+  const { error, count } = await auth.supabase.from("client_notes").delete({ count: "exact" }).eq("id", id);
   if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Note");
+  if (missing) return missing;
   revalidatePath(`/clients/${clientId}`);
   return { success: "Note removed." };
 }
@@ -220,8 +215,10 @@ export async function deleteCommunicationAction(
   if (!id || !clientId) return { error: "Activity details are missing." };
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error } = await auth.supabase.from("communications").delete().eq("id", id);
+  const { error, count } = await auth.supabase.from("communications").delete({ count: "exact" }).eq("id", id);
   if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Record");
+  if (missing) return missing;
   revalidatePath(`/clients/${clientId}`);
   return { success: "Activity removed." };
 }
@@ -297,8 +294,10 @@ export async function removeServiceAction(
   if (!id || !clientId) return { error: "Service details are missing." };
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error } = await auth.supabase.from("client_services").delete().eq("id", id);
+  const { error, count } = await auth.supabase.from("client_services").delete({ count: "exact" }).eq("id", id);
   if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Service assignment");
+  if (missing) return missing;
   revalidatePath(`/clients/${clientId}`);
   revalidatePath("/clients");
   revalidatePath("/services");
@@ -345,14 +344,20 @@ export async function deleteClientFileAction(
 ): Promise<ActionState> {
   const id = field(formData, "id");
   const clientId = field(formData, "client_id");
-  const path = field(formData, "storage_path");
-  if (!id || !clientId || !path) return { error: "File details are missing." };
+  if (!id || !clientId) return { error: "File details are missing." };
   const auth = await getUserClient();
   if ("error" in auth) return auth;
+  // Never trust a client-supplied storage path: resolve it from the file row.
+  const row = await auth.supabase.from("client_files").select("storage_path").eq("id", id).maybeSingle();
+  if (row.error) return { error: readableError(row.error.message) };
+  if (!row.data) return { error: "File not found, or it was already removed." };
+  const path = row.data.storage_path;
   const removed = await auth.supabase.storage.from("client-files").remove([path]);
   if (removed.error) return { error: readableError(removed.error.message) };
-  const { error } = await auth.supabase.from("client_files").delete().eq("id", id);
+  const { error, count } = await auth.supabase.from("client_files").delete({ count: "exact" }).eq("id", id);
   if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "File");
+  if (missing) return missing;
   revalidatePath(`/clients/${clientId}`);
   return { success: "File removed." };
 }

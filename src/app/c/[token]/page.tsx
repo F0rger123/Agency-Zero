@@ -4,6 +4,8 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { hashPublicToken } from "@/lib/public-tokens";
 import { isMissingTable } from "@/lib/forms";
 import { MigrationsRequired, SetupRequired } from "@/components/states";
+import { ViewBeacon } from "@/components/view-beacon";
+import { markContractViewedAction } from "./actions";
 import { SignContractForm } from "./sign-form";
 
 export const metadata: Metadata = { title: "Contract" };
@@ -13,7 +15,6 @@ export default async function PublicContractPage({ params }: { params: Promise<{
   const { token } = await params;
   const supabase = await createClient();
   const tokenHash = hashPublicToken(token);
-  await supabase.rpc("mark_public_contract_viewed", { p_token_hash: tokenHash });
   const response = await supabase.rpc("get_public_contract", { p_token_hash: tokenHash });
   if (response.error) {
     if (isMissingTable(response.error.message)) return <MigrationsRequired />;
@@ -31,6 +32,7 @@ export default async function PublicContractPage({ params }: { params: Promise<{
   const contract = response.data as { title: string; status: string; body: string; version: number; client_name: string; company: string | null; signed_at: string | null; signer_name: string | null };
   return (
     <main className="mx-auto max-w-3xl px-6 py-12 sm:py-20">
+      <ViewBeacon markViewed={markContractViewedAction.bind(null, token)} />
       <header className="border-b border-border pb-10">
         <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Agency Zero · Contract</p>
         <h1 className="mt-5 text-3xl font-semibold tracking-tight">{contract.title}</h1>

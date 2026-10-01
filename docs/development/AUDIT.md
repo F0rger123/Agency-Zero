@@ -99,3 +99,13 @@ bugs/features cannot yet be modelled inside a project.
 See [ROADMAP.md](ROADMAP.md). Top three: (1) confirm sign-ups off + owner-only RLS,
 (2) reconcile the 0009 schema drift, (3) generalize the work-item model (task type:
 task/bug/feature + phases) so the project workspace can become the real home.
+
+## 10. Remediation log (2026-10-01)
+P0 shipped on branch `claude/compassionate-faraday-kixpre`:
+S1 → migration `0014` (owner-only RLS incl. Storage) · S2/B-003 → `ViewBeacon` · S6/B-007 →
+file paths resolved from DB rows · B-004/B-005 → migration `0015` + actions rewritten ·
+B-006 → affected-row checks in every update/delete · B-009 → action files reformatted and
+deduplicated onto `src/lib/actions.ts` · tests: 14 vitest tests + SQL suite (owner / stranger /
+anon, atomic saves, invoice protection) · CI runs both.
+**Still open:** B-002 (needs prod schema dump), S3 (signature evidence), S5, performance
+items (B-008), B-011. 0014/0015 are **not yet applied to any database but the scratch test DB**.

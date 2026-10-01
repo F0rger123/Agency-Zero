@@ -5,10 +5,13 @@ Claim work here before starting; move to "Recently done" (with commit) when fini
 ## In progress
 | What | Who/branch | Migrations | Notes |
 |---|---|---|---|
-| Audit + agent-dev doc system | claude / `claude/compassionate-faraday-kixpre` | none | Awaiting owner review of AUDIT.md before any refactor |
+| (none) | | | P0 complete on `claude/compassionate-faraday-kixpre`; awaiting owner to apply 0014/0015 and provide prod schema dump |
 
-## Next up (proposed, needs owner go-ahead)
-P0 items 1–2 in ROADMAP.md (owner-only RLS, schema-drift reconciliation).
+## Next up (needs owner go-ahead)
+- Owner: apply `0014` + `0015` to production (see HANDOFF), dump prod schema for B-002.
+- P1 item 6: unified work items (task/bug/feature_request) — migration `0016`.
 
 ## Recently done
+- 2026-10-01: P0 — owner-only RLS (0014), atomic saves + invoice protection (0015), shared action layer,
+  affected-row checks, ViewBeacon, vitest + SQL tests, CI.
 - 2026-09-28: audit, AGENTS.md, docs/development/*, CI workflow.

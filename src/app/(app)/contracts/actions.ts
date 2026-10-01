@@ -1,16 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient as createSupabaseClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { getUserClient, type UserClient, notFoundWhenNoRows } from "@/lib/actions";
 import { createPublicToken } from "@/lib/public-tokens";
 import { field, optionalDate, optionalField, readableError, requiredText, type ActionState } from "@/lib/forms";
-
-async function getUserClient(): Promise<{ supabase: Awaited<ReturnType<typeof createSupabaseClient>> } | { error: string }> {
-  if (!isSupabaseConfigured()) return { error: "Supabase is not configured." };
-  const supabase = await createSupabaseClient(); const { data: { user } } = await supabase.auth.getUser();
-  return user ? { supabase } : { error: "Your session has expired. Sign in again." };
-}
 
 const statuses = ["draft", "sent", "signed", "void"];
 
@@ -31,14 +24,22 @@ type ParsedContract = {
  * {{business_name}}, {{client_name}}, {{client_company}}, {{contract_title}},
  * {{quote_number}}, {{date}}.
  */
-function renderPlaceholders(body: string, data: {
-  businessName: string | null;
-  clientName: string;
-  clientCompany: string | null;
-  contractTitle: string;
-  quoteNumber: string | null;
-}): string {
-  const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
+function renderPlaceholders(
+  body: string,
+  data: {
+    businessName: string | null;
+    clientName: string;
+    clientCompany: string | null;
+    contractTitle: string;
+    quoteNumber: string | null;
+  },
+): string {
+  const today = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
   return body
     .replaceAll("{{business_name}}", data.businessName || "Agency Zero")
     .replaceAll("{{client_name}}", data.clientName)
@@ -55,7 +56,8 @@ function parseContract(formData: FormData): ParsedContract | ActionState {
   if (!clientId) return { error: "Choose a client." };
   const status = field(formData, "status") || "draft";
   if (!statuses.includes(status)) return { error: "Choose a valid contract status." };
-  if (status === "signed") return { error: "Contracts become signed only through the public electronic-signature flow." };
+  if (status === "signed")
+    return { error: "Contracts become signed only through the public electronic-signature flow." };
   const rawBody = String(formData.get("body") ?? "").trim();
   const templateId = optionalField(formData, "template_id");
   if (rawBody.length > 100000) return { error: "Contract body must be 100000 characters or fewer." };
@@ -68,18 +70,24 @@ function parseContract(formData: FormData): ParsedContract | ActionState {
     status,
     body: rawBody || null,
     template_id: templateId,
-    token_expires_at: optionalDate(formData, "token_expires_at") ? `${optionalDate(formData, "token_expires_at")}T23:59:59Z` : null,
+    token_expires_at: optionalDate(formData, "token_expires_at")
+      ? `${optionalDate(formData, "token_expires_at")}T23:59:59Z`
+      : null,
   };
 }
 
 /** Resolves the final contract body: template start + placeholder rendering. */
 async function resolveBody(
-  supabase: Awaited<ReturnType<typeof createSupabaseClient>>,
-  parsed: ParsedContract
+  supabase: UserClient,
+  parsed: ParsedContract,
 ): Promise<string | ActionState> {
   let body = parsed.body;
   if (!body && parsed.template_id) {
-    const template = await supabase.from("contract_templates").select("body").eq("id", parsed.template_id).maybeSingle();
+    const template = await supabase
+      .from("contract_templates")
+      .select("body")
+      .eq("id", parsed.template_id)
+      .maybeSingle();
     if (template.error) return { error: readableError(template.error.message) };
     if (!template.data) return { error: "The chosen template was not found." };
     body = template.data.body as string;
@@ -108,35 +116,60 @@ async function resolveBody(
 }
 
 export async function createTemplateAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
-  const name = requiredText(formData, "name", "Template name", 160); const body = requiredText(formData, "body", "Template body", 100000);
-  if (typeof name !== "string") return name; if (typeof body !== "string") return body;
-  const auth = await getUserClient(); if ("error" in auth) return auth;
-  const { error } = await auth.supabase.from("contract_templates").insert({ name, body, active: formData.get("active") !== "off" });
+  const name = requiredText(formData, "name", "Template name", 160);
+  const body = requiredText(formData, "body", "Template body", 100000);
+  if (typeof name !== "string") return name;
+  if (typeof body !== "string") return body;
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error } = await auth.supabase
+    .from("contract_templates")
+    .insert({ name, body, active: formData.get("active") !== "off" });
   if (error) return { error: readableError(error.message) };
-  revalidatePath("/contracts"); return { success: "Template created." };
+  revalidatePath("/contracts");
+  return { success: "Template created." };
 }
 
 export async function updateTemplateAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
-  const id = field(formData, "id"); const name = requiredText(formData, "name", "Template name", 160); const body = requiredText(formData, "body", "Template body", 100000);
-  if (!id) return { error: "Template ID is missing." }; if (typeof name !== "string") return name; if (typeof body !== "string") return body;
-  const auth = await getUserClient(); if ("error" in auth) return auth;
-  const { error } = await auth.supabase.from("contract_templates").update({ name, body, active: formData.get("active") === "on" }).eq("id", id);
+  const id = field(formData, "id");
+  const name = requiredText(formData, "name", "Template name", 160);
+  const body = requiredText(formData, "body", "Template body", 100000);
+  if (!id) return { error: "Template ID is missing." };
+  if (typeof name !== "string") return name;
+  if (typeof body !== "string") return body;
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error, count } = await auth.supabase
+    .from("contract_templates")
+    .update({ name, body, active: formData.get("active") === "on" }, { count: "exact" })
+    .eq("id", id);
   if (error) return { error: readableError(error.message) };
-  revalidatePath("/contracts"); return { success: "Template saved." };
+  const missing = notFoundWhenNoRows(count, "Record");
+  if (missing) return missing;
+  revalidatePath("/contracts");
+  return { success: "Template saved." };
 }
 
 export async function deleteTemplateAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
-  const id = field(formData, "id"); if (!id) return { error: "Template ID is missing." };
-  const auth = await getUserClient(); if ("error" in auth) return auth;
-  const { error } = await auth.supabase.from("contract_templates").delete().eq("id", id);
+  const id = field(formData, "id");
+  if (!id) return { error: "Template ID is missing." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error, count } = await auth.supabase.from("contract_templates").delete({ count: "exact" }).eq("id", id);
   if (error) return { error: readableError(error.message) };
-  revalidatePath("/contracts"); return { success: "Template deleted." };
+  const missing = notFoundWhenNoRows(count, "Record");
+  if (missing) return missing;
+  revalidatePath("/contracts");
+  return { success: "Template deleted." };
 }
 
 export async function createContractAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
-  const parsed = parseContract(formData); if (!("client_id" in parsed)) return parsed;
-  const auth = await getUserClient(); if ("error" in auth) return auth;
-  const body = await resolveBody(auth.supabase, parsed); if (typeof body !== "string") return body;
+  const parsed = parseContract(formData);
+  if (!("client_id" in parsed)) return parsed;
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const body = await resolveBody(auth.supabase, parsed);
+  if (typeof body !== "string") return body;
   const token = createPublicToken();
   const { data, error } = await auth.supabase
     .from("contracts")
@@ -144,50 +177,74 @@ export async function createContractAction(_previous: ActionState, formData: For
     .select("id, version")
     .single();
   if (error) return { error: readableError(error.message) };
-  const version = await auth.supabase.from("contract_versions").insert({ contract_id: data.id, version: data.version, body });
+  const version = await auth.supabase
+    .from("contract_versions")
+    .insert({ contract_id: data.id, version: data.version, body });
   if (version.error) return { error: readableError(version.error.message) };
-  revalidatePath("/contracts"); revalidatePath("/"); return { success: "Contract created." };
+  revalidatePath("/contracts");
+  revalidatePath("/");
+  return { success: "Contract created." };
 }
 
 export async function updateContractAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
-  const id = field(formData, "id"); if (!id) return { error: "Contract ID is missing." };
-  const parsed = parseContract(formData); if (!("client_id" in parsed)) return parsed;
-  const auth = await getUserClient(); if ("error" in auth) return auth;
+  const id = field(formData, "id");
+  if (!id) return { error: "Contract ID is missing." };
+  const parsed = parseContract(formData);
+  if (!("client_id" in parsed)) return parsed;
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
   const current = await auth.supabase.from("contracts").select("version, status").eq("id", id).maybeSingle();
   if (current.error) return { error: readableError(current.error.message) };
   if (!current.data) return { error: "Contract not found." };
-  if (current.data.status === "signed") return { error: "Signed contracts are immutable; create a new contract instead." };
-  const body = await resolveBody(auth.supabase, parsed); if (typeof body !== "string") return body;
+  if (current.data.status === "signed")
+    return { error: "Signed contracts are immutable; create a new contract instead." };
+  const body = await resolveBody(auth.supabase, parsed);
+  if (typeof body !== "string") return body;
   const version = Number(current.data.version) + 1;
-  const updated = await auth.supabase.from("contracts").update({ ...parsed, body, version }).eq("id", id);
+  const updated = await auth.supabase
+    .from("contracts")
+    .update({ ...parsed, body, version })
+    .eq("id", id);
   if (updated.error) return { error: readableError(updated.error.message) };
   const history = await auth.supabase.from("contract_versions").insert({ contract_id: id, version, body });
   if (history.error) return { error: readableError(history.error.message) };
-  revalidatePath("/contracts"); revalidatePath(`/contracts/${id}`);
+  revalidatePath("/contracts");
+  revalidatePath(`/contracts/${id}`);
   return { success: `Contract saved as version ${version}.` };
 }
 
 export async function deleteContractAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
-  const id = field(formData, "id"); if (!id) return { error: "Contract ID is missing." };
-  const auth = await getUserClient(); if ("error" in auth) return auth;
+  const id = field(formData, "id");
+  if (!id) return { error: "Contract ID is missing." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
   const current = await auth.supabase.from("contracts").select("status").eq("id", id).maybeSingle();
   if (current.error) return { error: readableError(current.error.message) };
-  if (current.data?.status === "signed") return { error: "Signed contracts cannot be deleted; they are a permanent record." };
-  const { error } = await auth.supabase.from("contracts").delete().eq("id", id);
+  if (current.data?.status === "signed")
+    return { error: "Signed contracts cannot be deleted; they are a permanent record." };
+  const { error, count } = await auth.supabase.from("contracts").delete({ count: "exact" }).eq("id", id);
   if (error) return { error: readableError(error.message) };
-  revalidatePath("/contracts"); return { success: "Contract deleted." };
+  const missing = notFoundWhenNoRows(count, "Contract");
+  if (missing) return missing;
+  revalidatePath("/contracts");
+  return { success: "Contract deleted." };
 }
 
 /** Rotate the public signing link: revokes the old token, issues a fresh one. */
 export async function regenerateContractTokenAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
-  const id = field(formData, "id"); if (!id) return { error: "Contract ID is missing." };
-  const auth = await getUserClient(); if ("error" in auth) return auth;
+  const id = field(formData, "id");
+  if (!id) return { error: "Contract ID is missing." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
   const token = createPublicToken();
-  const { error } = await auth.supabase
+  const { error, count } = await auth.supabase
     .from("contracts")
-    .update({ public_token: token.token, public_token_hash: token.hash, token_expires_at: null })
+    .update({ public_token: token.token, public_token_hash: token.hash, token_expires_at: null }, { count: "exact" })
     .eq("id", id);
   if (error) return { error: readableError(error.message) };
-  revalidatePath("/contracts"); revalidatePath(`/contracts/${id}`);
+  const missing = notFoundWhenNoRows(count, "Contract");
+  if (missing) return missing;
+  revalidatePath("/contracts");
+  revalidatePath(`/contracts/${id}`);
   return { success: "New signing link generated — the previous link no longer works." };
 }

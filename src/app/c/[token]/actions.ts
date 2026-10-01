@@ -8,7 +8,23 @@ import { field, readableError, type ActionState } from "@/lib/forms";
 
 export async function signContractAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
   if (!isSupabaseConfigured()) return { error: "This contract service is not configured." };
-  const token = field(formData, "token"); const signerName = field(formData, "signer_name"); if (!token || !signerName) return { error: "Signer name is required." }; if (formData.get("agreement") !== "on") return { error: "Confirm the electronic-signature statement." };
-  const supabase = await createClient(); const { error } = await supabase.rpc("sign_public_contract", { p_token_hash: hashPublicToken(token), p_signer_name: signerName });
-  if (error) return { error: readableError(error.message) }; revalidatePath(`/c/${token}`); return { success: "Contract signed." };
+  const token = field(formData, "token");
+  const signerName = field(formData, "signer_name");
+  if (!token || !signerName) return { error: "Signer name is required." };
+  if (formData.get("agreement") !== "on") return { error: "Confirm the electronic-signature statement." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("sign_public_contract", {
+    p_token_hash: hashPublicToken(token),
+    p_signer_name: signerName,
+  });
+  if (error) return { error: readableError(error.message) };
+  revalidatePath(`/c/${token}`);
+  return { success: "Contract signed." };
+}
+
+/** Called by <ViewBeacon> from a real browser; never from page render. */
+export async function markContractViewedAction(token: string): Promise<void> {
+  if (!isSupabaseConfigured() || !token) return;
+  const supabase = await createClient();
+  await supabase.rpc("mark_public_contract_viewed", { p_token_hash: hashPublicToken(token) });
 }

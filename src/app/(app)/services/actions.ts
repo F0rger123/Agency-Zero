@@ -1,8 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient as createSupabaseClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { getUserClient, notFoundWhenNoRows } from "@/lib/actions";
 import {
   field,
   optionalField,
@@ -10,18 +9,6 @@ import {
   requiredText,
   type ActionState,
 } from "@/lib/forms";
-
-async function getUserClient(): Promise<
-  | { supabase: Awaited<ReturnType<typeof createSupabaseClient>> }
-  | { error: string }
-> {
-  if (!isSupabaseConfigured()) return { error: "Supabase is not configured." };
-  const supabase = await createSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user ? { supabase } : { error: "Your session has expired. Sign in again." };
-}
 
 const BILLING_TYPES = ["one_off", "recurring"];
 const BILLING_INTERVALS = ["monthly", "quarterly", "yearly"];
@@ -116,11 +103,13 @@ export async function updateServiceAction(
   const auth = await getUserClient();
   if ("error" in auth) return auth;
 
-  const { error } = await auth.supabase.from("services").update(values).eq("id", id);
+  const { error, count } = await auth.supabase.from("services").update(values, { count: "exact" }).eq("id", id);
   if (error) {
     if (error.code === "23505") return { error: "A service with that name already exists." };
     return { error: readableError(error.message) };
   }
+  const missing = notFoundWhenNoRows(count, "Service");
+  if (missing) return missing;
   revalidateServicePaths();
   return { success: "Service saved." };
 }
@@ -145,8 +134,10 @@ export async function setServiceActiveAction(
 
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error } = await auth.supabase.from("services").update({ active }).eq("id", id);
+  const { error, count } = await auth.supabase.from("services").update({ active }, { count: "exact" }).eq("id", id);
   if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Service");
+  if (missing) return missing;
   revalidateServicePaths();
   return { success: active ? "Service reactivated." : "Service deactivated." };
 }
