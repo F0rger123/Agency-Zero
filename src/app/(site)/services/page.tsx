@@ -9,7 +9,7 @@ import { services } from "@/lib/site-config";
 export const metadata: Metadata = {
   title: "Services",
   description:
-    "Custom software and CRMs, websites, SEO, Meta ads, social media and video content — six disciplines delivered as one system.",
+    "Custom software and CRMs, website design, SEO, Meta ads, social media and video content — six disciplines delivered as one system.",
   alternates: { canonical: "/services" },
 };
 

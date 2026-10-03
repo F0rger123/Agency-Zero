@@ -24,9 +24,10 @@ export type WorkItem = {
 
 export const crewboss = {
   url: "https://smocks-crm.pages.dev/",
-  dashboard: { src: "/images/work/crewboss-dashboard.jpg", alt: "CrewBoss dashboard showing month-to-date revenue, active jobs, crew on shift, today's schedule and a live crew list", width: 1536, height: 704 },
-  phone: { src: "/images/work/crewboss-phone.jpg", alt: "CrewBoss mobile field portal showing today's jobs, a job checklist and a clock-out button", width: 512, height: 594 },
-  features: { src: "/images/work/crewboss-features.jpg", alt: "CrewBoss feature set: scheduling, estimates and invoices, Stripe payments, client portal, automations, AI assistant, field portal and live crew tracking", width: 1656, height: 1742 },
+  hero: { src: "/images/work/crewboss-hero.jpg", alt: "CrewBoss home page: \"Run your pressure washing business like a boss\" above the owner dashboard with revenue, active jobs, crew on shift and today's schedule", width: 2880, height: 2240 },
+  features: { src: "/images/work/crewboss-features.jpg", alt: "CrewBoss features: scheduling and crew assignment, estimates, invoices and payments, Stripe, client portal, drag-and-drop automations, the Alfred AI assistant, mobile field portal, live crew tracking and job photos", width: 2400, height: 3112 },
+  field: { src: "/images/work/crewboss-field.jpg", alt: "CrewBoss mobile field portal on a phone: today's jobs, a job checklist and a clock-out button, with the reasons it is built for the field", width: 2400, height: 1140 },
+  steps: { src: "/images/work/crewboss-steps.jpg", alt: "CrewBoss onboarding in three steps: set up your business, send your first estimate, your crew clocks in", width: 2400, height: 1280 },
 };
 
 export const work: WorkItem[] = [
@@ -46,7 +47,7 @@ export const work: WorkItem[] = [
     ],
     outcome: "Live as a product with a free trial. Customer results will be added here as they are collected.",
     services: ["software"],
-    image: { ...crewboss.dashboard, fit: "contain" },
+    image: { ...crewboss.hero, fit: "cover" },
     href: crewboss.url,
   },
   {
@@ -59,7 +60,7 @@ export const work: WorkItem[] = [
     delivered: ["Custom design", "Motion and interaction", "SEO foundations"],
     outcome: "Outcome to be added once the project is published.",
     services: ["websites", "seo"],
-    image: { src: "/images/mockups/web-studio.jpg", alt: "Concept website for an architecture studio", width: 2160, height: 1350 },
+    image: { src: "/images/mockups/work-site.jpg", alt: "Three concept websites side by side: an editorial architecture studio, a moody restaurant and a calm financial advisory firm", width: 2000, height: 1250 },
   },
   {
     slug: "launch-campaign",
@@ -71,6 +72,6 @@ export const work: WorkItem[] = [
     delivered: ["Meta ads", "Short-form video", "Social content plan"],
     outcome: "Outcome to be added once the project is published.",
     services: ["meta-ads", "social", "content"],
-    image: { src: "/images/mockups/ad-1.jpg", alt: "Concept Meta feed ad for a plumbing company", width: 1500, height: 1875 },
+    image: { src: "/images/mockups/work-campaign.jpg", alt: "A Meta feed ad, a before-and-after short-form video and a carousel ad from one concept launch campaign", width: 2000, height: 1250 },
   },
 ];

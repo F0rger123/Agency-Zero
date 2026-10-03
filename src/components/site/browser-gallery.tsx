@@ -24,7 +24,7 @@ export function BrowserGallery() {
                 <span className="size-1.5 rounded-full bg-bone/30" />
                 <span className="size-1.5 rounded-full bg-bone/30" />
                 <span className="size-1.5 rounded-full bg-bone/30" />
-                <span className="t-label ml-3 truncate !text-[0.6rem]">{concept.name.toLowerCase().replace(/[^a-z]+/g, "")}.com</span>
+                <span className="t-label ml-3 truncate !text-[0.6rem]">{concept.name}</span>
               </div>
               <div className="overflow-hidden">
                 <Photo

@@ -49,49 +49,58 @@ export function CrewbossCaseStudy() {
             </a>
           </Reveal>
 
-          <div className="space-y-5 lg:col-span-7">
-            <Reveal delay={80}>
+          <Reveal delay={80} className="lg:col-span-7">
+            <figure>
+              <div className="overflow-hidden border border-rule-strong bg-coal">
+                <Photo src={crewboss.hero.src} alt={crewboss.hero.alt} width={crewboss.hero.width} height={crewboss.hero.height} className="w-full" />
+              </div>
+              <figcaption className="t-label mt-3">Home page and owner dashboard — revenue, jobs, schedule, live crew</figcaption>
+            </figure>
+          </Reveal>
+        </div>
+
+        <div className="mt-12 grid gap-5 lg:grid-cols-12">
+          <Reveal delay={60} className="lg:col-span-6">
+            <figure>
+              <div className="overflow-hidden border border-rule-strong bg-coal">
+                <Photo src={crewboss.features.src} alt={crewboss.features.alt} width={crewboss.features.width} height={crewboss.features.height} className="w-full" />
+              </div>
+              <figcaption className="t-label mt-3">Everything the office and the field need — one system</figcaption>
+            </figure>
+          </Reveal>
+          <div className="flex flex-col justify-between gap-5 lg:col-span-6">
+            <Reveal delay={120}>
               <figure>
-                <div className="border border-rule-strong bg-coal p-2 md:p-3">
-                  <Photo src={crewboss.dashboard.src} alt={crewboss.dashboard.alt} width={crewboss.dashboard.width} height={crewboss.dashboard.height} className="w-full" />
+                <div className="overflow-hidden border border-rule-strong bg-coal">
+                  <Photo src={crewboss.field.src} alt={crewboss.field.alt} width={crewboss.field.width} height={crewboss.field.height} className="w-full" />
                 </div>
-                <figcaption className="t-label mt-3">Owner dashboard — revenue, jobs, schedule, live crew</figcaption>
+                <figcaption className="t-label mt-3">Mobile field portal — checklists, photos, clock in and out</figcaption>
               </figure>
             </Reveal>
-            <div className="grid gap-5 md:grid-cols-5">
-              <Reveal delay={160} className="md:col-span-2">
-                <figure>
-                  <div className="border border-rule-strong bg-coal p-2 md:p-3">
-                    <Photo src={crewboss.phone.src} alt={crewboss.phone.alt} width={crewboss.phone.width} height={crewboss.phone.height} className="w-full" />
-                  </div>
-                  <figcaption className="t-label mt-3">Mobile field portal</figcaption>
-                </figure>
-              </Reveal>
-              <Reveal delay={240} className="md:col-span-3">
-                <a
-                  href={crewboss.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex h-full min-h-56 flex-col justify-between border border-rule-strong p-6 transition-colors duration-500 hover:bg-bone hover:text-ink"
-                >
-                  <p className="t-label group-hover:!text-ink/60">Live product</p>
-                  <div>
-                    <p className="t-title !text-[1.5rem]">Try it yourself.</p>
-                    <p className="mt-3 font-mono text-xs uppercase tracking-[0.14em] opacity-70">smocks-crm.pages.dev ↗</p>
-                  </div>
-                </a>
-              </Reveal>
-            </div>
+            <Reveal delay={180}>
+              <figure>
+                <div className="overflow-hidden border border-rule-strong bg-coal">
+                  <Photo src={crewboss.steps.src} alt={crewboss.steps.alt} width={crewboss.steps.width} height={crewboss.steps.height} className="w-full" />
+                </div>
+                <figcaption className="t-label mt-3">Up and running the same day</figcaption>
+              </figure>
+            </Reveal>
+            <Reveal delay={240}>
+              <a
+                href={crewboss.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col justify-between gap-6 border border-rule-strong p-6 transition-colors duration-500 hover:bg-bone hover:text-ink"
+              >
+                <p className="t-label group-hover:!text-ink/60">Live product</p>
+                <div>
+                  <p className="t-title !text-[1.5rem]">Try it yourself.</p>
+                  <p className="mt-3 font-mono text-xs uppercase tracking-[0.14em] opacity-70">smocks-crm.pages.dev ↗</p>
+                </div>
+              </a>
+            </Reveal>
           </div>
         </div>
-        <Reveal delay={120} className="mt-16">
-          <figure>
-            <div className="aspect-[16/7] overflow-hidden border border-rule-strong bg-coal md:aspect-[21/8]">
-              <Photo src={crewboss.features.src} alt={crewboss.features.alt} width={crewboss.features.width} height={crewboss.features.height} className="w-full object-cover object-top" />
-            </div>
-            <figcaption className="t-label mt-3">The feature set — office, field and growth</figcaption>
-          </figure>
-        </Reveal>
       </div>
     </section>
   );

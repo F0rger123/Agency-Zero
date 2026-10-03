@@ -1,5 +1,17 @@
 # Handoff log (newest first)
 
+## 2026-10-03 (3) — Claude — mockup redesign, CrewBoss captures, "Website design" naming
+**Done**: five concept sites re-rendered with genuinely different designs (Halden = warm editorial serif; Northline = blue/yellow lead-gen with
+quote form; Ember & Oak = moody amber serif; Kairo = acid-lime brutalist; Atlas & Reed = green/cream serif + data panel). Device lineup now shows
+one Northline design laid out per breakpoint (`dev-tablet`, `dev-phone` scenes) so tablet/phone fit their screens. Reels have like / comment /
+share rail; the "Same business. Better site." reel (previously caption hidden by blend mode) is rebuilt on a solid scrim. Ads recoloured.
+Browser-bar `.com` text removed from the gallery. Service is now named **"Website design"** everywhere it is a label (nav, section, footer,
+metadata). CrewBoss case study re-captured at 2x from the live site (hero + dashboard, full feature grid, field portal, onboarding steps);
+the old low-res dashboard/phone crops were deleted. The two "Example" work cards now use composite images (`work-site`, `work-campaign`).
+**Verified**: lint, tsc, 25 tests, build; no horizontal overflow on /, /services, /services/websites, /work, /about, /contact at 360/390/768/834/1024.
+**Not verified**: real devices; Lighthouse. **No migrations or env changes.**
+**Lead routing (answer to owner)**: form → `submit_lead` RPC → `leads` table → CRM `/app/leads` (+ dashboard strip); optional email via Resend.
+
 ## 2026-10-03 (2) — Claude — access fix, mockup imagery, CrewBoss case study, copy, lead email
 **Why the owner saw "No access"**: Cloudflare Workers Builds builds every push; the new `/app` layout called `is_owner()` against a production DB
 that did not have migrations 0014+ yet → RPC missing → treated as "no access". My earlier "apply migrations before you deploy" advice was

@@ -23,8 +23,8 @@ export default function AboutPage() {
     <>
       <PageHero
         eyebrow="About"
-        title="A small studio for software, websites and marketing."
-        lead="We build custom software for businesses, and the websites, search presence and content that bring customers to it."
+        title="A small studio for software, website design and marketing."
+        lead="We build custom software for businesses, and the website design, search presence and content that bring customers to it."
       />
 
       <section className="border-t border-rule py-24 md:py-32">

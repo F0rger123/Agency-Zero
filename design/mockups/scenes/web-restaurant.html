@@ -1,29 +1,32 @@
 <!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../base.css">
 <style>
-body{background:#0a0a0a}
-.page{position:relative;width:1440px;height:900px;background:radial-gradient(70% 90% at 50% 45%,#262626,#0a0a0a 75%)}
-nav{position:absolute;top:0;left:0;right:0;height:84px;display:flex;align-items:center;justify-content:space-between;padding:0 64px;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#cfcfcf}
-.logo{font-weight:600;letter-spacing:.4em;color:#fff}
-.table{position:absolute;inset:0;opacity:.55;background:repeating-linear-gradient(88deg,#151515 0 3px,#1d1d1d 3px 9px,#121212 9px 14px)}
-.plate{position:absolute;left:50%;top:540px;width:560px;height:560px;margin-left:-280px;border-radius:50%;background:radial-gradient(circle at 38% 30%,#fbfbf9,#d8d8d4 38%,#8c8c88 72%,#4b4b49);box-shadow:0 60px 80px rgba(0,0,0,.75),0 0 0 14px #111,0 0 0 15px #ffffff22}
-.ring{position:absolute;left:50%;top:590px;width:430px;height:430px;margin-left:-215px;border-radius:50%;box-shadow:inset 0 0 0 2px #00000022,inset 0 14px 30px #ffffff55,inset 0 -18px 30px #00000033}
-.food1{position:absolute;left:640px;top:665px;width:210px;height:150px;border-radius:60% 40% 55% 45%;background:radial-gradient(circle at 35% 30%,#7b7b78,#2c2c2a 70%);filter:blur(.4px);box-shadow:0 18px 26px #0007}
-.food2{position:absolute;left:800px;top:755px;width:120px;height:90px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#e9e9e5,#8f8f8b 70%);box-shadow:0 14px 20px #0006}
-.food3{position:absolute;left:560px;top:775px;width:90px;height:60px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#555,#161616 75%);box-shadow:0 12px 18px #0007}
-.fork,.knife{position:absolute;width:26px;height:520px;border-radius:14px;background:linear-gradient(90deg,#4a4a48,#e8e8e4 45%,#6e6e6b);box-shadow:8px 20px 30px #0008}
-.fork{left:330px;top:430px;transform:rotate(9deg)}.knife{left:1080px;top:430px;width:34px;transform:rotate(-9deg);border-radius:6px 40px 20px 6px}
-.kick{position:absolute;top:118px;width:100%;text-align:center;font-family:"M";font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:#aaa}
-h1{position:absolute;top:142px;width:100%;text-align:center;font-size:112px;line-height:.9;letter-spacing:-.06em;font-weight:600}
-h1 i{font-style:normal;color:#8d8d8d}
-.book{position:absolute;left:50%;top:392px;margin-left:-330px;width:660px;height:78px;display:grid;grid-template-columns:1fr 1fr 1fr auto;border:1px solid #ffffff33;background:#0c0c0ccc;backdrop-filter:blur(4px);z-index:5}
-.book div{padding:16px 22px;border-right:1px solid #ffffff22;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8e8e8e}.book div b{display:block;margin-top:6px;font-size:16px;letter-spacing:0;text-transform:none;color:#f4f4f2;font-weight:500}
-.book .go{background:#f4f4f2;color:#0a0a0a;display:flex;align-items:center;padding:0 26px;font-size:12px;letter-spacing:.16em;font-weight:600;text-transform:uppercase;border:0}
-</style></head><body data-w="1440" data-h="900" data-scale="1.5" data-q="86">
-<div class="edit vig"><div class="page gray">
- <div class="table"></div>
+/* Ember & Oak — moody, warm, serif italics, amber on charred wood */
+body{background:#140b07}
+.page{position:relative;width:1440px;height:900px;background:radial-gradient(75% 90% at 50% 55%,#4a2412,#140b07 72%);overflow:hidden;color:#f6e7d2}
+.wood{position:absolute;inset:0;opacity:.5;background:repeating-linear-gradient(88deg,#1b0e08 0 3px,#2a160c 3px 11px,#170b06 11px 17px)}
+nav{position:absolute;top:0;left:0;right:0;height:84px;display:flex;align-items:center;justify-content:space-between;padding:0 64px;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:#d9bf9c;z-index:6}
+.logo{font-family:"Liberation Serif",serif;font-size:24px;letter-spacing:.2em;color:#ffd9a0}
+.kick{position:absolute;top:120px;width:100%;text-align:center;font-size:12px;letter-spacing:.34em;text-transform:uppercase;color:#e69a4a}
+h1{position:absolute;top:150px;width:100%;text-align:center;font-family:"Liberation Serif",serif;font-weight:400;font-size:122px;line-height:.9;letter-spacing:-.03em;z-index:3}
+h1 i{color:#f08a2c}
+.plate{position:absolute;left:50%;top:520px;width:600px;height:600px;margin-left:-300px;border-radius:50%;background:radial-gradient(circle at 38% 30%,#3a2a22,#1b110d 60%,#0b0604);box-shadow:0 60px 90px #000c,0 0 0 14px #25140d,0 0 0 15px #ffb36633}
+.ring{position:absolute;left:50%;top:572px;width:470px;height:470px;margin-left:-235px;border-radius:50%;box-shadow:inset 0 0 0 2px #ffb36622,inset 0 16px 34px #ffb36633}
+.steak{position:absolute;left:610px;top:640px;width:240px;height:150px;border-radius:55% 45% 52% 48%;background:radial-gradient(circle at 35% 28%,#b0522a,#5c230f 62%,#2a0f06);box-shadow:0 20px 30px #000a,inset 0 0 0 3px #f08a2c44}
+.herb{position:absolute;left:760px;top:720px;width:120px;height:80px;border-radius:50% 10% 50% 10%;background:radial-gradient(circle at 30% 30%,#8bd05a,#2b5a1a);transform:rotate(-20deg);box-shadow:0 10px 16px #0008}
+.char{position:absolute;left:560px;top:760px;width:100px;height:60px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f2a24a,#a4491a 70%);box-shadow:0 12px 18px #000a}
+.flame{position:absolute;left:50%;top:460px;margin-left:-60px;width:120px;height:170px;border-radius:50% 50% 50% 50%/70% 70% 30% 30%;background:radial-gradient(circle at 50% 80%,#fff2b0,#ffa736 40%,rgba(255,90,20,0) 72%);filter:blur(14px);opacity:.75}
+.book{position:absolute;left:50%;top:404px;margin-left:-340px;width:680px;height:80px;display:grid;grid-template-columns:1fr 1fr 1fr auto;border:1px solid #f08a2c66;background:#1a0d08e6;z-index:5}
+.book div{padding:16px 22px;border-right:1px solid #f08a2c33;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#c79a6a}.book div b{display:block;margin-top:6px;font-size:17px;letter-spacing:0;text-transform:none;color:#fff0dc;font-weight:500}
+.book .go{background:#f08a2c;color:#1a0d08;display:flex;align-items:center;padding:0 28px;font-size:12px;letter-spacing:.16em;font-weight:700;text-transform:uppercase;border:0}
+.side{position:absolute;bottom:56px;font-family:"Liberation Serif",serif;font-style:italic;font-size:20px;color:#d9bf9c;width:300px;line-height:1.4}
+</style></head><body data-w="1440" data-h="900" data-scale="1.5" data-q="88">
+<div class="edit vig"><div class="page">
+ <div class="wood"></div>
  <nav><span>Menu</span><span class="logo">EMBER &amp; OAK</span><span>Reserve</span></nav>
  <div class="kick">Wood-fired kitchen · Open nightly</div>
  <h1>Fire, salt<br><i>&amp; patience.</i></h1>
- <div class="book"><div>Date<b>Fri 14 Nov</b></div><div>Guests<b>2 people</b></div><div>Time<b>7:30 pm</b></div><div class="go">Reserve</div></div>
- <div class="plate"></div><div class="ring"></div><div class="food1"></div><div class="food2"></div><div class="food3"></div>
+ <div class="book"><div>Date<b>Fri 14 Nov</b></div><div>Guests<b>2 people</b></div><div>Time<b>7:30 pm</b></div><div class="go">Reserve a table</div></div>
+ <div class="flame"></div><div class="plate"></div><div class="ring"></div><div class="steak"></div><div class="herb"></div><div class="char"></div>
+ <div class="side" style="left:64px">“Cooked over oak, served without fuss.”</div>
+ <div class="side" style="right:64px;text-align:right">Tue–Sun · 5pm till late<br>14 Harbour Row</div>
 </div></div></body></html>

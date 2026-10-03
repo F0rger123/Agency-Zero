@@ -1,21 +1,45 @@
 <!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../base.css">
 <style>
-.half{position:absolute;top:0;bottom:0;width:50%}
-.l{left:0;background:#1b1b1b}.r{right:0;background:#f1f1ef}
-.mess div{position:absolute;background:#555;border:1px solid #999}
-.clean div{position:absolute;background:#0c0c0c}
-.lab{position:absolute;top:100px;font-family:"M";font-size:12px;letter-spacing:.2em;text-transform:uppercase;z-index:12}
-.cap{position:absolute;left:0;right:0;bottom:120px;text-align:center;z-index:12;font-size:40px;font-weight:700;letter-spacing:-.04em;mix-blend-mode:difference;color:#fff}
-.sw{position:absolute;left:50%;top:0;bottom:0;width:3px;background:#fff;z-index:11;margin-left:-1px}
-.knob{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px;border-radius:50%;background:#fff;z-index:12;box-shadow:0 8px 20px #0008}
+/* Before / after reel: left = cluttered old site, right = the rebuilt one. Caption sits on a solid plate so it is always readable. */
+.screenfill{position:absolute;inset:0;background:#fff}
+.after{position:absolute;inset:0}.after img{width:100%;height:100%;object-fit:fill;display:block}
+.before{position:absolute;left:0;top:0;bottom:0;width:50%;overflow:hidden;background:#c9c4b6;z-index:5}
+.before .in{position:absolute;left:0;top:0;width:386px;height:100%;font-family:"Liberation Serif",serif;color:#222}
+.b-hd{height:70px;margin-top:44px;background:#1e3a8a;color:#ff0;font-size:22px;font-weight:700;padding:20px 14px;border-bottom:4px solid red}
+.b-ban{margin:10px;background:#f4e04d;border:3px dashed #c00;padding:10px;font-size:19px;font-weight:700;color:#c00;text-align:center;transform:rotate(-2deg)}
+.b-txt{margin:10px 14px;font-size:12px;line-height:1.35;color:#333}
+.b-box{margin:10px 14px;display:flex;gap:8px}.b-box i{flex:1;height:70px;background:#999;border:2px outset #ddd}
+.b-btn{margin:12px 14px;display:inline-block;background:#d8d8d8;border:2px outset #fff;padding:6px 14px;font-size:13px;font-family:"DejaVu Sans",sans-serif}
+.b-pop{position:absolute;left:30px;top:480px;width:210px;background:#fffbe0;border:2px solid #333;padding:10px;font-size:13px;transform:rotate(3deg);box-shadow:5px 6px 0 #0006}
+.b-hit{position:absolute;left:14px;top:400px;font-size:12px;color:#00e;text-decoration:underline;font-family:"DejaVu Sans",sans-serif}
+.sw{position:absolute;left:50%;top:0;bottom:0;width:3px;background:#fff;z-index:11;margin-left:-1px;box-shadow:0 0 12px #0008}
+.knob{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px;border-radius:50%;background:#fff;z-index:12;box-shadow:0 8px 20px #0008;display:grid;place-items:center;font-size:16px;color:#111;font-weight:700}
+.lab{position:absolute;top:100px;z-index:13;font-family:"M";font-size:12px;letter-spacing:.2em;text-transform:uppercase;padding:6px 10px;background:#000c;color:#fff}
+.scrim{position:absolute;left:0;right:0;bottom:0;height:300px;z-index:14;background:linear-gradient(180deg,transparent,rgba(0,0,0,.88) 70%)}
+.cap{position:absolute;left:22px;right:80px;bottom:96px;z-index:16;font-size:42px;line-height:.98;font-weight:700;letter-spacing:-.04em;color:#fff}
+.cap small{display:block;margin-top:12px;font-size:15px;font-weight:400;letter-spacing:0;color:#ddd}
+.who{position:absolute;left:22px;bottom:58px;font-size:13px;z-index:16;color:#eee}
+.prog{z-index:16}
 </style></head><body data-w="800" data-h="1200" data-scale="1.5" data-q="86">
-<div class="edit vig"><div class="stage gray"></div>
- <div class="phone gray" style="left:196px;top:120px;width:410px;height:870px;transform:perspective(1800px) rotateY(11deg) rotateX(3deg) rotateZ(-2deg)">
+<div class="edit vig"><div class="stage"></div>
+ <div class="phone" style="left:196px;top:120px;width:410px;height:870px;transform:perspective(1800px) rotateY(11deg) rotateX(3deg) rotateZ(-2deg)">
   <div class="screen"><div class="island"></div>
-   <div class="half l mess"><div style="left:20px;top:150px;width:150px;height:60px;transform:rotate(-4deg)"></div><div style="left:70px;top:230px;width:100px;height:140px;transform:rotate(5deg);background:#777"></div><div style="left:12px;top:410px;width:170px;height:30px;background:#444;transform:rotate(-2deg)"></div><div style="left:40px;top:470px;width:130px;height:90px;transform:rotate(3deg)"></div><div style="left:110px;top:600px;width:80px;height:50px;background:#888"></div></div>
-   <div class="half r clean"><div style="left:18px;top:150px;width:150px;height:14px"></div><div style="left:18px;top:176px;width:110px;height:14px"></div><div style="left:18px;top:216px;width:150px;height:7px;background:#aaa"></div><div style="left:18px;top:232px;width:120px;height:7px;background:#aaa"></div><div style="left:18px;top:270px;width:90px;height:34px"></div><div style="left:18px;top:340px;width:150px;height:170px;background:#c9c9c4"></div><div style="left:18px;top:530px;width:70px;height:70px;background:#dcdcd8"></div><div style="left:98px;top:530px;width:70px;height:70px;background:#c9c9c4"></div></div>
-   <div class="sw"></div><div class="knob"></div>
-   <div class="lab" style="left:20px;color:#bbb">Before</div><div class="lab" style="right:20px;color:#333">After</div>
-   <div class="cap">Same business.<br>Better site.</div>
+   <div class="after"><img src="../../../public/images/mockups/dev-phone.jpg"></div>
+   <div class="before"><div class="in">
+     <div class="b-hd">WELCOME TO OUR WEBSITE!!</div>
+     <div class="b-ban">★ SALE ★ CLICK HERE ★</div>
+     <div class="b-txt">Lorem ipsum our company has been established since 1998 and we do many things for many customers please read below for more information about everything</div>
+     <div class="b-box"><i></i><i></i><i></i></div>
+     <div class="b-txt">Contact us for a quote. Phone, email or fax. Visitors: 000412</div>
+     <div class="b-btn">Submit</div>
+     <div class="b-hit">Click here · Click here · Links</div>
+     <div class="b-pop">Subscribe to our newsletter!<br><b>[ X ]</b></div>
+   </div></div>
+   <div class="sw"></div><div class="knob">⇄</div>
+   <div class="lab" style="left:16px">Before</div><div class="lab" style="right:16px">After</div>
+   <div class="scrim"></div>
+   <div class="rail" style="bottom:130px"><div class="liked"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.5-9.2C1.2 8.6 3 5.5 6.2 5.5c2 0 3.6 1.1 5.8 3.4 2.2-2.3 3.8-3.4 5.8-3.4 3.2 0 5 3.1 3.7 6.3C19.5 16.4 12 21 12 21z"/></svg>8,931</div><div><svg viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-12.2 7.7L3 21l1.9-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>204</div><div><svg viewBox="0 0 24 24"><path d="M22 3 2 10.5l7.5 3L12 21l2.5-6.5z M9.5 13.5 22 3"/></svg>960</div></div>
+   <div class="cap">Same business.<br>Better site.<small>A 5-second before / after.</small></div>
+   <div class="who">@agencyzero · Original audio</div>
    <div class="prog"><b style="width:68%"></b></div><div class="glare"></div></div>
  </div></div></body></html>

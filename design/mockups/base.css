@@ -31,3 +31,9 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#000;font-family:"
 .louv{position:absolute;inset:0;background:repeating-linear-gradient(90deg,#0c0c0c 0 12px,#8d8d89 12px 15px,#cfcfca 15px 40px)}
 .rings{position:absolute;inset:-20%;background:repeating-radial-gradient(circle at 50% 50%,transparent 0 22px,rgba(255,255,255,.16) 23px 24px,transparent 25px 46px);-webkit-mask-image:radial-gradient(circle,#000 25%,transparent 70%);mask-image:radial-gradient(circle,#000 25%,transparent 70%)}
 .plate{position:absolute;border-radius:50%;background:radial-gradient(circle at 38% 30%,#fbfbf9,#d8d8d4 38%,#8c8c88 72%,#4b4b49);box-shadow:0 40px 60px rgba(0,0,0,.7),0 0 0 10px #101010,0 0 0 11px #ffffff22}
+
+/* Reel action rail: like / comment / share / save with counts */
+.rail{position:absolute;right:14px;display:flex;flex-direction:column;gap:20px;z-index:15;align-items:center}
+.rail div{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:13px;font-weight:600;color:#fff;text-shadow:0 1px 8px #0009}
+.rail svg{width:36px;height:36px;fill:none;stroke:#fff;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 6px #0008)}
+.rail .liked svg{fill:#fff}

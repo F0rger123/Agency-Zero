@@ -8,16 +8,16 @@ import { site } from "@/lib/site-config";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://agencyzero.com"),
   title: {
-    default: "Agency Zero — Software, websites, search & content",
+    default: "Agency Zero — Software, website design, search & content",
     template: "%s — Agency Zero",
   },
   description:
-    "Agency Zero builds custom software and CRMs, premium websites, SEO, Meta ads, social media and video content for businesses that want better systems and a stronger presence.",
+    "Agency Zero builds custom software and CRMs, premium website design, SEO, Meta ads, social media and video content for businesses that want better systems and a stronger presence.",
   openGraph: {
     type: "website",
     siteName: site.name,
-    title: "Agency Zero — Software, websites, search & content",
-    description: "Custom software, websites, SEO, paid media and content — built as one system.",
+    title: "Agency Zero — Software, website design, search & content",
+    description: "Custom software, website design, SEO, paid media and content — built as one system.",
   },
   twitter: { card: "summary_large_image" },
 };

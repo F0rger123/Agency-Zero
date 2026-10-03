@@ -26,7 +26,7 @@ export function WebsitesSection() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_25%,#000_80%)]" aria-hidden />
       <div className="site-wrap relative">
         <SectionHeading
-          eyebrow="02 — Websites"
+          eyebrow="02 — Website design"
           title="A website is the first thing your customers judge."
           lead="You are looking at the standard we build to. Every site is designed and engineered from scratch for the business behind it — these are five concept directions, each with its own look, structure and job to do."
         />
@@ -52,9 +52,9 @@ export function WebsitesSection() {
             <div className="lg:col-span-8">
               <Photo
                 src="/images/mockups/devices.jpg"
-                alt="A concept website shown on a laptop, a tablet and a phone"
-                width={2000}
-                height={1250}
+                alt="The same concept website designed for a laptop, a tablet and a phone"
+                width={2070}
+                height={1150}
                 className="w-full border border-rule"
               />
             </div>

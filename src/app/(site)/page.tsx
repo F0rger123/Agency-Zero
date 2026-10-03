@@ -17,7 +17,7 @@ const organizationLd = {
   "@type": "Organization",
   name: "Agency Zero",
   description:
-    "Custom software and CRMs, websites, SEO, Meta ads, social media and video content, built as one system.",
+    "Custom software and CRMs, website design, SEO, Meta ads, social media and video content, built as one system.",
   url: process.env.NEXT_PUBLIC_SITE_URL || "https://agencyzero.com",
 };
 
@@ -56,7 +56,7 @@ function Hero() {
         <Reveal>
           <p className="t-label mb-8 flex items-center gap-4">
             <span className="inline-block size-1.5 rounded-full bg-bone" aria-hidden />
-            Agency Zero — software, websites, search &amp; content
+            Agency Zero — software, website design, search &amp; content
           </p>
         </Reveal>
 
@@ -69,7 +69,7 @@ function Hero() {
         <div className="mt-10 grid items-end gap-10 md:mt-14 md:grid-cols-12">
           <Reveal delay={200} className="md:col-span-5">
             <p className="t-lead max-w-md">
-              Custom software. Websites. SEO. Paid media. Content. One studio, one standard — so the work around your
+              Custom software. Website design. SEO. Paid media. Content. One studio, one standard — so the work around your
               business finally fits together.
             </p>
           </Reveal>

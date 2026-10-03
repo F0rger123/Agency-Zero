@@ -9,7 +9,7 @@ export function SiteFooter() {
         <div className="md:col-span-5">
           <SiteWordmark />
           <p className="t-body mt-6 max-w-sm">
-            Software, websites, search, paid media and content — built as one system for businesses that want to be
+            Software, website design, search, paid media and content — built as one system for businesses that want to be
             taken seriously.
           </p>
           <a href={`mailto:${site.email}`} className="u-link t-title mt-10 inline-block break-all !text-[clamp(1.2rem,2.2vw,1.9rem)]">

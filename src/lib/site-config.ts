@@ -43,8 +43,8 @@ export const services: readonly {
   {
     slug: "websites",
     index: "02",
-    title: "Websites",
-    short: "Websites",
+    title: "Website design",
+    short: "Website design",
     summary: "Custom-designed, fast, responsive sites with motion, conversion and SEO built in.",
     points: ["Custom design, no templates", "Fast, responsive, accessible builds", "SEO foundations and conversion thinking"],
   },

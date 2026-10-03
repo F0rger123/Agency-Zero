@@ -57,7 +57,7 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
 
   websites: {
     slug: "websites",
-    title: "Websites",
+    title: "Website design",
     metaDescription:
       "Custom-designed, fast, responsive websites with motion, conversion thinking and SEO foundations built in.",
     headline: "A website that carries the standard of the business behind it.",

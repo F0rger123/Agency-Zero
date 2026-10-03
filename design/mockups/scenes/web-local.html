@@ -1,32 +1,39 @@
 <!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../base.css">
 <style>
-body{background:#080808}
-.page{position:relative;width:1440px;height:900px;background:radial-gradient(90% 80% at 75% 40%,#1d1d1d,#070707 70%)}
-nav{position:absolute;top:0;left:0;right:0;height:84px;display:flex;align-items:center;justify-content:space-between;padding:0 64px}
-.logo{font-weight:700;font-size:20px;letter-spacing:-.02em}.logo i{font-style:normal;color:#8a8a8a}
-.links{display:flex;gap:38px;font-size:14px;color:#bdbdbd}
-.call{background:#f4f4f2;color:#080808;padding:14px 24px;font-weight:600;font-size:14px}
-.rings{position:absolute;right:-120px;top:60px;width:880px;height:880px;border-radius:50%;
- background:repeating-radial-gradient(circle at 50% 50%,transparent 0 22px,rgba(255,255,255,.10) 23px 24px,transparent 25px 46px);
- -webkit-mask-image:radial-gradient(circle,#000 20%,transparent 68%);mask-image:radial-gradient(circle,#000 20%,transparent 68%)}
-.glow{position:absolute;right:140px;top:250px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.55),rgba(255,255,255,.08) 45%,transparent 70%);filter:blur(10px)}
-.drop{position:absolute;right:300px;top:350px;width:128px;height:128px;border-radius:0 50% 50% 50%;transform:rotate(45deg);background:radial-gradient(circle at 62% 38%,#fff,#c4c4c4 40%,#4a4a4a);box-shadow:0 40px 60px rgba(0,0,0,.6),inset -12px -12px 30px rgba(0,0,0,.45)}
-.tag{position:absolute;left:64px;top:170px;font-family:"M";font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#9b9b9b}
-h1{position:absolute;left:64px;top:206px;width:720px;font-size:92px;line-height:.96;letter-spacing:-.05em;font-weight:600}
-.sub{position:absolute;left:68px;top:500px;width:480px;font-size:19px;line-height:1.6;color:#b0b0b0}
-.btns{position:absolute;left:68px;top:620px;display:flex;gap:14px}
-.b1{background:#f4f4f2;color:#080808;padding:18px 30px;font-weight:600;font-size:15px}
-.b2{border:1px solid #ffffff44;padding:18px 30px;font-size:15px}
-.trust{position:absolute;left:64px;right:64px;bottom:0;height:150px;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid #ffffff1c;background:#0b0b0bcc}
-.trust div{padding:34px 32px;border-right:1px solid #ffffff1c}.trust div:last-child{border:0}
-.trust b{display:block;font-size:18px;font-weight:600;margin-bottom:8px}.trust span{font-size:14px;color:#9a9a9a}
-</style></head><body data-w="1440" data-h="900" data-scale="1.5" data-q="86">
-<div class="edit vig"><div class="page gray">
+/* Northline Plumbing — lead-gen: electric blue, safety yellow, heavy type, quote form */
+body{background:#0a2fd6}
+.page{position:relative;width:1440px;height:900px;background:linear-gradient(135deg,#0a2fd6,#0a1f9a);overflow:hidden}
+.top{position:absolute;top:0;left:0;right:0;height:44px;background:#ffd400;color:#0a1f9a;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:28px}
+nav{position:absolute;top:44px;left:0;right:0;height:84px;display:flex;align-items:center;justify-content:space-between;padding:0 64px;background:#fff;color:#0a1f9a}
+.logo{font-weight:800;font-size:28px;letter-spacing:-.03em}.logo i{font-style:normal;color:#ffb800}
+.links{display:flex;gap:36px;font-size:15px;font-weight:600;color:#26308a}
+.call{background:#0a2fd6;color:#fff;padding:14px 24px;font-weight:700;font-size:15px;border-radius:8px}
+.pipes{position:absolute;right:-40px;top:128px;width:700px;height:772px;opacity:.14;background:repeating-linear-gradient(45deg,#fff 0 3px,transparent 3px 40px)}
+.badge{position:absolute;left:64px;top:176px;background:#ffd400;color:#0a1f9a;font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:9px 14px;border-radius:6px}
+h1{position:absolute;left:64px;top:224px;width:760px;font-size:104px;line-height:.94;letter-spacing:-.045em;font-weight:800;color:#fff}
+h1 span{color:#ffd400}
+.sub{position:absolute;left:68px;top:520px;width:560px;font-size:21px;line-height:1.5;color:#cdd6ff}
+.btns{position:absolute;left:68px;top:630px;display:flex;gap:14px}
+.b1{background:#ffd400;color:#0a1f9a;padding:22px 34px;font-weight:800;font-size:18px;border-radius:10px}
+.b2{background:#ffffff1f;border:2px solid #ffffff66;padding:20px 32px;font-weight:700;font-size:18px;border-radius:10px}
+.card{position:absolute;right:64px;top:176px;width:420px;background:#fff;color:#111a55;border-radius:18px;padding:30px;box-shadow:0 40px 80px -10px #00000066}
+.card h3{font-size:26px;letter-spacing:-.02em;font-weight:800}.card p{font-size:14px;color:#5b648f;margin:6px 0 18px}
+.f{border:1.5px solid #ccd3f5;border-radius:10px;padding:14px 16px;font-size:15px;color:#7a82b0;margin-bottom:12px}
+.card .go{background:#0a2fd6;color:#fff;text-align:center;padding:17px;border-radius:10px;font-weight:800;font-size:17px;margin-top:6px}
+.stars{display:flex;align-items:center;gap:10px;margin-top:18px;font-size:13px;color:#5b648f}.stars b{color:#ffb800;letter-spacing:2px;font-size:17px}
+.trust{position:absolute;left:0;right:0;bottom:0;height:112px;background:#fff;display:grid;grid-template-columns:repeat(4,1fr);color:#0a1f9a}
+.trust div{padding:30px 40px;border-right:1px solid #dde2fa;display:flex;gap:14px;align-items:center}.trust div:last-child{border:0}
+.trust i{width:44px;height:44px;border-radius:50%;background:#ffd400;flex:none;display:grid;place-items:center;font-style:normal;font-weight:800}
+.trust b{display:block;font-size:17px;font-weight:800}.trust span{font-size:13px;color:#5b648f}
+</style></head><body data-w="1440" data-h="900" data-scale="1.5" data-q="88">
+<div class="edit"><div class="page">
+ <div class="top"><span>⚡ Emergency callouts 24/7</span><span>·</span><span>Call 0800 000 000</span></div>
  <nav><div class="logo">Northline<i>.</i></div><div class="links"><span>Plumbing</span><span>Heating</span><span>Emergency</span><span>Areas</span><span>Reviews</span></div><div class="call">Call 0800 000 000</div></nav>
- <div class="rings"></div><div class="glow"></div><div class="drop"></div>
- <div class="tag">Plumbing &amp; heating · Licensed</div>
- <h1>Fixed properly. First time.</h1>
+ <div class="pipes"></div>
+ <div class="badge">Licensed plumbing &amp; heating</div>
+ <h1>Fixed properly. <span>First time.</span></h1>
  <p class="sub">Boiler repairs, leaks and installations from a local team that arrives when it said it would.</p>
- <div class="btns"><div class="b1">Book a callout</div><div class="b2">Get a quote</div></div>
- <div class="trust"><div><b>Same-day callouts</b><span>Where availability allows</span></div><div><b>Fixed, upfront pricing</b><span>No surprises on the invoice</span></div><div><b>Fully insured</b><span>Work guaranteed in writing</span></div><div><b>Tidy, respectful</b><span>We leave it cleaner</span></div></div>
+ <div class="btns"><div class="b1">Book a callout</div><div class="b2">Get a free quote</div></div>
+ <div class="card"><h3>Get a fast quote</h3><p>We reply within 30 minutes, 7am–9pm.</p><div class="f">Your name</div><div class="f">Postcode</div><div class="f">What needs fixing?</div><div class="go">Send my request →</div><div class="stars"><b>★★★★★</b>4.9 from 312 local reviews</div></div>
+ <div class="trust"><div><i>✓</i><span><b>Same-day callouts</b>Where availability allows</span></div><div><i>£</i><span><b>Fixed pricing</b>Agreed before we start</span></div><div><i>⛨</i><span><b>Fully insured</b>Guaranteed in writing</span></div><div><i>★</i><span><b>Tidy &amp; respectful</b>We leave it cleaner</span></div></div>
 </div></div></body></html>
