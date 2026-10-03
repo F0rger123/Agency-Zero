@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isClockSkewError, retryOnClockSkew } from "@/lib/supabase/retry";
 import { isMissingTable } from "@/lib/forms";
 import { todayIso } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
@@ -50,8 +51,8 @@ export default async function DashboardPage() {
   // Two cheap aggregates in parallel. Revenue is a separate read model so a
   // missing migration 0018 degrades only the revenue cards, never the dashboard.
   const [{ data, error }, revenueResponse, leadsResponse] = await Promise.all([
-    supabase.rpc("get_dashboard_summary", { p_today: today }),
-    supabase.rpc("get_revenue_summary", { p_today: today }),
+    retryOnClockSkew(() => supabase.rpc("get_dashboard_summary", { p_today: today })),
+    retryOnClockSkew(() => supabase.rpc("get_revenue_summary", { p_today: today })),
     // New website inquiries (migration 0019). Errors (e.g. not applied yet) just hide the strip.
     supabase.from("leads").select("id", { count: "exact", head: true }).eq("status", "new"),
   ]);
@@ -80,7 +81,11 @@ export default async function DashboardPage() {
         <DataFailure
           title="Dashboard summary"
           message={error.message}
-          hint="The dashboard is one database read: public.get_dashboard_summary(p_today). The exact error is below, so it can be fixed rather than guessed at."
+          hint={
+            isClockSkewError(error.message)
+              ? "The database clock and your sign-in token are out of step by a few seconds. This normally clears by itself: reload in a minute. If it keeps happening, sign out and back in, and check your device clock is set automatically."
+              : "The dashboard is one database read: public.get_dashboard_summary(p_today). The exact error is below, so it can be fixed rather than guessed at."
+          }
         />
       </>
     );

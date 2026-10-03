@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { retryOnClockSkew } from "@/lib/supabase/retry";
 
 /**
  * Can the signed-in user use the CRM?
@@ -23,7 +24,7 @@ export type AccessState =
 
 export const getAccessState = cache(async (): Promise<AccessState> => {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("is_owner");
+  const { data, error } = await retryOnClockSkew(() => supabase.rpc("is_owner"));
   if (error) {
     if (/could not find the function|does not exist|schema cache/i.test(error.message)) {
       return { status: "legacy" };

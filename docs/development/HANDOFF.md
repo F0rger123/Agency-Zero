@@ -1,5 +1,8 @@
 # Handoff log (newest first)
 
+## 2026-10-03 (10) — Claude — "JWT issued at future" on the dashboard
+Owner saw `JWT issued at future` (PGRST303: database clock behind the clock that minted the token; transient). Added `src/lib/supabase/retry.ts` (`retryOnClockSkew`, 4 attempts, 1.5 s apart, only for that error) and used it for the dashboard summary/revenue reads and the `is_owner()` access check; the dashboard failure message now explains the cause. Other pages still show the raw error if it persists — apply the same helper there if it recurs. Not verified against a real skewed database. No migrations.
+
 ## 2026-10-03 (9) — Claude — richer About / Work / Services pages; Cloudflare build status
 About: dot-field hero, new `PersonMoment` sticky scroll scene ("ONE PERSON. THE WHOLE JOB."), glyph service grid, bars divider, four-step "how a project runs", layered-text closing (`CtaSection` now takes copy props). Work: dot-field hero, CrewBoss case study, concept website gallery (BrowserGallery), reels + ads (MediaFrame), closing. Services: dot-field hero + bars divider. **Deploy note**: since commit 5c6a96d the Cloudflare check shows `failure` on every push (the owner still saw the old About). Pushing the same SHA to `main` AND a feature branch back-to-back is the only difference from the last green run (dc7c274) — from here on push to `main` only and watch the "Workers Builds" check; if it still fails, read the build log in the Cloudflare dashboard (build ids are in the check-run `details_url`).
 
