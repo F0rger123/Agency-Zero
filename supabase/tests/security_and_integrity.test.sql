@@ -140,3 +140,43 @@ begin
   assert (s ->> 'overdue_count')::int = 0, 'void invoice is not overdue';
 end $$;
 reset role;
+
+-- ── team access + revenue summary (0018) ───────────────────────────────────
+reset role;
+reset request.jwt.claim.sub;
+truncate public.payments cascade;
+set session_replication_role = replica;  -- bypass the issued-invoice delete guard for test cleanup
+delete from public.invoices;
+reset session_replication_role;
+insert into public.invoices (id, client_id, number, title, status, issued_on, due_on, currency, subtotal_cents, total_cents, balance_cents)
+values ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'INV-9', 'Rev', 'sent', '2026-10-01', '2026-10-30', 'USD', 5000, 5000, 5000),
+       ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', 'INV-10', 'Draft', 'draft', '2026-10-01', '2026-10-30', 'USD', 900, 900, 900);
+insert into public.payments (invoice_id, amount_cents, paid_on, kind) values
+  ('20000000-0000-0000-0000-000000000001', 1500, '2026-10-02', 'deposit'),
+  ('20000000-0000-0000-0000-000000000001', 700, '2026-09-15', 'partial');
+insert into public.payments (invoice_id, amount_cents, paid_on, kind, voided_at, void_reason) values
+  ('20000000-0000-0000-0000-000000000001', 9999, '2026-10-03', 'partial', now(), 'mistake');
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';
+do $$
+declare s jsonb := public.get_revenue_summary('2026-10-20');
+begin
+  assert (s ->> 'total_revenue_cents')::int = 2200, 'total revenue = received, non-voided payments only';
+  assert (s ->> 'revenue_this_month_cents')::int = 1500, 'this month only';
+  assert (s ->> 'outstanding_cents')::int = 2800, 'outstanding excludes drafts: 5000 - 2200';
+  assert (s ->> 'mixed_currency')::boolean = false, 'single currency';
+end $$;
+
+-- stranger sees zero until the owner authorises them
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';
+do $$ begin assert (public.get_revenue_summary('2026-10-20') ->> 'total_revenue_cents')::int = 0, 'stranger sees no revenue'; end $$;
+reset role;
+insert into public.app_team (user_id) values ('00000000-0000-0000-0000-0000000000b2');
+set role authenticated;
+do $$ begin
+  assert public.is_owner(), 'team member passes is_owner()';
+  assert (public.get_revenue_summary('2026-10-20') ->> 'total_revenue_cents')::int = 2200, 'team member sees revenue';
+end $$;
+select pg_temp.expect_error($q$insert into public.app_team (user_id) values (gen_random_uuid())$q$, 'permission denied');
+reset role;
+delete from public.app_team;

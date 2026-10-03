@@ -10,7 +10,7 @@ import { signOut } from "@/app/actions/auth";
 
 function Wordmark() {
   return (
-    <Link href="/" className="flex items-center gap-3 px-3">
+    <Link href="/app" className="flex items-center gap-3 px-3">
       <span aria-hidden className="block size-3 rounded-[3px] bg-foreground" />
       <span
         className="wordmark text-xl font-bold tracking-tight"
@@ -85,7 +85,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 
   const items: readonly NavItem[] = navItems;
   const renderLink = (item: NavItem) => {
-    const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+    const active = item.href === "/app" ? pathname === "/app" : pathname.startsWith(item.href);
     return (
       <Link
         key={item.href}

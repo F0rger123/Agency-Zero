@@ -1,0 +1,90 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { getUserClient, notFoundWhenNoRows } from "@/lib/actions";
+import { field, optionalField, readableError, requiredText, type ActionState } from "@/lib/forms";
+
+function dateTime(value: string, label: string): string | ActionState {
+  const parsed = new Date(value.endsWith("Z") ? value : `${value}:00Z`);
+  if (Number.isNaN(parsed.getTime())) return { error: `${label} is invalid.` };
+  return parsed.toISOString();
+}
+function eventValues(formData: FormData): ActionState | Record<string, unknown> {
+  const title = requiredText(formData, "title", "Event title", 240);
+  if (typeof title !== "string") return title;
+  const type = field(formData, "type") || "meeting";
+  if (!["meeting", "work_block", "other"].includes(type)) return { error: "Choose a valid event type." };
+  const starts = dateTime(field(formData, "starts_at"), "Start time");
+  const ends = dateTime(field(formData, "ends_at"), "End time");
+  if (typeof starts !== "string") return starts;
+  if (typeof ends !== "string") return ends;
+  if (new Date(ends) <= new Date(starts)) return { error: "End time must be after start time." };
+  return {
+    title,
+    type,
+    starts_at: starts,
+    ends_at: ends,
+    client_id: optionalField(formData, "client_id"),
+    project_id: optionalField(formData, "project_id"),
+    task_id: optionalField(formData, "task_id"),
+    notes: optionalField(formData, "notes"),
+  };
+}
+export async function createCalendarEventAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const values = eventValues(formData);
+  if ("error" in values) return values;
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error } = await auth.supabase.from("calendar_events").insert(values);
+  if (error) return { error: readableError(error.message) };
+  revalidatePath("/app/calendar");
+  revalidatePath("/app/workload");
+  revalidatePath("/app");
+  return { success: "Calendar item created." };
+}
+export async function updateCalendarEventAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const id = field(formData, "id");
+  if (!id) return { error: "Calendar item ID is missing." };
+  const values = eventValues(formData);
+  if ("error" in values) return values;
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error, count } = await auth.supabase.from("calendar_events").update(values, { count: "exact" }).eq("id", id);
+  if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Calendar item");
+  if (missing) return missing;
+  revalidatePath("/app/calendar");
+  revalidatePath("/app/workload");
+  revalidatePath("/app");
+  return { success: "Calendar item saved." };
+}
+export async function deleteCalendarEventAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const id = field(formData, "id");
+  if (!id) return { error: "Calendar item ID is missing." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error, count } = await auth.supabase.from("calendar_events").delete({ count: "exact" }).eq("id", id);
+  if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Calendar item");
+  if (missing) return missing;
+  revalidatePath("/app/calendar");
+  revalidatePath("/app/workload");
+  return { success: "Calendar item removed." };
+}
+export async function rescheduleTaskAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const id = field(formData, "task_id");
+  if (!id) return { error: "Task ID is missing." };
+  const date = optionalField(formData, "scheduled_date");
+  if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: "Planned date is invalid." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error, count } = await auth.supabase.from("tasks").update({ scheduled_date: date }, { count: "exact" }).eq("id", id);
+  if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Task");
+  if (missing) return missing;
+  revalidatePath("/app/calendar");
+  revalidatePath("/app/workload");
+  revalidatePath("/app/tasks");
+  revalidatePath("/app");
+  return { success: date ? "Task scheduled." : "Task unscheduled." };
+}

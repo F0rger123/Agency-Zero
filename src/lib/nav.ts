@@ -8,20 +8,20 @@
  * Every item is prefetched on idle/hover/focus by the app shell (D-031/D-034).
  */
 export const navItems = [
-  { label: "Dashboard", href: "/", icon: "dashboard" },
-  { label: "Clients", href: "/clients", icon: "clients" },
-  { label: "Projects", href: "/projects", icon: "projects" },
-  { label: "Tasks", href: "/tasks", icon: "tasks" },
-  { label: "Calendar", href: "/calendar", icon: "calendar" },
-  { label: "Workload", href: "/workload", icon: "workload" },
-  { label: "Reminders", href: "/reminders", icon: "reminders" },
-  { label: "Services", href: "/services", icon: "services" },
-  { label: "Quotes", href: "/quotes", icon: "quotes" },
-  { label: "Contracts", href: "/contracts", icon: "contracts" },
-  { label: "Invoices", href: "/invoices", icon: "invoices" },
-  { label: "Social", href: "/social", icon: "social", planned: true },
-  { label: "Marketing", href: "/marketing", icon: "marketing", planned: true },
-  { label: "Settings", href: "/settings", icon: "settings" },
+  { label: "Dashboard", href: "/app", icon: "dashboard" },
+  { label: "Clients", href: "/app/clients", icon: "clients" },
+  { label: "Projects", href: "/app/projects", icon: "projects" },
+  { label: "Tasks", href: "/app/tasks", icon: "tasks" },
+  { label: "Calendar", href: "/app/calendar", icon: "calendar" },
+  { label: "Workload", href: "/app/workload", icon: "workload" },
+  { label: "Reminders", href: "/app/reminders", icon: "reminders" },
+  { label: "Services", href: "/app/services", icon: "services" },
+  { label: "Quotes", href: "/app/quotes", icon: "quotes" },
+  { label: "Contracts", href: "/app/contracts", icon: "contracts" },
+  { label: "Invoices", href: "/app/invoices", icon: "invoices" },
+  { label: "Social", href: "/app/social", icon: "social", planned: true },
+  { label: "Marketing", href: "/app/marketing", icon: "marketing", planned: true },
+  { label: "Settings", href: "/app/settings", icon: "settings" },
 ] as const;
 
 /** A nav entry; `planned` sections are placeholders shown in a separate, muted group. */

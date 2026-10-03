@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { safeNextPath } from "@/lib/routes";
 
 /**
  * Auth callback for email links (confirmation, recovery).
@@ -46,7 +47,7 @@ export async function GET(request: Request) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(new URL("/", redirectOrigin));
+      return NextResponse.redirect(new URL(safeNextPath(searchParams.get("next")), redirectOrigin));
     }
   }
 
