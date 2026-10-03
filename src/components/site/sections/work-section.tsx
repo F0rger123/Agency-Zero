@@ -11,7 +11,7 @@ export function WorkSection() {
         <SectionHeading
           eyebrow="Selected work"
           title="Proof beats promises."
-          lead="A growing selection of projects. Each one is shown as the problem we were handed, what we delivered, and what changed."
+          lead="Each project is shown as the problem we were handed, what we delivered, and what changed. CrewBoss — a CRM we built — is live; more case studies are on the way."
         />
         <div className="mt-16 grid gap-5 md:mt-24 md:grid-cols-3">
           {work.map((item, i) => (

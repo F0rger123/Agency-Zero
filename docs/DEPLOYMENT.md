@@ -191,3 +191,30 @@ Revoke: `delete from public.app_team where user_id = '<id>';`
 **Apply migrations `0014`–`0019` in order BEFORE deploying this branch** (the app calls `get_revenue_summary`, `submit_lead`,
 `convert_lead_to_client`, `is_owner`).
 
+## ⚠ Pushing to GitHub deploys (Cloudflare Workers Builds)
+
+This repo is connected to **Cloudflare Workers Builds** (check name `Workers Builds: agency-zero`). Every push to any branch
+builds, and — depending on the Worker's branch-control settings — can publish a version or preview. Treat **a push as a deploy**:
+the app must keep working against the production database as it is *right now*.
+Consequences, learned the hard way (2026-10-03): the new `/app` layout called `is_owner()` before migrations `0014`+ were applied,
+which showed "No access" to the owner. The code now detects a not-yet-migrated database and keeps the CRM usable with a warning
+banner; apply `supabase/scripts/pending-migrations.sql` to remove it. To control what goes live, set Cloudflare → Workers & Pages →
+agency-zero → Settings → Builds → *Branch control* (production branch = `main`; non-production branches = preview only).
+
+## Where the website contact form goes
+
+1. **Always** into the database: `public.leads` (via `submit_lead()`), visible at `/app/leads` in the CRM, with a "new leads" strip on the dashboard.
+   (This needs migration `0019` applied. Until then the form shows an "email us" message instead of silently dropping the inquiry.)
+2. **Optionally by email** to you, using Resend (free tier is plenty). Setup:
+   1. Create an account at resend.com **with the email you want notifications at** (drummerforger@gmail.com) → API Keys → create a key.
+   2. Cloudflare → Workers & Pages → agency-zero → Settings → *Variables and secrets*:
+      - `RESEND_API_KEY` (type **Secret**) = the key
+      - `LEAD_NOTIFY_EMAIL` (Variable) = `drummerforger@gmail.com`
+      - optional `LEAD_FROM_EMAIL` = `Agency Zero <leads@yourdomain.com>` once you verify a domain in Resend. Without it, mail is sent from
+        `onboarding@resend.dev`, which Resend only delivers to the address the Resend account was created with — fine for you.
+   3. Redeploy (any push, or Retry build). Submit the form on the live site; you should get the email within seconds, with the sender set as
+      Reply-To so you can answer straight from Gmail.
+   Email failure never loses a lead (it is saved first). Failures are logged as `[lead] email notification failed` in Worker logs.
+
+The **"Prefer email?"** link and footer use `site.email` in `src/lib/site-config.ts` (currently drummerforger@gmail.com) — change it there.
+

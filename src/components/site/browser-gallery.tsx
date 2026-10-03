@@ -1,106 +1,52 @@
+import { webConcepts } from "@/content/concepts";
+import { Photo } from "./photo";
 import { ScrollScene } from "./scroll-scene";
 
 /**
- * 3D "unfurling" gallery of website layouts. On md+ the five frames start fanned
- * and stacked, then unfurl flat with scroll (CSS 3D, driven by `--p`); each has
- * its own parallax drift. Below md it is a plain horizontal swipe row.
- * The layouts are abstract placeholders — swap `frames` for real screenshots.
+ * Concept-website gallery. Staggered 12-column layout (two large + three
+ * medium); on md+ each card eases into place with scroll (`--p` from
+ * ScrollScene) and has its own parallax drift. Below md: a swipe row.
  */
-type Frame = { name: string; layout: "hero" | "grid" | "split" | "editorial" | "product" };
-
-const frames: Frame[] = [
-  { name: "Example · Studio", layout: "editorial" },
-  { name: "Example · Local service", layout: "split" },
-  { name: "Example · Brand", layout: "hero" },
-  { name: "Example · Shop", layout: "product" },
-  { name: "Example · Portfolio", layout: "grid" },
-];
-
-function Layout({ kind }: { kind: Frame["layout"] }) {
-  const bar = "bg-bone/70";
-  const dim = "bg-bone/15";
-  switch (kind) {
-    case "hero":
-      return (
-        <div className="flex h-full flex-col justify-end gap-2 p-4">
-          <div className={`h-5 w-4/5 ${bar}`} />
-          <div className={`h-5 w-3/5 ${bar}`} />
-          <div className={`mt-2 h-1.5 w-2/5 ${dim}`} />
-          <div className="mt-3 h-6 w-20 border border-bone/50" />
-        </div>
-      );
-    case "grid":
-      return (
-        <div className="grid h-full grid-cols-2 gap-2 p-3">
-          {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className={i % 3 === 0 ? "bg-bone/25" : "bg-bone/10"} />
-          ))}
-        </div>
-      );
-    case "split":
-      return (
-        <div className="grid h-full grid-cols-2">
-          <div className="flex flex-col justify-center gap-2 p-4">
-            <div className={`h-3 w-full ${bar}`} />
-            <div className={`h-3 w-2/3 ${bar}`} />
-            <div className={`mt-2 h-1.5 w-3/4 ${dim}`} />
-          </div>
-          <div className="bg-bone/20" />
-        </div>
-      );
-    case "editorial":
-      return (
-        <div className="flex h-full flex-col gap-3 p-4">
-          <div className={`h-1.5 w-1/4 ${dim}`} />
-          <div className={`h-7 w-full ${bar}`} />
-          <div className={`h-7 w-4/5 ${bar}`} />
-          <div className="mt-auto grid grid-cols-3 gap-2">
-            <div className="h-10 bg-bone/20" />
-            <div className="h-10 bg-bone/10" />
-            <div className="h-10 bg-bone/20" />
-          </div>
-        </div>
-      );
-    case "product":
-      return (
-        <div className="grid h-full grid-cols-3 gap-2 p-3">
-          {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="flex flex-col gap-1">
-              <div className="flex-1 bg-bone/15" />
-              <div className={`h-1 w-3/4 ${dim}`} />
-            </div>
-          ))}
-        </div>
-      );
-  }
-}
+const spans = ["md:col-span-7", "md:col-span-5 md:mt-28", "md:col-span-4", "md:col-span-4 md:mt-10", "md:col-span-4"];
 
 export function BrowserGallery() {
   return (
     <ScrollScene className="gallery">
-      <ul className="gallery-row -mx-[var(--site-pad)] flex snap-x gap-4 overflow-x-auto px-[var(--site-pad)] pb-4 md:mx-0 md:overflow-visible md:px-0 md:pb-0">
-        {frames.map((frame, i) => {
-          const k = i - 2;
-          return (
-            <li
-              key={frame.name}
-              className="gallery-card w-[72vw] shrink-0 snap-center md:w-auto"
-              style={{ "--k": k, "--z": 120 - Math.abs(k) * 70, "--par": i % 2 ? -70 : 70 } as React.CSSProperties}
-            >
-              <div className="border border-rule-strong bg-coal">
-                <div className="flex items-center gap-1.5 border-b border-rule px-3 py-2">
-                  <span className="size-1.5 rounded-full bg-bone/30" />
-                  <span className="size-1.5 rounded-full bg-bone/30" />
-                  <span className="size-1.5 rounded-full bg-bone/30" />
-                </div>
-                <div className="aspect-[3/4]">
-                  <Layout kind={frame.layout} />
-                </div>
+      <ul className="gallery-row -mx-[var(--site-pad)] flex snap-x gap-4 overflow-x-auto px-[var(--site-pad)] pb-4 md:mx-0 md:grid md:grid-cols-12 md:gap-6 md:overflow-visible md:px-0 md:pb-0">
+        {webConcepts.map((concept, i) => (
+          <li
+            key={concept.name}
+            className={`gallery-card group w-[82vw] shrink-0 snap-center md:w-auto ${spans[i]}`}
+            style={{ "--par": i % 2 ? -46 : 38 } as React.CSSProperties}
+          >
+            <div className="overflow-hidden border border-rule-strong bg-coal transition-colors duration-500 group-hover:border-bone/60">
+              <div className="flex items-center gap-1.5 border-b border-rule px-4 py-2.5">
+                <span className="size-1.5 rounded-full bg-bone/30" />
+                <span className="size-1.5 rounded-full bg-bone/30" />
+                <span className="size-1.5 rounded-full bg-bone/30" />
+                <span className="t-label ml-3 truncate !text-[0.6rem]">{concept.name.toLowerCase().replace(/[^a-z]+/g, "")}.com</span>
               </div>
-              <p className="t-label mt-3">{frame.name}</p>
-            </li>
-          );
-        })}
+              <div className="overflow-hidden">
+                <Photo
+                  src={concept.src}
+                  alt={concept.alt}
+                  width={2160}
+                  height={1350}
+                  className="aspect-[16/10] w-full object-cover object-top transition-transform duration-[1400ms] ease-[var(--ease-out)] group-hover:scale-[1.035]"
+                />
+              </div>
+            </div>
+            <div className="mt-4 flex items-start justify-between gap-4">
+              <div>
+                <p className="font-medium tracking-tight">{concept.name}</p>
+                <p className="t-label mt-1">{concept.kind}</p>
+              </div>
+              <div className="flex flex-wrap justify-end gap-2">
+                {concept.concept ? <span className="t-label border border-rule-strong px-2 py-1 !text-bone/70">Concept</span> : null}
+              </div>
+            </div>
+          </li>
+        ))}
       </ul>
     </ScrollScene>
   );

@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { site } from "@/lib/site-config";
+import { notifyOwnerOfLead } from "@/lib/lead-notify";
 import { BUDGETS, SERVICE_OPTIONS } from "./options";
 
 export type LeadState = { error?: string; success?: string };
@@ -77,6 +78,12 @@ export async function submitLeadAction(_previous: LeadState, formData: FormData)
     }
     if (/Please enter|Invalid/.test(error.message)) return { error: error.message };
     return { error: `Something went wrong. Please email ${site.email}.` };
+  }
+
+  // The lead is saved. Now (best effort) tell the owner by email; failures are logged, never shown.
+  const notified = await notifyOwnerOfLead({ name, business, email, phone, services, budget, details });
+  if (!notified.sent && notified.reason !== "not configured") {
+    console.error("[lead] email notification failed:", notified.reason);
   }
 
   return { success: "Thanks — your message is in. We'll reply within one working day." };

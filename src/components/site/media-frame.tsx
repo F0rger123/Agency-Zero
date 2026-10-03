@@ -9,14 +9,14 @@
 export type MediaSpec = {
   label: string;
   caption: string;
-  ratio: "9/16" | "16/9" | "4/5" | "1/1";
+  ratio: "9/16" | "2/3" | "16/9" | "4/5" | "1/1";
   video?: string;
   image?: string;
   poster?: string;
 };
 
 export function MediaFrame({ media, className = "" }: { media: MediaSpec; className?: string }) {
-  const ratio = { "9/16": "aspect-[9/16]", "16/9": "aspect-video", "4/5": "aspect-[4/5]", "1/1": "aspect-square" }[media.ratio];
+  const ratio = { "9/16": "aspect-[9/16]", "2/3": "aspect-[2/3]", "16/9": "aspect-video", "4/5": "aspect-[4/5]", "1/1": "aspect-square" }[media.ratio];
   return (
     <figure className={className}>
       <div className={`relative ${ratio} overflow-hidden border border-rule bg-char`}>

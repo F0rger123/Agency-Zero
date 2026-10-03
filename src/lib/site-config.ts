@@ -5,8 +5,8 @@
 export const site = {
   name: "Agency Zero",
   wordmark: "AGENCY ZER0",
-  // TODO(content): real address, socials and phone.
-  email: "hello@agencyzero.com",
+  // TODO(content): real socials and phone.
+  email: "drummerforger@gmail.com",
   socials: [
     { label: "Instagram", href: "https://instagram.com/" },
     { label: "LinkedIn", href: "https://linkedin.com/" },

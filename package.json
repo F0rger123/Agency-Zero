@@ -11,7 +11,8 @@
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "test": "vitest run",
-    "test:db": "bash supabase/tests/run.sh"
+    "test:db": "bash supabase/tests/run.sh",
+    "mockups": "node design/mockups/render.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -19,7 +20,8 @@
     "geist": "^1.7.2",
     "next": "16.3.5",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@opennextjs/cloudflare": "^1.20.6",
@@ -29,6 +31,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
+    "playwright-core": "^1.63.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^3.2.7",

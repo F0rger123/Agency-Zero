@@ -34,7 +34,7 @@ export default function ContactPage() {
           <aside className="lg:col-span-4 lg:col-start-9">
             <Reveal delay={100}>
               <p className="t-label">Prefer email?</p>
-              <a href={`mailto:${site.email}`} className="u-link t-title mt-4 inline-block break-all !text-[clamp(1.2rem,2vw,1.7rem)]">
+              <a href={`mailto:${site.email}?subject=${encodeURIComponent("Project inquiry")}`} className="u-link t-title mt-4 inline-block break-all !text-[clamp(1.2rem,2vw,1.7rem)]">
                 {site.email}
               </a>
             </Reveal>

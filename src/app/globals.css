@@ -431,33 +431,25 @@ html:has(.site) {
   }
 }
 
-/* 3D unfurl for the website gallery (md+). --p is written by ScrollScene. */
+/* Concept gallery (md+): cards ease up into place with scroll and drift at different speeds. --p from ScrollScene. */
 .gallery {
-  --u: clamp(0, calc((var(--p) - 0.12) * 2.4), 1);
+  --u: clamp(0, calc((var(--p) - 0.08) * 2.6), 1);
 }
 @media (min-width: 768px) {
   .gallery {
-    perspective: 1800px;
-  }
-  .gallery-row {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    transform-style: preserve-3d;
+    perspective: 2000px;
   }
   .gallery-card {
-    transform-style: preserve-3d;
     will-change: transform;
-    transform: translate3d(
-        calc((1 - var(--u)) * var(--k) * -82%),
-        calc((var(--p) - 0.5) * var(--par) * 1px),
-        calc((1 - var(--u)) * var(--z) * 1px)
-      )
-      rotateY(calc((1 - var(--u)) * var(--k) * 24deg));
+    transform: translate3d(0, calc((1 - var(--u)) * 70px + (var(--p) - 0.5) * var(--par) * 1px), 0)
+      rotateX(calc((1 - var(--u)) * 7deg));
+    opacity: calc(0.35 + var(--u) * 0.65);
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .gallery-card {
     transform: none !important;
+    opacity: 1 !important;
   }
 }
 

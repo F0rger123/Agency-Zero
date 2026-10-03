@@ -41,6 +41,11 @@ records what was verified and when.
 | `docs/BUILD_PROGRESS.md` | Historical change log (append-only; no longer the roadmap) |
 | `docs/MASTER_SPEC.md`, `DECISIONS.md`, `DATABASE_PLAN.md`, `DEPLOYMENT.md` | Reference |
 
+## ⚠ A push is a deploy
+Cloudflare Workers Builds builds (and may publish) every push, including feature branches. Never assume "I'll tell the owner to apply
+migrations before deploying" — by then it is already building. Code must tolerate the production database being **behind** (see
+`src/lib/access.ts` "legacy" state, `get_revenue_summary` / `leads` degrading gracefully). Details: `docs/DEPLOYMENT.md`.
+
 ## Two products, one repo
 - **Public marketing site** — `src/app/(site)`, `src/components/site`, `src/content`, dark design system
   (`docs/development/DESIGN_SYSTEM.md`). Public, static, no login. Content to replace: `docs/development/SITE_CONTENT.md`.

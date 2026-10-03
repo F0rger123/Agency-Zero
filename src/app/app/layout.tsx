@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { hasCrmAccess } from "@/lib/access";
-import { NoAccess } from "@/components/no-access";
+import { getAccessState } from "@/lib/access";
+import { MigrationWarning, NoAccess } from "@/components/no-access";
 import { AppShell } from "@/components/app-shell";
 import { SetupRequired } from "@/components/states";
 
@@ -49,9 +49,18 @@ export default async function AppLayout({
 
   // Signed in is not enough: the account must be the owner or an explicitly
   // authorised team member (DECISIONS D-043).
-  if (!(await hasCrmAccess())) {
-    return <NoAccess email={session.user.email} />;
+  const access = await getAccessState();
+  if (access.status === "denied") {
+    return <NoAccess email={session.user.email} userId={session.user.id} />;
+  }
+  if (access.status === "error") {
+    return <NoAccess email={session.user.email} userId={session.user.id} problem={access.message} />;
   }
 
-  return <AppShell email={session.user.email}>{children}</AppShell>;
+  return (
+    <AppShell email={session.user.email}>
+      {access.status === "legacy" ? <MigrationWarning /> : null}
+      {children}
+    </AppShell>
+  );
 }

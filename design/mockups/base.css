@@ -1,0 +1,33 @@
+/* Shared base for the mockup scenes (rendered to public/images/mockups by render.mjs). */
+@font-face{font-family:"G";src:url("../../node_modules/geist/dist/fonts/geist-sans/Geist-Regular.woff2");font-weight:400}
+@font-face{font-family:"G";src:url("../../node_modules/geist/dist/fonts/geist-sans/Geist-Medium.woff2");font-weight:500}
+@font-face{font-family:"G";src:url("../../node_modules/geist/dist/fonts/geist-sans/Geist-SemiBold.woff2");font-weight:600}
+@font-face{font-family:"G";src:url("../../node_modules/geist/dist/fonts/geist-sans/Geist-Bold.woff2");font-weight:700}
+@font-face{font-family:"M";src:url("../../node_modules/geist/dist/fonts/geist-mono/GeistMono-Regular.woff2");font-weight:400}
+@font-face{font-family:"M";src:url("../../node_modules/geist/dist/fonts/geist-mono/GeistMono-Medium.woff2");font-weight:500}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100vw;height:100vh;overflow:hidden;background:#000;font-family:"G",system-ui,sans-serif;color:#f4f4f2;-webkit-font-smoothing:antialiased}
+.mono{font-family:"M",ui-monospace,monospace}
+.abs{position:absolute}
+.fill{position:absolute;inset:0}
+/* The "edit": film grain + vignette + a touch of bloom, applied per scene via .edit */
+.edit{position:relative;overflow:hidden;width:100%;height:100%}
+.edit::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:99;mix-blend-mode:overlay;opacity:.55;
+ background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 1.4 -.2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+.edit.vig::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:98;background:radial-gradient(120% 100% at 50% 40%,transparent 55%,rgba(0,0,0,.5))}
+.gray{filter:grayscale(1) contrast(1.08)}
+/* concrete / paper texture helper */
+.tex{position:absolute;inset:0;mix-blend-mode:soft-light;opacity:.7;
+ background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><filter id='t'><feTurbulence type='fractalNoise' baseFrequency='.012 .02' numOctaves='5' seed='4'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 1.6 -.3'/></filter><rect width='100%' height='100%' filter='url(%23t)'/></svg>")}
+/* Phone + stage helpers */
+.stage{position:absolute;inset:0;background:radial-gradient(70% 60% at 50% 38%,#2b2b2b,#0a0a0a 72%)}
+.phone{position:absolute;border-radius:58px;background:linear-gradient(145deg,#3a3a3a,#0d0d0d 40%,#262626);padding:11px;box-shadow:0 0 0 2px #00000099,0 70px 110px -20px #000,0 30px 50px -20px #000c,inset 0 0 0 1.5px #ffffff22}
+.phone .screen{position:relative;width:100%;height:100%;border-radius:48px;overflow:hidden;background:#000}
+.phone .island{position:absolute;left:50%;top:14px;width:104px;height:30px;margin-left:-52px;border-radius:20px;background:#000;z-index:20}
+.glare{position:absolute;inset:0;z-index:30;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.22),transparent 35%,transparent 70%,rgba(255,255,255,.06))}
+.ico{position:absolute;right:16px;display:flex;flex-direction:column;gap:22px;z-index:15}
+.ico i{display:block;width:44px;height:44px;border-radius:50%;background:#ffffff22;border:1.5px solid #ffffff66;backdrop-filter:blur(2px)}
+.prog{position:absolute;left:18px;right:18px;bottom:20px;height:3px;background:#ffffff33;z-index:15}.prog b{display:block;width:42%;height:100%;background:#fff}
+.louv{position:absolute;inset:0;background:repeating-linear-gradient(90deg,#0c0c0c 0 12px,#8d8d89 12px 15px,#cfcfca 15px 40px)}
+.rings{position:absolute;inset:-20%;background:repeating-radial-gradient(circle at 50% 50%,transparent 0 22px,rgba(255,255,255,.16) 23px 24px,transparent 25px 46px);-webkit-mask-image:radial-gradient(circle,#000 25%,transparent 70%);mask-image:radial-gradient(circle,#000 25%,transparent 70%)}
+.plate{position:absolute;border-radius:50%;background:radial-gradient(circle at 38% 30%,#fbfbf9,#d8d8d4 38%,#8c8c88 72%,#4b4b49);box-shadow:0 40px 60px rgba(0,0,0,.7),0 0 0 10px #101010,0 0 0 11px #ffffff22}

@@ -46,3 +46,12 @@ reactive lattice. **New dependencies: `geist` (fonts, OFL). No animation librari
 ## Performance rules (measured, see HANDOFF)
 No CSS `mask-image` over canvases (use gradient overlays); canvases pause off-screen, in background tabs and while
 scrolling; no `backdrop-filter` except the scrolled nav; images/video via `MediaFrame` are lazy (`preload="none"`).
+
+## Mockup imagery (`design/mockups`, output `public/images/mockups`)
+There is no stock photography or image generator in the pipeline. Concept websites, device lineup, phone reels and Meta ads are
+**HTML/CSS scenes rendered to JPEG** with a consistent "edit" (monochrome grade, grain, vignette). Edit a scene in
+`design/mockups/scenes/*.html` and run `npm run mockups` (needs Chromium; `npm i` provides `playwright-core`).
+Concepts are fictional businesses and labelled "Concept" in the UI. Replace with real client work by swapping the entry in
+`src/content/concepts.ts` / `src/content/media.ts` / `src/content/work.ts`.
+Real screenshots (CrewBoss) live in `public/images/work` and were captured from the product's public landing page.
+

@@ -2,18 +2,33 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Is the signed-in user allowed to use the CRM?
+ * Can the signed-in user use the CRM?
  *
- * Asks Postgres (`public.is_owner()`: the owner, or a user the owner added to
- * `public.app_team`). This is the same predicate every RLS policy uses, so the
- * UI gate and the data gate can never disagree. Cached per request.
+ *   ok      – `public.is_owner()` says yes (owner, or a member of `public.app_team`).
+ *   denied  – the database is up to date and this account is not authorised.
+ *   legacy  – `is_owner()` does not exist yet, i.e. migrations 0014+ have not been
+ *             applied to this database. At that point the database's own policies are
+ *             the old "any signed-in user" ones, so this check cannot add protection;
+ *             the CRM stays usable (with a visible warning) instead of locking the
+ *             owner out of their own system.
+ *   error   – the check itself failed (network/DB); never reported as "no access".
  *
- * A signed-in but unauthorised account is shown a "no access" page and can
- * read nothing — RLS returns zero rows regardless of what the UI does.
+ * Postgres RLS (`is_owner()`) remains the real gate on every row once migrated.
  */
-export const hasCrmAccess = cache(async (): Promise<boolean> => {
+export type AccessState =
+  | { status: "ok" }
+  | { status: "denied" }
+  | { status: "legacy" }
+  | { status: "error"; message: string };
+
+export const getAccessState = cache(async (): Promise<AccessState> => {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("is_owner");
-  if (error) return false;
-  return data === true;
+  if (error) {
+    if (/could not find the function|does not exist|schema cache/i.test(error.message)) {
+      return { status: "legacy" };
+    }
+    return { status: "error", message: error.message };
+  }
+  return data === true ? { status: "ok" } : { status: "denied" };
 });

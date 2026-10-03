@@ -13,7 +13,11 @@ export function ProcessSection() {
   return (
     <Section id="process" className="overflow-hidden bg-coal">
       <div className="site-wrap">
-        <SectionHeading eyebrow="Process" title="From tangled to clear." />
+        <SectionHeading
+          eyebrow="Process"
+          title="From first call to launch, in four steps."
+          lead="Every project runs the same way, so you always know what is happening and what comes next."
+        />
       </div>
 
       <div className="relative mt-16 h-[300px] md:mt-24 md:h-[380px]">
@@ -21,8 +25,8 @@ export function ProcessSection() {
         <div className="absolute inset-y-0 left-0 w-[12%] bg-gradient-to-r from-coal to-transparent" aria-hidden />
         <div className="absolute inset-y-0 right-0 w-[12%] bg-gradient-to-l from-coal to-transparent" aria-hidden />
         <div className="site-wrap relative flex h-full items-end justify-between pb-2">
-          <p className="t-label">Problem</p>
-          <p className="t-label">Solution</p>
+          <p className="t-label">Your brief</p>
+          <p className="t-label">The finished work</p>
         </div>
       </div>
 
