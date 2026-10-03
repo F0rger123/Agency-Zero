@@ -1,5 +1,8 @@
 # Handoff log (newest first)
 
+## 2026-10-03 (6) — Claude — About rewritten for a solo owner; real Instagram
+About page now names Luke Knight as sole owner (first person, no "team/studio" claims); home CTA no longer says "one studio". Footer socials reduced to the real Instagram (https://www.instagram.com/agency.zer0/); placeholder LinkedIn/YouTube removed. Reel mockups show @agency.zer0. `site.owner` / `site.instagram` in `src/lib/site-config.ts`. No migrations.
+
 ## 2026-10-03 (5) — Claude — calendar defaults to month view
 Owner confirmed migrations 0014–0019 applied and website leads arrive in the CRM. `/app/calendar` now opens in **month** view (`?view=week|day` still work). No migrations.
 

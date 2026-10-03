@@ -5,13 +5,11 @@
 export const site = {
   name: "Agency Zero",
   wordmark: "AGENCY ZER0",
-  // TODO(content): real socials and phone.
+  // TODO(content): phone number (and other socials) if wanted.
   email: "drummerforger@gmail.com",
-  socials: [
-    { label: "Instagram", href: "https://instagram.com/" },
-    { label: "LinkedIn", href: "https://linkedin.com/" },
-    { label: "YouTube", href: "https://youtube.com/" },
-  ],
+  owner: "Luke Knight",
+  instagram: "https://www.instagram.com/agency.zer0/",
+  socials: [{ label: "Instagram", href: "https://www.instagram.com/agency.zer0/" }],
 } as const;
 
 export const nav = [

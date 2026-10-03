@@ -69,7 +69,7 @@ function Hero() {
         <div className="mt-10 grid items-end gap-10 md:mt-14 md:grid-cols-12">
           <Reveal delay={200} className="md:col-span-5">
             <p className="t-lead max-w-md">
-              Custom software. Website design. SEO. Paid media. Content. One studio, one standard — so the work around your
+              Custom software. Website design. SEO. Paid media. Content. One person, one standard — so the work around your
               business finally fits together.
             </p>
           </Reveal>
