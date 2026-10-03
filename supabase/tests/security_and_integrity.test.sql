@@ -180,3 +180,31 @@ end $$;
 select pg_temp.expect_error($q$insert into public.app_team (user_id) values (gen_random_uuid())$q$, 'permission denied');
 reset role;
 delete from public.app_team;
+
+-- ── website leads (0019) ───────────────────────────────────────────────────
+reset role;
+reset request.jwt.claim.sub;
+set role anon;
+select public.submit_lead('Pat Example', 'Example Co', 'Pat@Example.com', null, array['software','websites'], '$5k–$15k', 'Need a CRM', 'hash-1') as lead_id \gset
+select pg_temp.expect_error($q$select public.submit_lead('', null, 'a@b.co', null, '{}', null, null)$q$, 'Please enter your name');
+select pg_temp.expect_error($q$select public.submit_lead('X', null, 'not-an-email', null, '{}', null, null)$q$, 'valid email');
+select pg_temp.expect_error($q$select public.submit_lead('X', null, 'x@y.co', null, array['hacking'], null, null)$q$, 'Invalid service');
+do $$ begin assert (select count(*) from public.leads) = 0, 'anon cannot read leads'; end $$;
+reset role;
+select public.submit_lead('B', null, 'pat@example.com', null, '{}', null, null);
+select public.submit_lead('C', null, 'pat@example.com', null, '{}', null, null);
+set role anon;
+select pg_temp.expect_error($q$select public.submit_lead('D', null, 'PAT@example.com', null, '{}', null, null)$q$, 'Too many requests');
+reset role;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';   -- stranger (not on the team any more)
+do $$ begin assert (select count(*) from public.leads) = 0, 'stranger cannot read leads'; end $$;
+select pg_temp.expect_error(format('select public.convert_lead_to_client(%L)', :'lead_id'), 'Lead not found');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';   -- owner
+select public.convert_lead_to_client(:'lead_id') as new_client \gset
+do $$ begin
+  assert (select status from public.leads where id = (select id from public.leads order by created_at limit 1)) = 'converted', 'lead converted';
+  assert (select count(*) from public.contacts where client_id = (select client_id from public.leads where status = 'converted')) = 1, 'primary contact created';
+  assert (select source from public.clients order by created_at desc limit 1) = 'website', 'client source';
+end $$;
+reset role;

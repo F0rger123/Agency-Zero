@@ -9,6 +9,7 @@
  */
 export const navItems = [
   { label: "Dashboard", href: "/app", icon: "dashboard" },
+  { label: "Leads", href: "/app/leads", icon: "leads" },
   { label: "Clients", href: "/app/clients", icon: "clients" },
   { label: "Projects", href: "/app/projects", icon: "projects" },
   { label: "Tasks", href: "/app/tasks", icon: "tasks" },

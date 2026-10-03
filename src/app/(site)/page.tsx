@@ -1,12 +1,40 @@
 import Link from "next/link";
 import { AsciiReactionLazy } from "@/components/site/ascii-reaction-lazy";
+import { BrandMoment } from "@/components/site/brand-moment";
 import { Reveal } from "@/components/site/reveal";
+import { ContentSection } from "@/components/site/sections/content-section";
+import { CtaSection } from "@/components/site/sections/cta-section";
+import { ProcessSection } from "@/components/site/sections/process-section";
+import { SeoSection } from "@/components/site/sections/seo-section";
+import { ServicesSection } from "@/components/site/sections/services-section";
+import { SoftwareSection } from "@/components/site/sections/software-section";
+import { WebsitesSection } from "@/components/site/sections/websites-section";
+import { WorkSection } from "@/components/site/sections/work-section";
 import { services } from "@/lib/site-config";
+
+const organizationLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Agency Zero",
+  description:
+    "Custom software and CRMs, websites, SEO, Meta ads, social media and video content, built as one system.",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://agencyzero.com",
+};
 
 export default function HomePage() {
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }} />
       <Hero />
+      <BrandMoment />
+      <ServicesSection />
+      <SoftwareSection />
+      <WebsitesSection />
+      <SeoSection />
+      <ContentSection />
+      <WorkSection />
+      <ProcessSection />
+      <CtaSection />
     </>
   );
 }
@@ -14,17 +42,15 @@ export default function HomePage() {
 function Hero() {
   return (
     <section className="relative isolate flex min-h-[100svh] flex-col justify-end overflow-hidden pt-28">
-      {/* Atmosphere: the reaction field lives on the right/bottom and fades under the headline. */}
-      <div
-        className="absolute inset-0 -z-10 [mask-image:linear-gradient(to_right,transparent_8%,#000_62%)] max-md:[mask-image:linear-gradient(to_bottom,transparent_10%,#000_70%)]"
-        aria-hidden
-      >
-        <div className="absolute inset-0 [mask-image:linear-gradient(to_bottom,transparent_2%,#000_22%,#000_72%,transparent_96%)]">
-          <AsciiReactionLazy />
-        </div>
+      {/* Atmosphere: the reaction field sits right/bottom; plain gradient overlays (cheaper than CSS masks)
+          fade it out under the headline and at the edges. */}
+      <div className="absolute inset-0 -z-10" aria-hidden>
+        <AsciiReactionLazy />
+        <div className="absolute inset-y-0 left-0 w-[70%] bg-gradient-to-r from-ink via-ink/70 to-transparent max-md:hidden" />
+        <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-ink via-ink/70 to-transparent md:h-1/3 max-md:from-ink" />
+        <div className="absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-ink to-transparent" />
       </div>
       <div className="depth-top absolute inset-0 -z-10" aria-hidden />
-      <div className="absolute inset-x-0 bottom-0 -z-10 h-1/3 bg-gradient-to-t from-ink to-transparent" aria-hidden />
 
       <div className="site-wrap pb-10 md:pb-14">
         <Reveal>

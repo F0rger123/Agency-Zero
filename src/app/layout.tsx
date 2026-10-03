@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     template: "%s — Agency Zero",
   },
   description:
-    "Private agency operating system: clients, projects, tasks, sales, and delivery in one place.",
+    "Agency Zero — custom software, websites, SEO, Meta ads, social media and video content.",
 };
 
 export const viewport: Viewport = {

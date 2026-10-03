@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
@@ -5,6 +6,8 @@ import { hasCrmAccess } from "@/lib/access";
 import { NoAccess } from "@/components/no-access";
 import { AppShell } from "@/components/app-shell";
 import { SetupRequired } from "@/components/states";
+
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 /**
  * Authenticated shell. The proxy already bounces anonymous visitors; this

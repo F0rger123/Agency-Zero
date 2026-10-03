@@ -36,14 +36,24 @@ records what was verified and when.
 | `docs/development/IDEAS.md` | Unscheduled ideas (was `docs/IDEAS_BACKLOG.md`) |
 | `docs/development/HANDOFF.md` | Session-to-session notes, newest first |
 | `docs/development/AUDIT.md` | Latest verified audit of main |
+| `docs/development/DESIGN_SYSTEM.md` | Public-site design system, primitives, sources, performance rules |
+| `docs/development/SITE_CONTENT.md` | Placeholder content/assets the owner must supply |
 | `docs/BUILD_PROGRESS.md` | Historical change log (append-only; no longer the roadmap) |
 | `docs/MASTER_SPEC.md`, `DECISIONS.md`, `DATABASE_PLAN.md`, `DEPLOYMENT.md` | Reference |
+
+## Two products, one repo
+- **Public marketing site** — `src/app/(site)`, `src/components/site`, `src/content`, dark design system
+  (`docs/development/DESIGN_SYSTEM.md`). Public, static, no login. Content to replace: `docs/development/SITE_CONTENT.md`.
+- **CRM** — `src/app/app/**` (URL `/app/**`), light system. Protected by proxy + `is_owner()` layout + RLS.
+  All in-app links use `appPath()` / `crmHref()` from `src/lib/routes.ts`.
+- Never import site components into the CRM or the reverse. Public pages must never read CRM tables (only the
+  narrow anonymous RPCs `submit_lead`, `get_public_*`, `respond_public_quote`, `sign_public_contract`).
 
 ## Engineering rules
 - **Customer-first**: work belongs inside `Client → Project → …` workspaces. Global
   pages (`/tasks`, `/invoices`…) are cross-cutting views, not the primary place to work.
 - **Migrations are append-only.** Never edit an applied migration. Next number is
-  **0018**. `0009` is intentionally missing (see AUDIT.md §Migrations).
+  **0020**. `0009` is intentionally missing (see AUDIT.md §Migrations).
 - **RLS on every table.** Policies must use the owner check, not just "authenticated"
   (see ROADMAP P0). New `security definer` functions need `set search_path`, an
   explicit `revoke ... from public` and targeted grants.

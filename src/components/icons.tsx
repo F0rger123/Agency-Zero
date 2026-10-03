@@ -20,6 +20,11 @@ const paths: Record<string, JSX.Element> = {
       <path d="M5 20c.9-3.4 3.7-5.5 7-5.5s6.1 2.1 7 5.5" />
     </>
   ),
+  leads: (
+    <>
+      <path d="M4 5.5h16l-6.2 7.2v5.3l-3.6 1.8v-7.1z" />
+    </>
+  ),
   projects: (
     <path d="M3.5 6.5c0-1.1.9-2 2-2h4l2 2.5h7c1.1 0 2 .9 2 2v8.5c0 1.1-.9 2-2 2h-13c-1.1 0-2-.9-2-2z" />
   ),

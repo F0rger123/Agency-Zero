@@ -153,17 +153,26 @@ export function AsciiReaction({ className = "" }: { className?: string }) {
     let s = 12345;
     const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
     for (let b = 0; b < blobs; b++) seedBlob(f, Math.floor(rnd() * cols), Math.floor(rnd() * rows));
-    for (let n = 0; n < 320; n++) step(f);
+    // Warm-up so the field already has structure; fewer steps on small screens (main-thread cost).
+    const warm = width < 700 ? 140 : 260;
+    for (let n = 0; n < warm; n++) step(f);
     fieldRef.current = f;
     draw();
   }, [draw]);
 
   useEffect(() => {
-    build();
+    // Build when the browser is idle so the headline paints first.
+    const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    const idleId = idle ? idle(build, { timeout: 800 }) : window.setTimeout(build, 120);
     const host = hostRef.current;
     if (!host) return;
     let timer = 0;
+    let first = true; // ResizeObserver fires once on observe(); the idle build already covers it
     const ro = new ResizeObserver(() => {
+      if (first) {
+        first = false;
+        return;
+      }
       window.clearTimeout(timer);
       timer = window.setTimeout(build, 180);
     });
@@ -186,6 +195,7 @@ export function AsciiReaction({ className = "" }: { className?: string }) {
     };
     window.addEventListener("pointermove", onMove, { passive: true });
     return () => {
+      if (!idle) window.clearTimeout(idleId);
       window.clearTimeout(timer);
       ro.disconnect();
       window.removeEventListener("pointermove", onMove);

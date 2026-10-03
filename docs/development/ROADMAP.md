@@ -1,5 +1,7 @@
 # Roadmap (prioritized, 2026-09-28)
 
+> **2026-10-03:** focus temporarily shifted to the public marketing site (done through Stage 4 except real content/assets) — the P1 customer-first CRM model below is still next for the CRM itself.
+
 Supersedes the phase list in `docs/BUILD_PROGRESS.md` (kept as history). Order reflects
 "strong foundation before AI, customer-first UX". Each item should end with docs +
 handoff per AGENTS.md.

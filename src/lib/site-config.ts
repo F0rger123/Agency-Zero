@@ -29,6 +29,8 @@ export const services: readonly {
   title: string;
   short: string;
   summary: string;
+  /** Plain-language outcomes (no guarantees, no invented numbers). */
+  points: readonly string[];
 }[] = [
   {
     slug: "software",
@@ -36,6 +38,7 @@ export const services: readonly {
     title: "Custom software & CRMs",
     short: "Software",
     summary: "Internal tools, CRMs and automations built around how your business actually runs.",
+    points: ["Less repetitive admin", "Fewer disconnected tools", "Software shaped around your actual workflow"],
   },
   {
     slug: "websites",
@@ -43,6 +46,7 @@ export const services: readonly {
     title: "Websites",
     short: "Websites",
     summary: "Custom-designed, fast, responsive sites with motion, conversion and SEO built in.",
+    points: ["Custom design, no templates", "Fast, responsive, accessible builds", "SEO foundations and conversion thinking"],
   },
   {
     slug: "seo",
@@ -50,6 +54,7 @@ export const services: readonly {
     title: "SEO",
     short: "SEO",
     summary: "Be easier to find in Google, AI search and local discovery.",
+    points: ["Technical and on-page foundations", "Local and Google Business presence", "Content that answers real searches"],
   },
   {
     slug: "meta-ads",
@@ -57,6 +62,7 @@ export const services: readonly {
     title: "Meta ads",
     short: "Meta Ads",
     summary: "Paid social on Facebook and Instagram: creative, targeting, tracking and iteration.",
+    points: ["Creative built for the feed", "Tracking you can actually read", "Steady testing and iteration"],
   },
   {
     slug: "social",
@@ -64,6 +70,7 @@ export const services: readonly {
     title: "Social media",
     short: "Social",
     summary: "Consistent, on-brand organic presence without it becoming your second job.",
+    points: ["A consistent, on-brand presence", "Planned content calendar", "Community and response handled"],
   },
   {
     slug: "content",
@@ -71,5 +78,6 @@ export const services: readonly {
     title: "Video & content",
     short: "Content",
     summary: "Short-form video, shoots and campaign creative that gives the other channels something to say.",
+    points: ["Short-form video and shoots", "Campaign and ad creative", "One production pipeline for every channel"],
   },
 ];

@@ -63,6 +63,11 @@ src/proxy.ts     Next.js 16 proxy (auth session + route protection)
 open-next.config.ts / wrangler.jsonc  Cloudflare OpenNext Worker configuration
 ```
 
+## Routes
+
+`/` public marketing site · `/app/**` protected CRM (owner / authorised team) · `/login` · `/q/<token>` and `/c/<token>`
+customer links. See `docs/DEPLOYMENT.md` ("Public site + CRM on one domain").
+
 ## Documentation
 
 Agents: start with [`AGENTS.md`](AGENTS.md) (session protocol) and [`docs/development/`](docs/development/) (VISION, ROADMAP, ACTIVE, BUGS, IDEAS, HANDOFF, AUDIT). The docs in [`/docs`](docs/) are the permanent record:

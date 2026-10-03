@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isMissingTable } from "@/lib/forms";
@@ -48,10 +49,13 @@ export default async function DashboardPage() {
   const today = todayIso();
   // Two cheap aggregates in parallel. Revenue is a separate read model so a
   // missing migration 0018 degrades only the revenue cards, never the dashboard.
-  const [{ data, error }, revenueResponse] = await Promise.all([
+  const [{ data, error }, revenueResponse, leadsResponse] = await Promise.all([
     supabase.rpc("get_dashboard_summary", { p_today: today }),
     supabase.rpc("get_revenue_summary", { p_today: today }),
+    // New website inquiries (migration 0019). Errors (e.g. not applied yet) just hide the strip.
+    supabase.from("leads").select("id", { count: "exact", head: true }).eq("status", "new"),
   ]);
+  const newLeads = leadsResponse.error ? 0 : (leadsResponse.count ?? 0);
   const revenue = revenueResponse.error ? null : (revenueResponse.data as RevenueSummary | null);
   if (revenueResponse.error && !isMissingTable(revenueResponse.error.message) && !revenueResponse.error.message.includes("Could not find the function")) {
     throw new Error(revenueResponse.error.message);
@@ -102,6 +106,18 @@ export default async function DashboardPage() {
   return (
     <>
       {header}
+      {newLeads > 0 ? (
+        <Link
+          href="/app/leads"
+          className="mb-10 flex items-center justify-between border border-border px-5 py-4 text-sm transition-colors hover:bg-muted"
+        >
+          <span>
+            <span className="font-medium">{newLeads} new website {newLeads === 1 ? "lead" : "leads"}</span>
+            <span className="text-muted-foreground"> waiting for a reply</span>
+          </span>
+          <span aria-hidden>→</span>
+        </Link>
+      ) : null}
       <RevenueCards revenue={revenue} mrrCents={summary.recurring.mrr_cents} currency={summary.currency} />
 
       <div className="mt-14">

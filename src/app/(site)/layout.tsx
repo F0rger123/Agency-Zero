@@ -34,6 +34,9 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       >
         Skip to content
       </a>
+      <noscript>
+        <style>{`.reveal{opacity:1!important;transform:none!important}`}</style>
+      </noscript>
       <SiteNav />
       <main id="main">{children}</main>
       <SiteFooter />

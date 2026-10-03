@@ -1,5 +1,35 @@
 # Handoff log (newest first)
 
+## 2026-10-03 — Claude — public site (Stages 1–4), /app routing, Total Revenue, leads
+**Did**
+- **Stage 1**: CRM moved from `/` to `/app/**` (`src/lib/routes.ts`; all links/revalidations updated; DB-provided hrefs go through `crmHref`).
+  Proxy now only runs for `/app` and `/login`; unauthenticated → `/login?next=…` (same-site paths only). CRM layout also requires
+  `is_owner()` (new `NoAccess` page); migration `0018` adds `app_team` so the owner can authorise others via SQL.
+  Dashboard **Total Revenue / Revenue this month / MRR / Outstanding** from `get_revenue_summary()` (non-voided payments only).
+  Public design system, nav, footer, ASCII reaction hero.
+- **Stage 2**: brand parallax moment, services wheel, software section (code spotlight + CRM mockup), websites (dot lattice +
+  3D unfurling gallery), SEO (Google / AI search / local), content (media placeholders), work cards, process (gateway flow), CTA (layered text, particles).
+- **Stage 3**: `/services`, `/services/<6 slugs>` (real long-form copy, FAQ + JSON-LD), `/work`, `/about`, `/contact`; contact form →
+  `submit_lead()` → CRM **Leads** page (`/app/leads`: filter, mark contacted/dismissed, convert to client + contact) + dashboard "new leads" strip; sitemap/robots/404.
+- **Stage 4**: reduced-motion, keyboard, no-JS fallback, mobile pass, performance pass (see below).
+**Verified (locally, production build)**: lint, tsc, 18 unit tests, `next build`, SQL suite (adds team access, revenue, leads cases).
+HTTP check with Supabase configured but unreachable: all public routes 200; `/app`, `/app/clients`, `/app/leads`, `/app/invoices/123` → 307 to `/login?next=…`.
+Playwright (headless Chromium): desktop + 390px mobile screenshots of every section (no horizontal overflow, no page errors); tab order sane
+(skip link → wordmark → nav → login → CTAs); reduced-motion renders static compositions with 0 hidden reveals; honeypot path and
+graceful form failure verified. Perf (software-rendered, so pessimistic): CLS 0, LCP ≈1.3 s desktop / ≈2.3 s at 4× CPU throttle;
+long-task blocking 55→~20 ms desktop; scroll frames over 33 ms cut ~64%.
+**NOT verified / not claimed**: anything against real Supabase or Cloudflare (no production deploy was done); an authenticated owner
+logging in and an authenticated-but-unauthorised user seeing "No access" (logic covered by SQL tests + code, not an end-to-end browser run);
+real-device/GPU scroll feel, Safari/Firefox, screen-reader pass, Lighthouse scores; the lead form actually writing to the DB.
+**Migration/deploy requirements (order matters)**: apply `0014`→`0019` to production, THEN deploy. CRM URLs changed (`/app/...`) —
+update bookmarks and Supabase Auth Site/redirect URLs. Set `NEXT_PUBLIC_SITE_URL`. Add Cloudflare rate-limit for `POST /contact`.
+Smoke test after deploy: submit the contact form → lead appears in `/app/leads`; sign in → `/app` loads; Total Revenue matches the sum of
+recorded payments; a second (non-team) account gets "No access".
+**Owner to-do**: replace placeholder content (docs/development/SITE_CONTENT.md): real email/socials, case studies, screenshots, video,
+about story, OG image, privacy/terms pages; decide analytics. Not done: subtle CRM dashboard background motion (skipped to protect performance).
+**Branch note**: all work (audit fixes + site) is on `claude/compassionate-faraday-kixpre`, **not merged to main** — no PR exists yet.
+**Next**: owner review of the site; then P1 CRM model (migration `0020`+).
+
 ## 2026-10-01 (2) — Claude — audit remediation pass 2
 **Did**: migration `0016` (payments become a void-only ledger — trigger blocks delete/edit/un-void, void needs a
 reason; invoice status un-sticks after a void; workspace read models expose `voided_at`; contract signature

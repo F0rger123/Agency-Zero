@@ -31,7 +31,7 @@ required by the current application. Do not add one just to deploy this phase.
 ## Supabase production configuration
 
 1. Create a new Supabase project.
-2. Apply migrations `0001` through `0008` and `0010` through `0017` in numeric order (`0009` is a production-only out-of-band sync; see `supabase/README.md`). The preferred
+2. Apply migrations `0001` through `0008` and `0010` through `0019` in numeric order (`0009` is a production-only out-of-band sync; see `supabase/README.md`). The preferred
    repeatable path is:
 
    ```bash
@@ -167,4 +167,27 @@ Also keep Supabase Auth → "Allow new users to sign up" **off**. Since migratio
   is not acceptable later, switch to show-once links (rotate to view).
 - `cloudflare-env.d.ts` is a generated file (`npm run cf-typegen`); it is kept
   in the repo because Cloudflare builds do not run `cf-typegen`.
+
+## Public site + CRM on one domain (2026-10-03)
+
+| Path | Who | Notes |
+|---|---|---|
+| `/`, `/services`, `/services/<slug>`, `/work`, `/about`, `/contact` | Everyone | Statically prerendered. Proxy not invoked. |
+| `/sitemap.xml`, `/robots.txt` | Everyone | `/app`, `/login`, `/q`, `/c` are disallowed for crawlers. |
+| `/login` | Everyone | Supports `?next=/app/...` (same-site CRM paths only). |
+| `/app/**` | Owner + `app_team` members | Unauthenticated → redirect to `/login?next=…`. Signed in but unauthorised → "No access" page; RLS returns no rows regardless. |
+| `/q/<token>`, `/c/<token>` | Customers with the link | Unchanged. |
+
+**CRM URLs changed** (`/clients` → `/app/clients`, dashboard `/` → `/app`). Update any bookmarks, and the
+Supabase Auth **Site URL / redirect URLs** if they pointed at a CRM path (the callback now lands on `/app`).
+
+**Cloudflare**: the contact form is an unauthenticated write. Add the rate-limit rule for `POST /contact` described above
+(SQL also limits 3/hour per email and 5/hour per fingerprint). Set `NEXT_PUBLIC_SITE_URL` to the production origin.
+
+**Authorising a team member** (owner, via Supabase SQL editor):
+`insert into public.app_team (user_id) select id from auth.users where email = 'person@example.com';`
+Revoke: `delete from public.app_team where user_id = '<id>';`
+
+**Apply migrations `0014`–`0019` in order BEFORE deploying this branch** (the app calls `get_revenue_summary`, `submit_lead`,
+`convert_lead_to_client`, `is_owner`).
 
