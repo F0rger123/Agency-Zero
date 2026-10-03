@@ -20,8 +20,8 @@ export const navItems = [
   { label: "Quotes", href: "/app/quotes", icon: "quotes" },
   { label: "Contracts", href: "/app/contracts", icon: "contracts" },
   { label: "Invoices", href: "/app/invoices", icon: "invoices" },
-  { label: "Social", href: "/app/social", icon: "social", planned: true },
-  { label: "Marketing", href: "/app/marketing", icon: "marketing", planned: true },
+  { label: "Social", href: "/app/social", icon: "social" },
+  { label: "Marketing", href: "/app/marketing", icon: "marketing" },
   { label: "Settings", href: "/app/settings", icon: "settings" },
 ] as const;
 

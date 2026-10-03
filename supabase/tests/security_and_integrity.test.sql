@@ -208,3 +208,59 @@ do $$ begin
   assert (select source from public.clients order by created_at desc limit 1) = 'website', 'client source';
 end $$;
 reset role;
+
+-- ── record a payment in one step (0020) ────────────────────────────────────
+reset role;
+reset request.jwt.claim.sub;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';   -- owner
+select public.record_client_payment('10000000-0000-0000-0000-000000000001', 'Website build (one-time)', 250000, '2026-10-05', 'bank_transfer') as paid_inv \gset
+select set_config('t.paid_inv', :'paid_inv', false);
+do $$
+declare s jsonb; inv uuid := current_setting('t.paid_inv')::uuid;
+begin
+  assert (select status from public.invoices where id = inv) = 'paid', 'one-step payment invoice is paid';
+  assert (select balance_cents from public.invoices where id = inv) = 0, 'no balance left';
+  assert (select count(*) from public.payments where invoice_id = inv and amount_cents = 250000) = 1, 'payment recorded';
+  assert (select number from public.invoices where id = inv) ~ '^INV-2026-\d{4}$', 'invoice number allocated';
+  s := public.get_revenue_summary('2026-10-20');
+  assert (s ->> 'total_revenue_cents')::int = 252200, 'one-time fee counts toward Total Revenue';
+end $$;
+select pg_temp.expect_error($q$select public.record_client_payment('10000000-0000-0000-0000-000000000001', 'x', 0)$q$, 'greater than zero');
+select pg_temp.expect_error($q$select public.record_client_payment('10000000-0000-0000-0000-000000000001', '', 100)$q$, 'Describe what');
+select pg_temp.expect_error($q$select public.record_client_payment('20000000-0000-0000-0000-000000000002', 'x', 100)$q$, 'Client not found');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';   -- stranger: RLS hides the client
+select pg_temp.expect_error($q$select public.record_client_payment('10000000-0000-0000-0000-000000000001', 'x', 100)$q$, 'Client not found');
+reset role;
+set role anon;
+select pg_temp.expect_error($q$select public.record_client_payment('10000000-0000-0000-0000-000000000001', 'x', 100)$q$, 'permission denied');
+reset role;
+
+-- ── marketing campaigns + social posts (0021) ──────────────────────────────
+reset role;
+reset request.jwt.claim.sub;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';   -- owner
+insert into public.marketing_campaigns (client_id, name, channel, budget_cents)
+  values ('10000000-0000-0000-0000-000000000001', 'Spring promo', 'meta_ads', 150000);
+insert into public.social_posts (client_id, platform, format, caption)
+  values ('10000000-0000-0000-0000-000000000001', 'instagram', 'reel', 'Before / after');
+do $$ begin
+  assert (select count(*) from public.marketing_campaigns) = 1, 'owner reads campaigns';
+  assert (select count(*) from public.social_posts) = 1, 'owner reads posts';
+end $$;
+select pg_temp.expect_error($q$insert into public.marketing_campaigns (client_id, name, spend_cents) values ('10000000-0000-0000-0000-000000000001', 'x', -1)$q$, 'spend_cents');
+select pg_temp.expect_error($q$insert into public.marketing_campaigns (client_id, name, starts_on, ends_on) values ('10000000-0000-0000-0000-000000000001', 'x', '2026-10-10', '2026-10-01')$q$, 'check');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';   -- stranger
+do $$ begin
+  assert (select count(*) from public.marketing_campaigns) = 0, 'stranger cannot read campaigns';
+  assert (select count(*) from public.social_posts) = 0, 'stranger cannot read posts';
+end $$;
+select pg_temp.expect_error($q$insert into public.social_posts (client_id) values ('10000000-0000-0000-0000-000000000001')$q$, 'row-level security');
+reset role;
+set role anon;
+do $$ begin
+  assert (select count(*) from public.marketing_campaigns) = 0, 'anon cannot read campaigns';
+  assert (select count(*) from public.social_posts) = 0, 'anon cannot read posts';
+end $$;
+reset role;

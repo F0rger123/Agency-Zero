@@ -225,3 +225,40 @@ export async function voidPaymentAction(_previous: ActionState, formData: FormDa
   revalidatePath("/app");
   return { success: "Payment voided. It stays in the ledger but no longer counts toward the invoice." };
 }
+
+/**
+ * One-step "payment received": creates a paid invoice + payment through `record_client_payment`
+ * (migration 0020), so a one-time fee counts toward Total Revenue straight away.
+ */
+export async function recordClientPaymentAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const clientId = field(formData, "client_id");
+  const description = requiredText(formData, "description", "What the payment was for", 200);
+  if (typeof description !== "string") return description;
+  if (!clientId) return { error: "Client is missing." };
+  const amount = money(field(formData, "amount"), "Amount");
+  if (typeof amount !== "number") return amount;
+  if (amount <= 0) return { error: "Enter an amount greater than zero." };
+  const paidOn = optionalDate(formData, "paid_on");
+  const method = field(formData, "method") || "other";
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error } = await auth.supabase.rpc("record_client_payment", {
+    p_client_id: clientId,
+    p_description: description,
+    p_amount_cents: amount,
+    p_paid_on: paidOn,
+    p_method: method,
+    p_project_id: optionalField(formData, "project_id"),
+    p_reference: optionalField(formData, "reference"),
+  });
+  if (error) {
+    if (/could not find the function|schema cache/i.test(error.message)) {
+      return { error: "Recording payments needs database update 0020. Apply it in the Supabase SQL editor, then try again." };
+    }
+    return { error: readableError(error.message) };
+  }
+  revalidatePath("/app");
+  revalidatePath("/app/invoices");
+  revalidatePath("/app/clients");
+  return { success: "Payment recorded. It now counts toward Total Revenue." };
+}

@@ -347,3 +347,5 @@ by the payments trigger, while the time-based `overdue` state is derived at read
 time (`src/lib/invoice-status.ts`, and the read models above) so that rendering
 a page never writes to the database. `public.refresh_invoice_statuses()` remains
 available for a scheduled/back-office sweep.
+| 0020 | record_client_payment(): paid invoice + payment in one transaction (security invoker) |
+| 0021 | marketing_campaigns + social_posts (owner-only RLS) |

@@ -3,6 +3,16 @@
 import { useFormStatus } from "react-dom";
 import type { ChangeEventHandler, ReactNode } from "react";
 
+/**
+ * Primary action button: black with white text, everywhere.
+ *
+ * Callers that want a smaller, secondary button used to pass "bg-background text-muted-foreground …"
+ * overrides. Tailwind does not resolve two `bg-*` utilities by class order, so those buttons came out
+ * black with dark grey text, which is unreadable. Overrides are now reduced to sizing only: a caller
+ * that passes `bg-background` gets a compact black button, and colour classes are dropped.
+ */
+const COLOUR_OVERRIDES = /^(bg-|text-(muted-foreground|foreground|faint-foreground)|hover:text-|ring-|font-normal)/;
+
 export function SubmitButton({
   children,
   pendingLabel = "Saving…",
@@ -13,11 +23,17 @@ export function SubmitButton({
   className?: string;
 }) {
   const { pending } = useFormStatus();
+  const tokens = className.split(/\s+/).filter(Boolean);
+  const compact = tokens.includes("bg-background");
+  const extra = tokens.filter((token) => !COLOUR_OVERRIDES.test(token) && !(compact && /^p[xy]-0$/.test(token)));
+  const sets = (pattern: RegExp) => extra.some((token) => pattern.test(token));
+  const padding = sets(/^p[xy]-/) ? "" : compact ? "px-3 py-1.5" : "px-4 py-2";
+  const size = sets(/^text-(xs|sm|base)$/) ? "" : compact ? "text-xs" : "text-sm";
   return (
     <button
       type="submit"
       disabled={pending}
-      className={`inline-flex items-center justify-center rounded-md bg-inverted px-4 py-2 text-sm font-medium text-inverted-foreground transition-opacity hover:opacity-80 disabled:cursor-wait disabled:opacity-50 ${className}`}
+      className={`inline-flex items-center justify-center rounded-md bg-inverted font-medium text-inverted-foreground transition-opacity hover:opacity-80 disabled:cursor-wait disabled:opacity-50 ${padding} ${size} ${extra.join(" ")}`}
     >
       {pending ? pendingLabel : children}
     </button>

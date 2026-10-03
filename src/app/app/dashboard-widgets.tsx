@@ -110,7 +110,11 @@ export function RevenueCards({ revenue, mrrCents, currency }: { revenue: Revenue
                   {moneyLabel(revenue.total_revenue_cents, revenue.currency)}
                 </p>
                 <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-foreground">Total revenue</p>
-                <p className="mt-1 text-xs text-faint-foreground">All payments received</p>
+                <p className="mt-1 text-xs text-faint-foreground">
+                  {revenue.total_revenue_cents === 0
+                    ? "Nothing recorded yet. Open a client, then Invoices, then Record a payment."
+                    : "All payments received, one-time and recurring"}
+                </p>
               </div>
             </li>
             <li>

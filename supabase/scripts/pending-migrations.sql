@@ -874,4 +874,163 @@ $m0019x2$;
 revoke execute on function public.convert_lead_to_client(uuid) from public, anon;
 grant execute on function public.convert_lead_to_client(uuid) to authenticated;
 
+-- ▶ migrations/0020_record_client_payment.sql
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Agency Zero — 0020: record a payment received in one step
+--
+-- Total Revenue is the sum of payments received. Until now a payment could only be
+-- added to an existing invoice, so a one-time fee ("built a website, charged $2,500")
+-- never reached the dashboard unless an invoice was created first. This function
+-- creates a PAID invoice (one line item) and its payment in a single transaction,
+-- so the fee shows up in Total Revenue immediately and stays auditable in the
+-- invoice/payment ledger. Security INVOKER: RLS (is_owner()) applies.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+create or replace function public.record_client_payment(
+  p_client_id uuid,
+  p_description text,
+  p_amount_cents integer,
+  p_paid_on date default null,
+  p_method text default 'other',
+  p_project_id uuid default null,
+  p_reference text default null
+)
+returns uuid
+language plpgsql
+security invoker
+set search_path = public
+as $m0020x1$
+declare
+  v_paid_on date := coalesce(p_paid_on, current_date);
+  v_currency text;
+  v_year text := to_char(v_paid_on, 'YYYY');
+  v_next integer;
+  v_number text;
+  v_invoice uuid;
+  v_description text := trim(coalesce(p_description, ''));
+begin
+  if p_amount_cents is null or p_amount_cents <= 0 then
+    raise exception 'Enter an amount greater than zero';
+  end if;
+  if length(v_description) = 0 or length(v_description) > 200 then
+    raise exception 'Describe what the payment was for (up to 200 characters)';
+  end if;
+  if p_method not in ('bank_transfer', 'cash', 'card', 'other', 'stripe') then
+    raise exception 'Invalid payment method';
+  end if;
+  if not exists (select 1 from public.clients c where c.id = p_client_id and c.deleted_at is null) then
+    raise exception 'Client not found';
+  end if;
+  if p_project_id is not null
+     and not exists (select 1 from public.projects p where p.id = p_project_id and p.client_id = p_client_id) then
+    raise exception 'That project does not belong to this client';
+  end if;
+
+  select coalesce((select s.default_currency from public.settings s where s.id = 1), 'USD') into v_currency;
+
+  -- Serialise number allocation so two quick saves cannot pick the same number.
+  perform pg_advisory_xact_lock(hashtext('invoice-number'));
+  select coalesce(max((regexp_match(i.number, '^INV-' || v_year || '-(\d+)$'))[1]::integer), 0) + 1
+    into v_next
+  from public.invoices i
+  where i.number ~ ('^INV-' || v_year || '-\d+$');
+  v_number := 'INV-' || v_year || '-' || lpad(v_next::text, 4, '0');
+
+  insert into public.invoices (
+    client_id, project_id, number, title, status, issued_on, due_on, currency,
+    subtotal_cents, discount_cents, tax_cents, total_cents, deposit_cents, paid_cents, balance_cents
+  ) values (
+    p_client_id, p_project_id, v_number, v_description, 'sent', v_paid_on, v_paid_on, v_currency,
+    p_amount_cents, 0, 0, p_amount_cents, 0, 0, p_amount_cents
+  ) returning id into v_invoice;
+
+  insert into public.invoice_line_items (invoice_id, sort_order, description, qty, unit_amount_cents, amount_cents)
+  values (v_invoice, 0, v_description, 1, p_amount_cents, p_amount_cents);
+
+  -- The payment trigger recalculates paid/balance and flips the invoice to 'paid'.
+  insert into public.payments (invoice_id, amount_cents, paid_on, method, kind, reference)
+  values (v_invoice, p_amount_cents, v_paid_on, p_method::public.payment_method, 'full', nullif(trim(coalesce(p_reference, '')), ''));
+
+  return v_invoice;
+end;
+$m0020x1$;
+
+revoke execute on function public.record_client_payment(uuid, text, integer, date, text, uuid, text) from public, anon;
+grant execute on function public.record_client_payment(uuid, text, integer, date, text, uuid, text) to authenticated;
+
+-- ▶ migrations/0021_marketing_and_social.sql
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Agency Zero — 0021: marketing campaigns and social content
+--
+-- Two small owner-only tables so the Marketing and Social sections of the CRM
+-- are real working tools (before the ad-platform integrations exist):
+--   * marketing_campaigns — paid/organic campaigns per client, with budget,
+--     spend and results entered by hand.
+--   * social_posts — a content calendar per client and platform.
+-- Both follow the repo rules: RLS via is_owner(), integer minor units for money.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+create type public.campaign_channel as enum ('meta_ads', 'google_ads', 'seo', 'email', 'other');
+create type public.campaign_status as enum ('planned', 'active', 'paused', 'completed');
+
+create table public.marketing_campaigns (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid not null references public.clients (id) on delete restrict,
+  name text not null check (length(trim(name)) between 1 and 160),
+  channel public.campaign_channel not null default 'meta_ads',
+  status public.campaign_status not null default 'planned',
+  objective text check (objective is null or length(objective) <= 500),
+  starts_on date,
+  ends_on date,
+  budget_cents integer check (budget_cents is null or budget_cents >= 0),
+  spend_cents integer not null default 0 check (spend_cents >= 0),
+  leads_count integer not null default 0 check (leads_count >= 0),
+  results_note text check (results_note is null or length(results_note) <= 2000),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (ends_on is null or starts_on is null or ends_on >= starts_on)
+);
+create index marketing_campaigns_client_idx on public.marketing_campaigns (client_id, created_at desc);
+create index marketing_campaigns_status_idx on public.marketing_campaigns (status, starts_on);
+
+create type public.social_platform as enum ('instagram', 'facebook', 'tiktok', 'linkedin', 'youtube', 'x', 'other');
+create type public.social_format as enum ('post', 'reel', 'story', 'carousel', 'video');
+create type public.social_status as enum ('idea', 'drafting', 'scheduled', 'posted');
+
+create table public.social_posts (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid not null references public.clients (id) on delete restrict,
+  platform public.social_platform not null default 'instagram',
+  format public.social_format not null default 'post',
+  status public.social_status not null default 'idea',
+  caption text check (caption is null or length(caption) <= 4000),
+  scheduled_for timestamptz,
+  post_url text check (post_url is null or length(post_url) <= 500),
+  notes text check (notes is null or length(notes) <= 2000),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index social_posts_client_idx on public.social_posts (client_id, scheduled_for);
+create index social_posts_status_idx on public.social_posts (status, scheduled_for);
+
+alter table public.marketing_campaigns enable row level security;
+alter table public.social_posts enable row level security;
+
+create policy "Owner manages campaigns"
+  on public.marketing_campaigns for all to authenticated
+  using (public.is_owner()) with check (public.is_owner());
+create policy "Owner manages social posts"
+  on public.social_posts for all to authenticated
+  using (public.is_owner()) with check (public.is_owner());
+
+create trigger marketing_campaigns_set_updated_at
+  before update on public.marketing_campaigns
+  for each row execute function public.set_updated_at();
+create trigger social_posts_set_updated_at
+  before update on public.social_posts
+  for each row execute function public.set_updated_at();
+
+grant select, insert, update, delete on public.marketing_campaigns to authenticated;
+grant select, insert, update, delete on public.social_posts to authenticated;
+
 commit;

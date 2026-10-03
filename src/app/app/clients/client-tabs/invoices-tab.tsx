@@ -5,7 +5,7 @@ import Link from "next/link";
 import { invoiceStatusLabel } from "@/lib/invoice-status";
 import { FormSection } from "@/components/form-controls";
 import { dateLabel, moneyLabel } from "@/lib/format";
-import { NewInvoiceForm } from "../../invoices/invoice-forms";
+import { NewInvoiceForm, RecordClientPaymentForm } from "../../invoices/invoice-forms";
 import { clientFormOptions } from "../client-workspace-options";
 import type { ClientWorkspaceData } from "../client-workspace-types";
 import { Empty } from "../client-workspace-parts";
@@ -14,6 +14,13 @@ export function InvoicesTab({ data, currency }: { data: ClientWorkspaceData; cur
   const options = clientFormOptions(data);
   return (
     <div className="space-y-12">
+      <FormSection
+        title="Record a payment"
+        description="Got paid? Record it here and it counts toward Total Revenue straight away."
+      >
+        <RecordClientPaymentForm clientId={data.client.id} projects={options.projects} />
+      </FormSection>
+
       <FormSection title="Invoices" description="Billing history with derived balances.">
         {data.invoices.length === 0 ? (
           <Empty>No invoices yet. Create the first one below.</Empty>

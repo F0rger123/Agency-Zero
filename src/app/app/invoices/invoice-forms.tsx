@@ -9,6 +9,7 @@ import {
   voidPaymentAction,
   recordPaymentAction,
   updateInvoiceAction,
+  recordClientPaymentAction,
 } from "./actions";
 import { FieldLabel, FormMessage, SelectInput, SubmitButton, TextInput } from "@/components/form-controls";
 
@@ -404,5 +405,62 @@ export function VoidPaymentForm({ id, invoiceId }: { id: string; invoiceId: stri
       </SubmitButton>
       <FormMessage {...state} />
     </form>
+  );
+}
+
+/**
+ * "I got paid" in one step: what for, how much, when, how. Creates a paid invoice behind the scenes so
+ * the amount shows up in Total Revenue and in the client's invoice history.
+ */
+export function RecordClientPaymentForm({ clientId, projects }: { clientId: string; projects: Option[] }) {
+  const [state, action] = useActionState(recordClientPaymentAction, initialState);
+  const today = new Date().toISOString().slice(0, 10);
+  return (
+    <Shell title="Record a payment received">
+      <p className="mb-4 max-w-prose text-sm leading-6 text-muted-foreground">
+        Use this when a client has paid you, for example a one-time website fee. It creates a paid invoice for you and adds the
+        amount to Total Revenue.
+      </p>
+      <form action={action} className="space-y-4">
+        <input type="hidden" name="client_id" value={clientId} />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <FieldLabel label="What was it for?" htmlFor="client-payment-description" required />
+            <TextInput id="client-payment-description" name="description" required placeholder="Website build (one-time fee)" />
+          </div>
+          <div>
+            <FieldLabel label="Amount" htmlFor="client-payment-amount" required hint="dollars" />
+            <TextInput id="client-payment-amount" name="amount" type="number" min={0.01} step={0.01} required placeholder="2500" />
+          </div>
+          <div>
+            <FieldLabel label="Date received" htmlFor="client-payment-date" required />
+            <TextInput id="client-payment-date" name="paid_on" type="date" required defaultValue={today} />
+          </div>
+          <div>
+            <FieldLabel label="Method" htmlFor="client-payment-method" required />
+            <SelectInput id="client-payment-method" name="method" required defaultValue="bank_transfer">
+              <option value="bank_transfer">Bank transfer</option>
+              <option value="card">Card</option>
+              <option value="cash">Cash</option>
+              <option value="stripe">Stripe</option>
+              <option value="other">Other</option>
+            </SelectInput>
+          </div>
+          <div>
+            <FieldLabel label="Project" htmlFor="client-payment-project" hint="optional" />
+            <SelectInput id="client-payment-project" name="project_id">
+              <option value="">Not linked to a project</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>{project.label}</option>
+              ))}
+            </SelectInput>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-4">
+          <SubmitButton>Record payment</SubmitButton>
+          <FormMessage {...state} />
+        </div>
+      </form>
+    </Shell>
   );
 }
