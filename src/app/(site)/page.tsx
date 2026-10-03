@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { AsciiReactionLazy } from "@/components/site/ascii-reaction-lazy";
 import { BrandMoment } from "@/components/site/brand-moment";
@@ -12,19 +13,16 @@ import { WebsitesSection } from "@/components/site/sections/websites-section";
 import { WorkSection } from "@/components/site/sections/work-section";
 import { services } from "@/lib/site-config";
 
-const organizationLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "Agency Zero",
+export const metadata: Metadata = {
+  title: { absolute: "Agency Zero — Software, website design, SEO & content" },
   description:
-    "Custom software and CRMs, website design, SEO, Meta ads, social media and video content, built as one system.",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://agencyzero.com",
+    "Custom software and CRMs, website design, SEO, Meta ads, social media and video content for businesses, run by Luke Knight.",
+  alternates: { canonical: "/" },
 };
 
 export default function HomePage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }} />
       <Hero />
       <BrandMoment />
       <ServicesSection />
@@ -62,7 +60,7 @@ function Hero() {
 
         <Reveal delay={90}>
           <h1 className="t-display max-w-[15ch] md:max-w-[17ch]">
-            We build the systems, content and presence behind better businesses.
+            I build the software, websites and marketing behind better businesses.
           </h1>
         </Reveal>
 

@@ -53,9 +53,9 @@ export function SeoSection() {
     <Section id="seo">
       <div className="site-wrap">
         <SectionHeading
-          eyebrow="03 — SEO"
-          title="Be easier to find, wherever people ask."
-          lead="Customers now look for a business in three places at once. We make sure yours is clear, credible and findable in all of them — and that what they find makes them get in touch."
+          eyebrow="03 — SEO optimisation"
+          title="Get found on Google, maps and AI search."
+          lead="Customers now look for a business in three places at once. I make sure yours is clear, credible and easy to find in all of them, and that what they find makes them get in touch."
         />
 
         {/* 1 + 2: Google and AI side by side */}
@@ -199,8 +199,8 @@ export function SeoSection() {
 
         <Reveal className="mt-14 flex flex-wrap items-center justify-between gap-6">
           <p className="t-body max-w-xl">
-            We don&apos;t promise rankings — nobody honest can. We do the technical, content and local work that makes you easier to find
-            and easier to choose, and we report on it plainly.
+            I don&apos;t promise rankings, because nobody honest can. I do the technical, content and local work that makes you easier to find
+            and easier to choose, and I report on it plainly.
           </p>
           <Link href="/services/seo" className="btn">
             SEO &amp; search <span className="arrow" aria-hidden>→</span>

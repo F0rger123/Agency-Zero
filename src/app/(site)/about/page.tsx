@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CtaBand } from "@/components/site/cta-band";
+import { InstagramButton } from "@/components/site/instagram-button";
 import { PageHero } from "@/components/site/page-hero";
 import { Reveal } from "@/components/site/reveal";
 import { services, site } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: "About",
+  title: "About Luke Knight",
   description:
     "Agency Zero is run by Luke Knight: custom software for businesses, plus the website design, search presence and content that bring customers to them.",
   alternates: { canonical: "/about" },
@@ -22,9 +23,9 @@ export default function AboutPage() {
   return (
     <>
       <PageHero
-        eyebrow="About"
-        title="Software, websites and marketing from one person."
-        lead="I'm Luke Knight. I build custom software for businesses, and the website design, search presence and content that bring customers to it."
+        eyebrow="About Luke"
+        title="Hi, I'm Luke Knight."
+        lead="I run Agency Zero on my own. I build custom software for businesses, and the website design, search work and content that bring customers to them."
       />
 
       <section className="border-t border-rule py-24 md:py-32">
@@ -42,12 +43,10 @@ export default function AboutPage() {
               businesses, is live, and what I learn building it goes back into client work.
             </p>
             <p className="t-body max-w-xl">
-              Follow the work on{" "}
-              <a href={site.instagram} target="_blank" rel="noopener noreferrer" className="u-link text-bone">
-                Instagram @agency.zer0
-              </a>{" "}
-              or email <a href={`mailto:${site.email}`} className="u-link text-bone">{site.email}</a>.
+              The quickest way to reach me is email at <a href={`mailto:${site.email}`} className="u-link text-bone">{site.email}</a>,
+              and I post my work on Instagram.
             </p>
+            <InstagramButton className="mt-2" />
           </Reveal>
         </div>
       </section>

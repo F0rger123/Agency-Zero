@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { nav, services, site } from "@/lib/site-config";
+import { InstagramButton } from "./instagram-button";
 import { SiteWordmark } from "./wordmark";
 
 export function SiteFooter() {
@@ -44,16 +45,10 @@ export function SiteFooter() {
         </div>
 
         <div className="md:col-span-2">
-          <p className="t-label">Elsewhere</p>
-          <ul className="mt-5 space-y-3 text-sm">
-            {site.socials.map((social) => (
-              <li key={social.label}>
-                <a href={social.href} target="_blank" rel="noopener noreferrer" className="u-link">
-                  {social.label}
-                </a>
-              </li>
-            ))}
-          </ul>
+          <p className="t-label">Follow</p>
+          <div className="mt-5">
+            <InstagramButton />
+          </div>
         </div>
       </div>
 

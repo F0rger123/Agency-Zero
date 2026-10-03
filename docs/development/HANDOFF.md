@@ -1,5 +1,8 @@
 # Handoff log (newest first)
 
+## 2026-10-03 (7) — Claude — clearer concept-site copy, plain-language Websites cards, "Concept" labels, SEO, Instagram button
+Concept-site mockups re-written in plain language (what the business does, who for, clear buttons); the four jargon cards (colour palette, performance budget, focus ring, search markup) replaced by "Easy to use on a phone / Loads quickly / Readable and simple / Easy to find on Google". Work cards say **Concept** (not Example) with "The brief / What it shows". Nav + page renamed **About Luke** ("Hi, I'm Luke Knight."), no team/studio wording. `InstagramButton` (inline logo, opens https://www.instagram.com/agency.zer0/) in footer, About and Contact; LinkedIn/YouTube removed. SEO: site-wide JSON-LD (ProfessionalService + Person + WebSite), BreadcrumbList on service pages, OG/Twitter image (`public/og.jpg`, from `design/mockups/scenes/og.html`), canonical + absolute title on home, sitemap lastModified; the home SEO section is retitled "SEO optimisation". No migrations.
+
 ## 2026-10-03 (6) — Claude — About rewritten for a solo owner; real Instagram
 About page now names Luke Knight as sole owner (first person, no "team/studio" claims); home CTA no longer says "one studio". Footer socials reduced to the real Instagram (https://www.instagram.com/agency.zer0/); placeholder LinkedIn/YouTube removed. Reel mockups show @agency.zer0. `site.owner` / `site.instagram` in `src/lib/site-config.ts`. No migrations.
 

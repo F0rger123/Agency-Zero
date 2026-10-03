@@ -22,7 +22,7 @@ export function CrewbossCaseStudy() {
                 <dd className="t-body mt-2">Generic CRMs weren&apos;t built for crews in driveways: scheduling, checklists, photos and customer texts lived in separate places.</dd>
               </div>
               <div>
-                <dt className="t-label">What we built</dt>
+                <dt className="t-label">What I built</dt>
                 <dd className="mt-3 grid gap-x-6 gap-y-2 text-sm text-mist sm:grid-cols-2">
                   {[
                     "Scheduling & crew assignment",

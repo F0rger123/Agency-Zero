@@ -27,7 +27,7 @@ export function WorkCard({ item, index }: { item: WorkItem; index: number }) {
         )}
         <span className="t-label absolute left-4 top-4 bg-ink/70 px-2 py-1">0{index + 1}</span>
         {item.placeholder ? (
-          <span className="t-label absolute right-4 top-4 border border-rule-strong bg-ink/70 px-2 py-1 !text-bone/80">Example</span>
+          <span className="t-label absolute right-4 top-4 border border-rule-strong bg-ink/70 px-2 py-1 !text-bone/80">Concept</span>
         ) : (
           <span className="t-label absolute right-4 top-4 border border-bone/60 bg-ink/70 px-2 py-1 !text-bone">Live product</span>
         )}
@@ -41,7 +41,7 @@ export function WorkCard({ item, index }: { item: WorkItem; index: number }) {
 
         <dl className="mt-6 space-y-4 text-sm">
           <div>
-            <dt className="t-label">Problem</dt>
+            <dt className="t-label">{item.placeholder ? "The brief" : "Problem"}</dt>
             <dd className="mt-1 text-mist">{item.problem}</dd>
           </div>
           <div>
@@ -49,7 +49,7 @@ export function WorkCard({ item, index }: { item: WorkItem; index: number }) {
             <dd className="mt-1 text-mist">{item.delivered.join(" · ")}</dd>
           </div>
           <div>
-            <dt className="t-label">Outcome</dt>
+            <dt className="t-label">{item.placeholder ? "What it shows" : "Outcome"}</dt>
             <dd className="mt-1 text-mist">{item.outcome}</dd>
           </div>
         </dl>

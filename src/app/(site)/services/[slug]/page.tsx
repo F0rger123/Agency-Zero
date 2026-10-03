@@ -9,6 +9,8 @@ import { ServiceGlyph } from "@/components/site/service-glyph";
 import { servicePages } from "@/content/services";
 import { services, site, type ServiceSlug } from "@/lib/site-config";
 
+const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://agencyzero.com").replace(/\/$/, "");
+
 export function generateStaticParams() {
   return services.map((service) => ({ slug: service.slug }));
 }
@@ -36,7 +38,17 @@ export default async function ServicePageRoute({ params }: { params: Promise<{ s
     "@type": "Service",
     name: page.title,
     description: page.metaDescription,
-    provider: { "@type": "Organization", name: site.name },
+    provider: { "@type": "ProfessionalService", name: site.name, url: base },
+    url: `${base}/services/${slug}`,
+  };
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: base },
+      { "@type": "ListItem", position: 2, name: "Services", item: `${base}/services` },
+      { "@type": "ListItem", position: 3, name: page.title, item: `${base}/services/${slug}` },
+    ],
   };
   const faqLd = {
     "@context": "https://schema.org",
@@ -50,7 +62,7 @@ export default async function ServicePageRoute({ params }: { params: Promise<{ s
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([jsonLd, faqLd]) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([jsonLd, faqLd, breadcrumbLd]) }} />
 
       <PageHero
         eyebrow={`${meta.index} — ${page.title}`}

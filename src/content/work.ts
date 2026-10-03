@@ -2,8 +2,8 @@ import type { ServiceSlug } from "@/lib/site-config";
 
 /**
  * Selected work. Real entries have `placeholder: false`. Placeholders are
- * clearly tagged "Example" in the UI and contain NO invented metrics.
- * TODO(content): replace the examples with real projects as they are published.
+ * clearly tagged "Concept" in the UI and contain NO invented metrics.
+ * TODO(content): replace the concepts with real projects as they are published.
  */
 export type WorkImage = { src: string; alt: string; width: number; height: number; fit?: "cover" | "contain" };
 
@@ -34,7 +34,7 @@ export const work: WorkItem[] = [
   {
     slug: "crewboss",
     placeholder: false,
-    client: "CrewBoss — our own product",
+    client: "CrewBoss — my own product",
     sector: "Field-service software",
     title: "CrewBoss: a CRM built specifically for pressure-washing businesses",
     problem:
@@ -53,24 +53,24 @@ export const work: WorkItem[] = [
   {
     slug: "premium-brand-site",
     placeholder: true,
-    client: "Example project",
+    client: "Agency Zero concept",
     sector: "Professional services",
     title: "A website that finally looks as good as the work",
     problem: "A dated template site was undermining a premium offer.",
     delivered: ["Custom design", "Motion and interaction", "SEO foundations"],
-    outcome: "Outcome to be added once the project is published.",
+    outcome: "A concept showing the kind of work I would deliver for this type of business.",
     services: ["websites", "seo"],
     image: { src: "/images/mockups/work-site.jpg", alt: "Three concept websites side by side: an editorial architecture studio, a moody restaurant and a calm financial advisory firm", width: 2000, height: 1250 },
   },
   {
     slug: "launch-campaign",
     placeholder: true,
-    client: "Example project",
+    client: "Agency Zero concept",
     sector: "Local business",
     title: "A launch campaign across paid and organic",
     problem: "A new offer needed attention fast, with creative that matched the brand.",
     delivered: ["Meta ads", "Short-form video", "Social content plan"],
-    outcome: "Outcome to be added once the project is published.",
+    outcome: "A concept showing the kind of work I would deliver for this type of business.",
     services: ["meta-ads", "social", "content"],
     image: { src: "/images/mockups/work-campaign.jpg", alt: "A Meta feed ad, a before-and-after short-form video and a carousel ad from one concept launch campaign", width: 2000, height: 1250 },
   },

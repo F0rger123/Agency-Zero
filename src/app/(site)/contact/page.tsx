@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { InstagramButton } from "@/components/site/instagram-button";
 import { PageHero } from "@/components/site/page-hero";
 import { Reveal } from "@/components/site/reveal";
 import { site } from "@/lib/site-config";
@@ -37,6 +38,9 @@ export default function ContactPage() {
               <a href={`mailto:${site.email}?subject=${encodeURIComponent("Project inquiry")}`} className="u-link t-title mt-4 inline-block break-all !text-[clamp(1.2rem,2vw,1.7rem)]">
                 {site.email}
               </a>
+              <div className="mt-6">
+                <InstagramButton />
+              </div>
             </Reveal>
 
             <Reveal delay={180}>
