@@ -29,7 +29,7 @@ export default async function CalendarPage({
 }) {
   if (!isSupabaseConfigured()) return <SetupRequired />;
   const params = await searchParams;
-  const view = ["day", "week", "month"].includes(params.view ?? "") ? params.view! : "week";
+  const view = ["day", "week", "month"].includes(params.view ?? "") ? params.view! : "month";
   const selected = validDate(params.date);
   const rangeStart = view === "day" ? selected : view === "week" ? monday(selected) : `${selected.slice(0, 7)}-01`;
   const rangeEnd =

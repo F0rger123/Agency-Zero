@@ -1,5 +1,8 @@
 # Handoff log (newest first)
 
+## 2026-10-03 (5) — Claude — calendar defaults to month view
+Owner confirmed migrations 0014–0019 applied and website leads arrive in the CRM. `/app/calendar` now opens in **month** view (`?view=week|day` still work). No migrations.
+
 ## 2026-10-03 (4) — Claude — owner could not run the SQL; CRM errors; leads without email
 **Reported**: owner ran `pending-migrations.sql` in the Supabase editor → `42P13 no function body specified`; dashboard shows the generic
 "Something went wrong (ref …)"; many CRM errors. Cannot reproduce in Postgres (the old script runs cleanly as one simple query on a scratch DB),
