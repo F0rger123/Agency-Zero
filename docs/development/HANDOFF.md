@@ -1,5 +1,8 @@
 # Handoff log (newest first)
 
+## 2026-10-03 (9) — Claude — richer About / Work / Services pages; Cloudflare build status
+About: dot-field hero, new `PersonMoment` sticky scroll scene ("ONE PERSON. THE WHOLE JOB."), glyph service grid, bars divider, four-step "how a project runs", layered-text closing (`CtaSection` now takes copy props). Work: dot-field hero, CrewBoss case study, concept website gallery (BrowserGallery), reels + ads (MediaFrame), closing. Services: dot-field hero + bars divider. **Deploy note**: since commit 5c6a96d the Cloudflare check shows `failure` on every push (the owner still saw the old About). Pushing the same SHA to `main` AND a feature branch back-to-back is the only difference from the last green run (dc7c274) — from here on push to `main` only and watch the "Workers Builds" check; if it still fails, read the build log in the Cloudflare dashboard (build ids are in the check-run `details_url`).
+
 ## 2026-10-03 (8) — Claude — first-person copy
 Site copy (services, process, contact, form messages, CTAs) switched from "we/us/our" to "I/me/my" because Agency Zero is run solely by Luke Knight. Mockup images show fictional businesses and keep their own voice. No migrations.
 

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BarsDivider } from "@/components/site/bars-divider";
 import { CtaBand } from "@/components/site/cta-band";
+import { DotField } from "@/components/site/dot-field";
 import { PageHero } from "@/components/site/page-hero";
 import { Reveal } from "@/components/site/reveal";
 import { ServiceGlyph } from "@/components/site/service-glyph";
@@ -16,11 +18,15 @@ export const metadata: Metadata = {
 export default function ServicesPage() {
   return (
     <>
-      <PageHero
-        eyebrow="Services"
-        title="Six disciplines. One standard."
-        lead="Most businesses stitch these together from different vendors. I build and run them together, so your software, site, search presence and content all pull in the same direction."
-      />
+      <div className="relative">
+        <DotField />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_40%,transparent_20%,#000_85%)]" aria-hidden />
+        <PageHero
+          eyebrow="Services"
+          title="Six disciplines. One standard."
+          lead="Most businesses stitch these together from different vendors. I build and run them together, so your software, site, search presence and content all pull in the same direction."
+        />
+      </div>
 
       <section className="border-t border-rule">
         <ul className="site-wrap divide-y divide-rule">
@@ -42,6 +48,8 @@ export default function ServicesPage() {
           ))}
         </ul>
       </section>
+
+      <BarsDivider />
 
       <section className="border-t border-rule py-24 md:py-32">
         <div className="site-wrap grid gap-12 md:grid-cols-12">
