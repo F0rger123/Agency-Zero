@@ -82,7 +82,13 @@ export function SiteNav() {
               aria-controls="mobile-menu"
               onClick={() => setOpen((value) => !value)}
             >
-              {open ? "Close" : "Menu"}
+              <span className="inline-flex items-center gap-2">
+                <span aria-hidden className="relative block h-2.5 w-4">
+                  <span className={`absolute left-0 top-0 h-px w-full bg-bone transition-transform duration-300 ${open ? "translate-y-[5px] rotate-45" : ""}`} />
+                  <span className={`absolute bottom-0 left-0 h-px w-full bg-bone transition-transform duration-300 ${open ? "-translate-y-[4px] -rotate-45" : ""}`} />
+                </span>
+                {open ? "Close" : "Menu"}
+              </span>
             </button>
           </div>
         </div>
@@ -90,13 +96,17 @@ export function SiteNav() {
 
       <div
         id="mobile-menu"
-        hidden={!open}
-        className="fixed inset-0 z-40 bg-ink pt-24 md:hidden"
+        data-open={open}
+        aria-hidden={!open}
+        inert={!open}
+        className={`fixed inset-0 z-40 bg-ink pt-24 transition-[opacity,visibility,transform] duration-500 ease-[var(--ease-out)] md:hidden ${
+          open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-3 opacity-0"
+        }`}
       >
         <nav aria-label="Mobile" className="site-wrap flex h-full flex-col pb-10">
           <ul className="flex flex-col">
             {nav.map((item, index) => (
-              <li key={item.href} className="border-b border-rule">
+              <li key={item.href} className="menu-item border-b border-rule" style={{ "--i": index } as React.CSSProperties}>
                 <Link href={item.href} className="flex items-baseline justify-between py-5 t-title">
                   {item.label}
                   <span className="t-label">0{index + 1}</span>
@@ -104,7 +114,7 @@ export function SiteNav() {
               </li>
             ))}
           </ul>
-          <div className="mt-auto flex items-center justify-between">
+          <div className="menu-item mt-auto flex items-center justify-between" style={{ "--i": nav.length } as React.CSSProperties}>
             <Link href="/contact" className="btn btn-solid">
               Start a project <span className="arrow">→</span>
             </Link>

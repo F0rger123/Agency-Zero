@@ -42,7 +42,7 @@ function NavPendingDot() {
   );
 }
 
-function NavList({ onNavigate }: { onNavigate?: () => void }) {
+function NavList({ onNavigate, animated = false }: { onNavigate?: () => void; animated?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -84,7 +84,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
   );
 
   const items: readonly NavItem[] = navItems;
-  const renderLink = (item: NavItem) => {
+  const renderLink = (item: NavItem, index = 0) => {
     const active = item.href === "/app" ? pathname === "/app" : pathname.startsWith(item.href);
     return (
       <Link
@@ -95,7 +95,8 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
         onMouseEnter={() => prefetch(item.href)}
         onFocus={() => prefetch(item.href)}
         aria-current={active ? "page" : undefined}
-        className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+        style={animated ? ({ "--i": index } as React.CSSProperties) : undefined}
+        className={`press flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-[color,background-color,transform] ${animated ? "drawer-item" : ""} ${
           active
             ? "bg-muted font-medium text-foreground"
             : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
@@ -110,11 +111,15 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <nav aria-label="Main" className="flex flex-col gap-0.5 px-3">
-      {items.filter((item) => !item.planned).map(renderLink)}
-      <p className="mt-5 px-3 pb-1 text-[10px] font-medium uppercase tracking-widest text-faint-foreground">
-        Planned
-      </p>
-      {items.filter((item) => item.planned).map(renderLink)}
+      {items.filter((item) => !item.planned).map((item, index) => renderLink(item, index))}
+      {items.some((item) => item.planned) ? (
+        <>
+          <p className="mt-5 px-3 pb-1 text-[10px] font-medium uppercase tracking-widest text-faint-foreground">
+            Planned
+          </p>
+          {items.filter((item) => item.planned).map((item, index) => renderLink(item, index))}
+        </>
+      ) : null}
     </nav>
   );
 }
@@ -158,7 +163,39 @@ export function AppShell({
   email: string;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  // closed → opening (mounted, still off-screen) → open → closing (sliding out) → closed
+  const [phase, setPhase] = useState<"closed" | "opening" | "open" | "closing">("closed");
+  const visible = phase === "open";
+  const openDrawer = () => setPhase("opening");
+  const closeDrawer = () => setPhase((current) => (current === "closed" ? current : "closing"));
+
+  useEffect(() => {
+    if (phase === "opening") {
+      // Two frames so the off-screen state is painted before the slide starts.
+      let second = 0;
+      const first = requestAnimationFrame(() => {
+        second = requestAnimationFrame(() => setPhase("open"));
+      });
+      return () => {
+        cancelAnimationFrame(first);
+        cancelAnimationFrame(second);
+      };
+    }
+    if (phase === "closing") {
+      // Fallback for reduced motion, where no transition end fires.
+      const timer = window.setTimeout(() => setPhase("closed"), 380);
+      return () => window.clearTimeout(timer);
+    }
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase === "closed") return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeDrawer();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [phase]);
 
   return (
     <div className="min-h-screen">
@@ -167,9 +204,9 @@ export function AppShell({
         <button
           type="button"
           aria-label="Open menu"
-          aria-expanded={open}
-          onClick={() => setOpen(true)}
-          className="-ml-2 rounded-md p-2 text-foreground transition-colors hover:bg-muted"
+          aria-expanded={phase === "open" || phase === "opening"}
+          onClick={openDrawer}
+          className="press -ml-2 rounded-md p-2 text-foreground transition-[background-color,transform] hover:bg-muted"
         >
           <Icon name="menu" className="size-5" />
         </button>
@@ -185,33 +222,41 @@ export function AppShell({
         <SidebarFooter email={email} />
       </aside>
 
-      {/* Mobile drawer */}
-      {open ? (
+      {/* Mobile drawer: overlay fades, panel slides, links stagger in; the reverse on close. */}
+      {phase !== "closed" ? (
         <div
           className="fixed inset-0 z-40 lg:hidden"
           role="dialog"
           aria-modal="true"
           aria-label="Menu"
+          data-open={visible}
         >
           <button
             aria-label="Close menu"
             tabIndex={-1}
-            onClick={() => setOpen(false)}
-            className="absolute inset-0 bg-inverted/40"
+            onClick={closeDrawer}
+            className={`absolute inset-0 bg-inverted/40 transition-opacity duration-300 ease-out ${visible ? "opacity-100" : "opacity-0"}`}
           />
-          <div className="absolute inset-y-0 left-0 flex w-68 flex-col border-r border-border bg-background">
+          <div
+            onTransitionEnd={(event) => {
+              if (event.target === event.currentTarget && phase === "closing") setPhase("closed");
+            }}
+            className={`absolute inset-y-0 left-0 flex w-68 flex-col border-r border-border bg-background shadow-xl transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              visible ? "translate-x-0" : "-translate-x-full"
+            }`}
+          >
             <div className="flex h-16 items-center justify-between pl-0 pr-3">
               <Wordmark />
               <button
                 type="button"
                 aria-label="Close menu"
-                onClick={() => setOpen(false)}
-                className="rounded-md p-2 text-foreground transition-colors hover:bg-muted"
+                onClick={closeDrawer}
+                className="press rounded-md p-2 text-foreground transition-[background-color,transform] duration-200 hover:bg-muted hover:rotate-90"
               >
                 <Icon name="close" className="size-5" />
               </button>
             </div>
-            <NavList onNavigate={() => setOpen(false)} />
+            <NavList animated onNavigate={closeDrawer} />
             <SidebarFooter email={email} />
           </div>
         </div>

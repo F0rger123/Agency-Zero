@@ -529,3 +529,134 @@ html:has(.site) {
   outline: 2px solid var(--color-bone);
   outline-offset: 3px;
 }
+
+/* Typed text ─────────────────────────────────────────────────────────────── */
+:where(.typed) {
+  display: inline-block;
+}
+.typed-full::before {
+  content: attr(data-text);
+  visibility: hidden;
+}
+.typed-live {
+  position: absolute;
+  inset: 0;
+}
+.typed-live::before,
+.typed-live-inline::before {
+  content: attr(data-typed);
+}
+.typed-caret::before {
+  content: "|";
+}
+.typed-caret {
+  margin-left: 0.04em;
+  font-weight: 300;
+  opacity: 0.85;
+}
+
+/* Page transitions (opacity only, so sticky scenes inside keep working) ──── */
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.page-in {
+  animation: page-in 0.55s var(--ease-out) both;
+}
+
+/* Scroll progress line (CSS scroll-driven; ignored where unsupported) ────── */
+.scroll-progress {
+  display: none;
+}
+@supports (animation-timeline: scroll()) {
+  .scroll-progress {
+    display: block;
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 80;
+    height: 2px;
+    transform-origin: 0 50%;
+    background: var(--color-bone);
+    transform: scaleX(0);
+    animation: progress-grow linear both;
+    animation-timeline: scroll(root block);
+  }
+}
+@keyframes progress-grow {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Marquee ────────────────────────────────────────────────────────────────── */
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 38s linear infinite;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+/* Lift on hover for cards ────────────────────────────────────────────────── */
+.lift {
+  transition: transform 0.5s var(--ease-out), border-color 0.5s var(--ease-out), background-color 0.5s var(--ease-out);
+}
+.lift:hover {
+  transform: translateY(-4px);
+}
+
+/* Public mobile menu: stagger the links in ───────────────────────────────── */
+.menu-item {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out);
+}
+[data-open="true"] .menu-item {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(120ms + var(--i, 0) * 70ms);
+}
+
+/* CRM mobile drawer: stagger the nav items in ────────────────────────────── */
+.drawer-item {
+  opacity: 0;
+  transform: translateX(-12px);
+  transition: opacity 0.35s var(--ease-out), transform 0.35s var(--ease-out);
+}
+[data-open="true"] .drawer-item {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(140ms + var(--i, 0) * 28ms);
+}
+.press:active {
+  transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-in,
+  .marquee-track {
+    animation: none;
+  }
+  .scroll-progress {
+    display: none;
+  }
+  .lift:hover {
+    transform: none;
+  }
+  .menu-item,
+  .drawer-item {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

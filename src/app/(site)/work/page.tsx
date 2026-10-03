@@ -6,6 +6,7 @@ import { DotField } from "@/components/site/dot-field";
 import { MediaFrame } from "@/components/site/media-frame";
 import { PageHero } from "@/components/site/page-hero";
 import { Reveal } from "@/components/site/reveal";
+import { TypedText } from "@/components/site/typed-text";
 import { CtaSection } from "@/components/site/sections/cta-section";
 import { adCreative, contentReel } from "@/content/media";
 
@@ -36,7 +37,7 @@ export default function WorkPage() {
         <div className="site-wrap">
           <Reveal>
             <p className="t-label">Concept · Website design</p>
-            <h2 className="t-display mt-6 max-w-[18ch]">Five businesses, five different websites.</h2>
+            <h2 className="t-display mt-6 max-w-[18ch]"><TypedText text="Five businesses, five different websites." className="block" speed={24} /></h2>
             <p className="t-lead mt-8 max-w-xl">
               Each concept is designed around what that business needs visitors to do: call, book, enquire or join. None of them is a
               template.
@@ -52,7 +53,7 @@ export default function WorkPage() {
         <div className="site-wrap">
           <Reveal>
             <p className="t-label">Concept · Video and ads</p>
-            <h2 className="t-display mt-6 max-w-[18ch]">Content and ads that look like the brand.</h2>
+            <h2 className="t-display mt-6 max-w-[18ch]"><TypedText text="Content and ads that look like the brand." className="block" speed={24} /></h2>
             <p className="t-lead mt-8 max-w-xl">
               Short-form video for Instagram and Facebook Reels, and Meta ads with the offer, hook and call to action planned first.
             </p>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AsciiReactionLazy } from "@/components/site/ascii-reaction-lazy";
 import { BrandMoment } from "@/components/site/brand-moment";
+import { Marquee } from "@/components/site/marquee";
 import { Reveal } from "@/components/site/reveal";
 import { ContentSection } from "@/components/site/sections/content-section";
 import { CtaSection } from "@/components/site/sections/cta-section";
@@ -11,6 +12,7 @@ import { ServicesSection } from "@/components/site/sections/services-section";
 import { SoftwareSection } from "@/components/site/sections/software-section";
 import { WebsitesSection } from "@/components/site/sections/websites-section";
 import { WorkSection } from "@/components/site/sections/work-section";
+import { TypeRotator, TypedText } from "@/components/site/typed-text";
 import { services } from "@/lib/site-config";
 
 export const metadata: Metadata = {
@@ -25,6 +27,7 @@ export default function HomePage() {
     <>
       <Hero />
       <BrandMoment />
+      <Marquee items={["Custom software", "Website design", "SEO", "Meta ads", "Social media", "Video content"]} />
       <ServicesSection />
       <SoftwareSection />
       <WebsitesSection />
@@ -54,18 +57,25 @@ function Hero() {
         <Reveal>
           <p className="t-label mb-8 flex items-center gap-4">
             <span className="inline-block size-1.5 rounded-full bg-bone" aria-hidden />
-            Agency Zero — software, website design, search &amp; content
+            <TypedText text="Agency Zero — software, website design, search & content" speed={20} />
           </p>
         </Reveal>
 
         <Reveal delay={90}>
           <h1 className="t-display max-w-[15ch] md:max-w-[17ch]">
-            I build the software, websites and marketing behind better businesses.
+            <TypedText text="I build the software, websites and marketing behind better businesses." className="block" speed={26} delay={350} />
           </h1>
         </Reveal>
 
         <div className="mt-10 grid items-end gap-10 md:mt-14 md:grid-cols-12">
           <Reveal delay={200} className="md:col-span-5">
+            <p className="t-label mb-5">
+              Right now I&apos;m building{" "}
+              <TypeRotator
+                className="text-bone"
+                phrases={["a custom CRM", "a new website", "an SEO plan", "a Meta ads campaign", "short-form video"]}
+              />
+            </p>
             <p className="t-lead max-w-md">
               Custom software. Website design. SEO. Paid media. Content. One person, one standard — so the work around your
               business finally fits together.
@@ -77,7 +87,7 @@ function Hero() {
                 Start a project <span className="arrow" aria-hidden>→</span>
               </Link>
               <Link href="/work" className="btn">
-                See our work <span className="arrow" aria-hidden>→</span>
+                See my work <span className="arrow" aria-hidden>→</span>
               </Link>
             </div>
           </Reveal>

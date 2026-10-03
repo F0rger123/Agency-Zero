@@ -6,6 +6,7 @@ import { InstagramButton } from "@/components/site/instagram-button";
 import { PageHero } from "@/components/site/page-hero";
 import { PersonMoment } from "@/components/site/person-moment";
 import { Reveal } from "@/components/site/reveal";
+import { TypedText } from "@/components/site/typed-text";
 import { CtaSection } from "@/components/site/sections/cta-section";
 import { ServiceGlyph } from "@/components/site/service-glyph";
 import { services, site } from "@/lib/site-config";
@@ -78,7 +79,7 @@ export default function AboutPage() {
         <div className="site-wrap">
           <Reveal>
             <p className="t-label">What I do</p>
-            <h2 className="t-display mt-6 max-w-[16ch]">Six things, one standard.</h2>
+            <h2 className="t-display mt-6 max-w-[16ch]"><TypedText text="Six things, one standard." className="block" speed={24} /></h2>
           </Reveal>
           <ul className="mt-14 grid gap-px border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-3">
             {services.map((service, i) => (
@@ -104,7 +105,7 @@ export default function AboutPage() {
         <div className="site-wrap">
           <Reveal>
             <p className="t-label">How a project runs</p>
-            <h2 className="t-display mt-6 max-w-[18ch]">Four steps, and you always know which one you are on.</h2>
+            <h2 className="t-display mt-6 max-w-[18ch]"><TypedText text="Four steps, and you always know which one you are on." className="block" speed={24} /></h2>
           </Reveal>
           <ol className="mt-14 grid gap-px border border-rule bg-rule md:grid-cols-4">
             {steps.map(([n, title, body], i) => (

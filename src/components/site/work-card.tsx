@@ -8,7 +8,7 @@ const label = (slug: ServiceSlug) => services.find((s) => s.slug === slug)?.shor
 /** A case-study card: business, problem, delivered, outcome, visual. */
 export function WorkCard({ item, index }: { item: WorkItem; index: number }) {
   return (
-    <article className="group relative flex h-full flex-col border border-rule bg-ink transition-colors duration-500 hover:border-rule-strong">
+    <article className="lift group relative flex h-full flex-col border border-rule bg-ink hover:border-rule-strong">
       {/* visual: real screenshot / mockup when provided, abstract pattern otherwise */}
       <div className="relative aspect-[16/10] overflow-hidden border-b border-rule bg-char">
         {item.image ? (
