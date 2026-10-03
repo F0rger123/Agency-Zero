@@ -284,7 +284,9 @@ function Fields({
   clients,
   services,
   quote,
+  lockedClientId,
 }: {
+  lockedClientId?: string;
   clients: Option[];
   services: ServiceOption[];
   quote?: Quote;
@@ -302,12 +304,19 @@ function Fields({
         </div>
         <div>
           <FieldLabel label="Client" htmlFor="quote-client" required />
-          <SelectInput id="quote-client" name="client_id" required defaultValue={quote?.client_id}>
+          {lockedClientId ? (
+            <>
+              <input type="hidden" name="client_id" value={lockedClientId} />
+              <p className="flex h-10 items-center text-sm">{clients.find((c) => c.id === lockedClientId)?.label ?? "This client"}</p>
+            </>
+          ) : (
+            <SelectInput id="quote-client" name="client_id" required defaultValue={quote?.client_id}>
             <option value="">Choose a client</option>
             {clients.map((client) => (
               <option key={client.id} value={client.id}>{client.label}</option>
             ))}
           </SelectInput>
+          )}
         </div>
         <div>
           <FieldLabel label="Status" htmlFor="quote-status" required />
@@ -361,7 +370,9 @@ function Fields({
 export function NewQuoteForm({
   clients,
   services = [],
+  lockedClientId,
 }: {
+  lockedClientId?: string;
   clients: Option[];
   services?: ServiceOption[];
 }) {
@@ -369,7 +380,7 @@ export function NewQuoteForm({
   return (
     <Shell title="Create quote">
       <form action={action} className="space-y-5">
-        <Fields clients={clients} services={services} />
+        <Fields clients={clients} services={services} lockedClientId={lockedClientId} />
         <div className="flex flex-wrap items-center gap-4">
           <SubmitButton>Create quote</SubmitButton>
           <FormMessage {...state} />

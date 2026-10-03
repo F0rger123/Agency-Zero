@@ -123,7 +123,9 @@ function Fields({
   quotes,
   contracts,
   invoice,
+  lockedClientId,
 }: {
+  lockedClientId?: string;
   clients: Option[];
   projects: Option[];
   quotes: Option[];
@@ -155,7 +157,13 @@ function Fields({
         </div>
         <div>
           <FieldLabel label="Client" htmlFor="invoice-client" required />
-          <SelectInput id="invoice-client" name="client_id" required defaultValue={invoice?.client_id}>
+          {lockedClientId ? (
+            <>
+              <input type="hidden" name="client_id" value={lockedClientId} />
+              <p className="flex h-10 items-center text-sm">{clients.find((c) => c.id === lockedClientId)?.label ?? "This client"}</p>
+            </>
+          ) : (
+            <SelectInput id="invoice-client" name="client_id" required defaultValue={invoice?.client_id}>
             <option value="">Choose a client</option>
             {clients.map((item) => (
               <option key={item.id} value={item.id}>
@@ -163,6 +171,7 @@ function Fields({
               </option>
             ))}
           </SelectInput>
+          )}
         </div>
         <div>
           <FieldLabel label="Status" htmlFor="invoice-status" required />
@@ -266,7 +275,9 @@ export function NewInvoiceForm({
   projects,
   quotes,
   contracts,
+  lockedClientId,
 }: {
+  lockedClientId?: string;
   clients: Option[];
   projects: Option[];
   quotes: Option[];
@@ -276,7 +287,7 @@ export function NewInvoiceForm({
   return (
     <Shell title="Create invoice">
       <form action={action} className="space-y-5">
-        <Fields clients={clients} projects={projects} quotes={quotes} contracts={contracts} />
+        <Fields clients={clients} projects={projects} quotes={quotes} contracts={contracts} lockedClientId={lockedClientId} />
         <div className="flex flex-wrap items-center gap-4">
           <SubmitButton>Create invoice</SubmitButton>
           <FormMessage {...state} />

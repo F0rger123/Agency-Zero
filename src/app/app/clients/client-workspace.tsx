@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { dateTimeLabel, moneyLabel } from "@/lib/format";
 import { OverviewTab } from "./client-tabs/overview-tab";
-import { ContactsTab } from "./client-tabs/contacts-tab";
 import { ProjectsTab } from "./client-tabs/projects-tab";
 import { TasksTab } from "./client-tabs/tasks-tab";
 import { ServicesTab } from "./client-tabs/services-tab";
@@ -28,7 +27,6 @@ export type { ClientWorkspaceData } from "./client-workspace-types";
 
 const tabs = [
   "Overview",
-  "Contacts",
   "Projects",
   "Tasks",
   "Services",
@@ -38,12 +36,18 @@ const tabs = [
   "Notes",
   "Activity",
   "Files",
-  "Settings",
+  "Profile",
 ] as const;
 
 type Tab = (typeof tabs)[number];
 
-export function ClientWorkspace({ data }: { data: ClientWorkspaceData }) {
+export function ClientWorkspace({
+  data,
+  templates = [],
+}: {
+  data: ClientWorkspaceData;
+  templates?: { id: string; label: string }[];
+}) {
   const [tab, setTab] = useState<Tab>("Overview");
   const { client, stats } = data;
   const currency = "USD";
@@ -68,9 +72,14 @@ export function ClientWorkspace({ data }: { data: ClientWorkspaceData }) {
           </a>
         ) : null}
         {client.source ? <span className="text-sm text-muted-foreground">Source: {client.source}</span> : null}
-        <span className="ml-auto text-xs text-muted-foreground">
-          Last activity {dateTimeLabel(stats.last_activity_at)}
-        </span>
+        <button
+          type="button"
+          onClick={() => setTab("Profile")}
+          className="ml-auto rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-muted"
+        >
+          Edit profile
+        </button>
+        <span className="text-xs text-muted-foreground">Last activity {dateTimeLabel(stats.last_activity_at)}</span>
       </div>
 
       <div className="grid grid-cols-2 gap-px border-b border-border bg-border sm:grid-cols-5">
@@ -121,17 +130,16 @@ export function ClientWorkspace({ data }: { data: ClientWorkspaceData }) {
 
       <div role="tabpanel" aria-label={tab} className="mt-8">
         {tab === "Overview" ? <OverviewTab data={data} /> : null}
-        {tab === "Contacts" ? <ContactsTab data={data} /> : null}
         {tab === "Projects" ? <ProjectsTab data={data} currency={currency} /> : null}
         {tab === "Tasks" ? <TasksTab data={data} /> : null}
         {tab === "Services" ? <ServicesTab data={data} /> : null}
         {tab === "Quotes" ? <QuotesTab data={data} /> : null}
-        {tab === "Contracts" ? <ContractsTab data={data} /> : null}
+        {tab === "Contracts" ? <ContractsTab data={data} templates={templates} /> : null}
         {tab === "Invoices & payments" ? <InvoicesTab data={data} currency={currency} /> : null}
         {tab === "Notes" ? <NotesTab data={data} /> : null}
         {tab === "Activity" ? <ActivityTab data={data} /> : null}
         {tab === "Files" ? <FilesTab data={data} /> : null}
-        {tab === "Settings" ? <SettingsTab data={data} /> : null}
+        {tab === "Profile" ? <SettingsTab data={data} /> : null}
       </div>
     </div>
   );

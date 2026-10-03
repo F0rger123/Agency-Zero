@@ -53,3 +53,5 @@ Add a new row for every meaningful architectural, design, or scope decision. Nev
 | D-046 | 2026-10-03 | Website leads: `leads` table (owner-only) + anonymous `submit_lead()` (validation, service whitelist, SQL rate limits, hashed fingerprint, honeypot + timing in the action); `convert_lead_to_client()` (`0019`). | Public form must write to the CRM without exposing anything. | Active |
 | D-047 | 2026-10-03 | Marketing-site visuals are original implementations (no 21st.dev code, no animation libraries); only new dependency is the `geist` font package. Background canvases pause off-screen/hidden/while scrolling; no CSS masks over canvases. | Licences/API keys, bundle size, measured scroll jank. | Active |
 
+## D-048 — A client is the contact (2026-10-03)
+The client record carries the person/company details; the separate Contacts tab is removed from the client workspace. Work (projects, tasks, quotes, contracts, invoices) is created inside the client workspace with the client locked. `contacts` table kept for later (e.g. multiple people per company) but not shown.

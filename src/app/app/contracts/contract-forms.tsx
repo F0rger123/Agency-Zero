@@ -46,7 +46,9 @@ function ContractFields({
   projects,
   templates,
   contract,
+  lockedClientId,
 }: {
+  lockedClientId?: string;
   clients: Option[];
   quotes: Option[];
   projects: Option[];
@@ -77,7 +79,13 @@ function ContractFields({
         </div>
         <div>
           <FieldLabel label="Client" htmlFor="contract-client" required />
-          <SelectInput id="contract-client" name="client_id" required defaultValue={contract?.client_id}>
+          {lockedClientId ? (
+            <>
+              <input type="hidden" name="client_id" value={lockedClientId} />
+              <p className="flex h-10 items-center text-sm">{clients.find((c) => c.id === lockedClientId)?.label ?? "This client"}</p>
+            </>
+          ) : (
+            <SelectInput id="contract-client" name="client_id" required defaultValue={contract?.client_id}>
             <option value="">Choose a client</option>
             {clients.map((item) => (
               <option key={item.id} value={item.id}>
@@ -85,6 +93,7 @@ function ContractFields({
               </option>
             ))}
           </SelectInput>
+          )}
         </div>
         <div>
           <FieldLabel label="Template" htmlFor="contract-template" hint="optional; used when the body is empty" />
@@ -156,7 +165,9 @@ export function NewContractForm({
   quotes,
   projects,
   templates,
+  lockedClientId,
 }: {
+  lockedClientId?: string;
   clients: Option[];
   quotes: Option[];
   projects: Option[];
@@ -166,7 +177,7 @@ export function NewContractForm({
   return (
     <Shell title="Create contract">
       <form action={action} className="space-y-5">
-        <ContractFields clients={clients} quotes={quotes} projects={projects} templates={templates} />
+        <ContractFields clients={clients} quotes={quotes} projects={projects} templates={templates} lockedClientId={lockedClientId} />
         <div className="flex flex-wrap items-center gap-4">
           <SubmitButton>Create contract</SubmitButton>
           <FormMessage {...state} />

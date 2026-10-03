@@ -4,6 +4,7 @@ import { crmHref } from "@/lib/routes";
 import Link from "next/link";
 import { FormSection } from "@/components/form-controls";
 import { dateLabel, moneyLabel } from "@/lib/format";
+import { NewProjectForm } from "../../projects/project-forms";
 import type { ClientWorkspaceData } from "../client-workspace-types";
 import { Empty } from "../client-workspace-parts";
 
@@ -14,7 +15,7 @@ export function ProjectsTab({ data, currency }: { data: ClientWorkspaceData; cur
       description="Delivery work for this client. Open a project to run it from the workspace."
     >
       {data.projects.length === 0 ? (
-        <Empty>No projects yet. Create one from the Projects page.</Empty>
+        <Empty>No projects yet. Create the first one below.</Empty>
       ) : (
         <div className="overflow-x-auto border-y border-border">
           <table className="w-full min-w-[760px] text-left text-sm">
@@ -49,6 +50,12 @@ export function ProjectsTab({ data, currency }: { data: ClientWorkspaceData; cur
           </table>
         </div>
       )}
+      <div className="mt-8">
+        <NewProjectForm
+          lockedClientId={data.client.id}
+          clients={[{ id: data.client.id, name: data.client.name, company: data.client.company }]}
+        />
+      </div>
     </FormSection>
   );
 }

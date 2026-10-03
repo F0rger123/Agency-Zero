@@ -118,7 +118,7 @@ export function NewClientForm() {
 export function EditClientForm({ client }: { client: Client }) {
   const [state, action] = useActionState(updateClientAction, initialState);
   return (
-    <FormShell title="Edit client">
+    <FormShell title="Contact details">
       <form action={action} className="space-y-5">
         <input type="hidden" name="id" value={client.id} />
         <ClientFields client={client} />

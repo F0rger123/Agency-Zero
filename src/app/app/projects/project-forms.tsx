@@ -42,7 +42,7 @@ function FormShell({ title, children }: { title: string; children: ReactNode }) 
   );
 }
 
-function ProjectFields({ clients, project }: { clients: ClientOption[]; project?: Project }) {
+function ProjectFields({ clients, project, lockedClientId }: { clients: ClientOption[]; project?: Project; lockedClientId?: string }) {
   return (
     <div className="space-y-4">
       <div>
@@ -58,7 +58,13 @@ function ProjectFields({ clients, project }: { clients: ClientOption[]; project?
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <FieldLabel label="Client" htmlFor="project-client" required />
-          <SelectInput id="project-client" name="client_id" defaultValue={project?.client_id} required>
+          {lockedClientId ? (
+            <>
+              <input type="hidden" name="client_id" value={lockedClientId} />
+              <p className="flex h-10 items-center text-sm">{clients.find((c) => c.id === lockedClientId)?.name ?? "This client"}</p>
+            </>
+          ) : (
+            <SelectInput id="project-client" name="client_id" defaultValue={project?.client_id} required>
             <option value="">Choose a client</option>
             {clients.map((client) => (
               <option key={client.id} value={client.id}>
@@ -67,6 +73,7 @@ function ProjectFields({ clients, project }: { clients: ClientOption[]; project?
               </option>
             ))}
           </SelectInput>
+          )}
         </div>
         <div>
           <FieldLabel label="Status" htmlFor="project-status" required />
@@ -144,12 +151,12 @@ function ProjectFields({ clients, project }: { clients: ClientOption[]; project?
   );
 }
 
-export function NewProjectForm({ clients }: { clients: ClientOption[] }) {
+export function NewProjectForm({ clients, lockedClientId }: { clients: ClientOption[]; lockedClientId?: string }) {
   const [state, action] = useActionState(createProjectAction, initialState);
   return (
     <FormShell title="Add project">
       <form action={action} className="space-y-5">
-        <ProjectFields clients={clients} />
+        <ProjectFields clients={clients} lockedClientId={lockedClientId} />
         <div className="flex flex-wrap items-center gap-4">
           <SubmitButton>Create project</SubmitButton>
           <FormMessage {...state} />

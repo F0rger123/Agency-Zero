@@ -1,5 +1,8 @@
 # Handoff log (newest first)
 
+## 2026-10-03 (11) — Claude — client workspace: no Contacts tab, create everything inside the client
+Owner request: a client IS the contact. Removed the Contacts tab (the `contacts` table and `get_client_workspace().contacts` remain, unused by the UI). "Settings" is now **Profile** (prefilled edit form + an "Edit profile" button in the header). Projects, Tasks, Quotes, Contracts and Invoices tabs each end with the normal create form with the client locked (`lockedClientId` prop on `NewProjectForm/NewTaskForm/NewQuoteForm/NewContractForm/NewInvoiceForm`; hidden `client_id` input, no picker). Option lists come from the workspace payload (`client-workspace-options.ts`); contract templates are fetched in `clients/[id]/page.tsx`. Global pages are unchanged cross-cutting views. Not browser-tested against a real database (types, lint, tests, build pass). No migrations.
+
 ## 2026-10-03 (10) — Claude — "JWT issued at future" on the dashboard
 Owner saw `JWT issued at future` (PGRST303: database clock behind the clock that minted the token; transient). Added `src/lib/supabase/retry.ts` (`retryOnClockSkew`, 4 attempts, 1.5 s apart, only for that error) and used it for the dashboard summary/revenue reads and the `is_owner()` access check; the dashboard failure message now explains the cause. Other pages still show the raw error if it persists — apply the same helper there if it recurs. Not verified against a real skewed database. No migrations.
 

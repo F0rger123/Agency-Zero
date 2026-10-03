@@ -4,14 +4,17 @@ import { crmHref } from "@/lib/routes";
 import Link from "next/link";
 import { FormSection } from "@/components/form-controls";
 import { dateLabel, moneyLabel } from "@/lib/format";
+import { NewQuoteForm } from "../../quotes/quote-forms";
+import { clientFormOptions } from "../client-workspace-options";
 import type { ClientWorkspaceData } from "../client-workspace-types";
 import { Empty } from "../client-workspace-parts";
 
 export function QuotesTab({ data }: { data: ClientWorkspaceData }) {
+  const options = clientFormOptions(data);
   return (
     <FormSection title="Quotes" description="Proposals sent to this client, including recurring proposals.">
       {data.quotes.length === 0 ? (
-        <Empty>No quotes yet.</Empty>
+        <Empty>No quotes yet. Create the first one below.</Empty>
       ) : (
         <ul className="divide-y divide-border border-y border-border">
           {data.quotes.map((quote) => (
@@ -31,6 +34,9 @@ export function QuotesTab({ data }: { data: ClientWorkspaceData }) {
           ))}
         </ul>
       )}
+      <div className="mt-8">
+        <NewQuoteForm lockedClientId={data.client.id} clients={options.clients} services={options.services} />
+      </div>
     </FormSection>
   );
 }

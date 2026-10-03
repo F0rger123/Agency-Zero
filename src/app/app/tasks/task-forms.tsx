@@ -49,7 +49,9 @@ function TaskFields({
   projects,
   milestones,
   tasks,
+  lockedClientId,
 }: {
+  lockedClientId?: string;
   task?: Task;
   clients: Option[];
   projects: Option[];
@@ -85,7 +87,13 @@ function TaskFields({
         </div>
         <div>
           <FieldLabel label="Client" htmlFor="task-client" />
-          <SelectInput id="task-client" name="client_id" defaultValue={task?.client_id}>
+          {lockedClientId ? (
+            <>
+              <input type="hidden" name="client_id" value={lockedClientId} />
+              <p className="flex h-10 items-center text-sm">{clients.find((c) => c.id === lockedClientId)?.label ?? "This client"}</p>
+            </>
+          ) : (
+            <SelectInput id="task-client" name="client_id" defaultValue={task?.client_id}>
             <option value="">No client</option>
             {clients.map((option) => (
               <option key={option.id} value={option.id}>
@@ -93,6 +101,7 @@ function TaskFields({
               </option>
             ))}
           </SelectInput>
+          )}
         </div>
         <div>
           <FieldLabel label="Project" htmlFor="task-project" />
@@ -199,7 +208,9 @@ export function NewTaskForm({
   projects,
   milestones,
   tasks,
+  lockedClientId,
 }: {
+  lockedClientId?: string;
   clients: Option[];
   projects: Option[];
   milestones: Option[];
@@ -209,7 +220,7 @@ export function NewTaskForm({
   return (
     <FormShell title="Add task">
       <form action={action} className="space-y-5">
-        <TaskFields clients={clients} projects={projects} milestones={milestones} tasks={tasks} />
+        <TaskFields clients={clients} projects={projects} milestones={milestones} tasks={tasks} lockedClientId={lockedClientId} />
         <div className="flex flex-wrap items-center gap-4">
           <SubmitButton>Create task</SubmitButton>
           <FormMessage {...state} />

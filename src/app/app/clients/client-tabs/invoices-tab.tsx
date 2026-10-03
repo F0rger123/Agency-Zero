@@ -5,15 +5,18 @@ import Link from "next/link";
 import { invoiceStatusLabel } from "@/lib/invoice-status";
 import { FormSection } from "@/components/form-controls";
 import { dateLabel, moneyLabel } from "@/lib/format";
+import { NewInvoiceForm } from "../../invoices/invoice-forms";
+import { clientFormOptions } from "../client-workspace-options";
 import type { ClientWorkspaceData } from "../client-workspace-types";
 import { Empty } from "../client-workspace-parts";
 
 export function InvoicesTab({ data, currency }: { data: ClientWorkspaceData; currency: string }) {
+  const options = clientFormOptions(data);
   return (
     <div className="space-y-12">
       <FormSection title="Invoices" description="Billing history with derived balances.">
         {data.invoices.length === 0 ? (
-          <Empty>No invoices yet.</Empty>
+          <Empty>No invoices yet. Create the first one below.</Empty>
         ) : (
           <div className="overflow-x-auto border-y border-border">
             <table className="w-full min-w-[720px] text-left text-sm">
@@ -53,6 +56,15 @@ export function InvoicesTab({ data, currency }: { data: ClientWorkspaceData; cur
             </table>
           </div>
         )}
+        <div className="mt-8">
+          <NewInvoiceForm
+            lockedClientId={data.client.id}
+            clients={options.clients}
+            projects={options.projects}
+            quotes={options.quotes}
+            contracts={options.contracts}
+          />
+        </div>
       </FormSection>
       <FormSection title="Payments" description="Manual payments recorded against this client's invoices.">
         {data.payments.length === 0 ? (

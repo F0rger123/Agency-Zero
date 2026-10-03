@@ -7,8 +7,8 @@ import type { ClientWorkspaceData } from "../client-workspace-types";
 export function SettingsTab({ data }: { data: ClientWorkspaceData }) {
   return (
     <FormSection
-      title="Client settings"
-      description="Edit the client record or archive it when the relationship is no longer active."
+      title="Profile"
+      description="This is the client's own record: name, company, email, phone and website. Everything is already filled in from what you entered, so just change what you need."
     >
       <EditClientForm client={data.client} />
       <div className="mt-10 border-t border-border pt-6">

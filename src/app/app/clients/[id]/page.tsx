@@ -10,11 +10,11 @@ import { ClientWorkspace, type ClientWorkspaceData } from "../client-workspace";
 /**
  * Client detail = one tabbed workspace.
  *
- * Everything the twelve tabs need comes from a single
+ * Everything the eleven tabs need comes from a single
  * `get_client_workspace(p_client_id)` read (migration 0012). Tab switching is
- * client-side state, so moving between Overview / Contacts / Projects /
+ * client-side state, so moving between Overview / Projects /
  * Tasks / Services / Quotes / Contracts / Invoices / Notes / Activity / Files /
- * Settings never triggers a navigation or a loading skeleton.
+ * Profile never triggers a navigation or a loading skeleton.
  */
 export default async function ClientDetailPage({
   params,
@@ -25,7 +25,14 @@ export default async function ClientDetailPage({
 
   const { id } = await params;
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_client_workspace", { p_client_id: id });
+  const [{ data, error }, templatesResponse] = await Promise.all([
+    supabase.rpc("get_client_workspace", { p_client_id: id }),
+    // Contract templates for the "new contract" form inside the client workspace.
+    supabase.from("contract_templates").select("id, name, active").order("name").limit(100),
+  ]);
+  const templates = ((templatesResponse.data ?? []) as { id: string; name: string; active: boolean }[])
+    .filter((template) => template.active)
+    .map((template) => ({ id: template.id, label: template.name }));
 
   const backLink = (
     <Link
@@ -73,7 +80,7 @@ export default async function ClientDetailPage({
           "Client record"
         }
       />
-      <ClientWorkspace data={workspace} />
+      <ClientWorkspace data={workspace} templates={templates} />
     </>
   );
 }

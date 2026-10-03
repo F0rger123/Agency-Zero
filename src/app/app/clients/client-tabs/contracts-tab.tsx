@@ -4,10 +4,19 @@ import { crmHref } from "@/lib/routes";
 import Link from "next/link";
 import { FormSection } from "@/components/form-controls";
 import { dateLabel } from "@/lib/format";
+import { NewContractForm } from "../../contracts/contract-forms";
+import { clientFormOptions } from "../client-workspace-options";
 import type { ClientWorkspaceData } from "../client-workspace-types";
 import { Empty } from "../client-workspace-parts";
 
-export function ContractsTab({ data }: { data: ClientWorkspaceData }) {
+export function ContractsTab({
+  data,
+  templates,
+}: {
+  data: ClientWorkspaceData;
+  templates: { id: string; label: string }[];
+}) {
+  const options = clientFormOptions(data);
   return (
     <FormSection title="Contracts" description="Agreements for this client and their signature status.">
       {data.contracts.length === 0 ? (
@@ -30,6 +39,15 @@ export function ContractsTab({ data }: { data: ClientWorkspaceData }) {
           ))}
         </ul>
       )}
+      <div className="mt-8">
+        <NewContractForm
+          lockedClientId={data.client.id}
+          clients={options.clients}
+          quotes={options.quotes}
+          projects={options.projects}
+          templates={templates}
+        />
+      </div>
     </FormSection>
   );
 }
