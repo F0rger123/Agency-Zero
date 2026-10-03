@@ -19,7 +19,7 @@ export default function ServicesPage() {
       <PageHero
         eyebrow="Services"
         title="Six disciplines. One standard."
-        lead="Most businesses stitch these together from different vendors. We build and run them together, so your software, site, search presence and content all pull in the same direction."
+        lead="Most businesses stitch these together from different vendors. I build and run them together, so your software, site, search presence and content all pull in the same direction."
       />
 
       <section className="border-t border-rule">
@@ -59,7 +59,7 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      <CtaBand note="Tell us what you're working on and we'll tell you honestly where we can help." />
+      <CtaBand note="Tell me what you're working on and I'll tell you honestly where I can help." />
     </>
   );
 }

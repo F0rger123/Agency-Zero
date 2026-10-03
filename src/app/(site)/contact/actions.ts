@@ -29,7 +29,7 @@ export async function submitLeadAction(_previous: LeadState, formData: FormData)
   // Honeypot + timing
   const startedAt = Number(formData.get("started_at"));
   const tooFast = Number.isFinite(startedAt) && Date.now() - startedAt < 2500;
-  if (text("company_url", 200) || tooFast) return { success: "Thanks — we'll be in touch shortly." };
+  if (text("company_url", 200) || tooFast) return { success: "Thanks — I'll be in touch shortly." };
 
   const name = text("name", 160);
   const email = text("email", 254).toLowerCase();
@@ -39,13 +39,13 @@ export async function submitLeadAction(_previous: LeadState, formData: FormData)
   const details = text("details", 4000);
   const services = formData.getAll("services").map(String);
 
-  if (!name) return { error: "Please tell us your name." };
+  if (!name) return { error: "Please tell me your name." };
   if (!EMAIL.test(email)) return { error: "Please enter a valid email address." };
   if (services.some((s) => !SERVICE_OPTIONS.some((option) => option.value === s))) {
     return { error: "Please choose from the listed services." };
   }
   if (budget && !(BUDGETS as readonly string[]).includes(budget)) return { error: "Please choose a listed budget range." };
-  if (!details && services.length === 0) return { error: "Tell us a little about what you need." };
+  if (!details && services.length === 0) return { error: "Tell me a little about what you need." };
 
   if (!isSupabaseConfigured()) {
     return { error: `This form is temporarily unavailable. Please email ${site.email}.` };
@@ -71,7 +71,7 @@ export async function submitLeadAction(_previous: LeadState, formData: FormData)
 
   if (error) {
     if (error.message.includes("Too many requests")) {
-      return { error: "You've sent a few messages already — please try again in a little while, or email us directly." };
+      return { error: "You've sent a few messages already — please try again in a little while, or email me directly." };
     }
     if (/does not exist|schema cache|Could not find the function/i.test(error.message)) {
       return { error: `This form is temporarily unavailable. Please email ${site.email}.` };
@@ -86,5 +86,5 @@ export async function submitLeadAction(_previous: LeadState, formData: FormData)
     console.error("[lead] email notification failed:", notified.reason);
   }
 
-  return { success: "Thanks — your message is in. We'll reply within one working day." };
+  return { success: "Thanks — your message is in. I'll reply within one working day." };
 }

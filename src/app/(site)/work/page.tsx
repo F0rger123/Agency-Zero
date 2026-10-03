@@ -8,7 +8,7 @@ import { work } from "@/content/work";
 
 export const metadata: Metadata = {
   title: "Work",
-  description: "Selected Agency Zero projects: the problem, what we delivered, and what changed.",
+  description: "Selected Agency Zero projects: the problem, what I delivered, and what changed.",
   alternates: { canonical: "/work" },
 };
 

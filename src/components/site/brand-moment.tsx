@@ -57,9 +57,9 @@ export function BrandMoment() {
             transform: "translateY(calc((1 - clamp(0, (var(--s) - 0.52) * 4, 1)) * 40px))",
           }}
         >
-          <p className="t-label md:col-span-3">Our premise</p>
+          <p className="t-label md:col-span-3">My premise</p>
           <p className="t-title md:col-span-9 max-w-[22ch] md:max-w-[28ch]">
-            Zero is where every business starts. We build what carries it to the next hundred.
+            Zero is where every business starts. I build what carries it to the next hundred.
           </p>
         </div>
       </div>

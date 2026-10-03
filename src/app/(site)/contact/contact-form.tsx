@@ -17,7 +17,7 @@ export function ContactForm() {
         <p className="t-label">Message received</p>
         <p className="t-title mt-6">{state.success}</p>
         <p className="t-body mt-4 max-w-md">
-          We read every message personally. If it&apos;s urgent, email us directly and mention your project.
+          I read every message personally. If it&apos;s urgent, email me directly and mention your project.
         </p>
       </div>
     );
@@ -85,7 +85,7 @@ export function ContactForm() {
           rows={5}
           maxLength={4000}
           className="field resize-y"
-          placeholder="What are you trying to achieve? Anything we should know — timing, links, who it's for."
+          placeholder="What are you trying to achieve? Anything I should know — timing, links, who it's for."
         />
       </div>
 
@@ -98,7 +98,7 @@ export function ContactForm() {
             {state.error}
           </p>
         ) : (
-          <p className="t-label">We reply within one working day.</p>
+          <p className="t-label">I reply within one working day.</p>
         )}
       </div>
     </form>

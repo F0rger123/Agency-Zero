@@ -53,7 +53,7 @@ export function ContentSection() {
               className="!grid-cols-1 !gap-6"
               eyebrow="04–06 — Ads, social & content"
               title="Attention, produced properly."
-              lead="Paid and organic work best when they share one creative engine. We plan, shoot, edit, publish and measure it as a single pipeline — so every channel has something worth saying."
+              lead="Paid and organic work best when they share one creative engine. I plan, shoot, edit, publish and measure it as a single pipeline — so every channel has something worth saying."
             />
             <ul className="mt-12 divide-y divide-rule border-y border-rule">
               {channels.map(([label, href], i) => (

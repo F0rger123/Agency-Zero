@@ -1,5 +1,8 @@
 # Handoff log (newest first)
 
+## 2026-10-03 (8) — Claude — first-person copy
+Site copy (services, process, contact, form messages, CTAs) switched from "we/us/our" to "I/me/my" because Agency Zero is run solely by Luke Knight. Mockup images show fictional businesses and keep their own voice. No migrations.
+
 ## 2026-10-03 (7) — Claude — clearer concept-site copy, plain-language Websites cards, "Concept" labels, SEO, Instagram button
 Concept-site mockups re-written in plain language (what the business does, who for, clear buttons); the four jargon cards (colour palette, performance budget, focus ring, search markup) replaced by "Easy to use on a phone / Loads quickly / Readable and simple / Easy to find on Google". Work cards say **Concept** (not Example) with "The brief / What it shows". Nav + page renamed **About Luke** ("Hi, I'm Luke Knight."), no team/studio wording. `InstagramButton` (inline logo, opens https://www.instagram.com/agency.zer0/) in footer, About and Contact; LinkedIn/YouTube removed. SEO: site-wide JSON-LD (ProfessionalService + Person + WebSite), BreadcrumbList on service pages, OG/Twitter image (`public/og.jpg`, from `design/mockups/scenes/og.html`), canonical + absolute title on home, sitemap lastModified; the home SEO section is retitled "SEO optimisation". No migrations.
 

@@ -7,14 +7,14 @@ import { ContactForm } from "./contact-form";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "Start a project with Agency Zero — tell us what you need and we'll reply within one working day.",
+  description: "Start a project with Agency Zero — tell me what you need and I'll reply within one working day.",
   alternates: { canonical: "/contact" },
 };
 
 const next = [
-  ["We read it", "Every inquiry is read by the people who would do the work."],
-  ["We reply", "Within one working day, with questions or a suggested next step."],
-  ["We talk", "A short call to understand the business before anything is proposed."],
+  ["I read it", "Every inquiry is read by me, the person who would do the work."],
+  ["I reply", "Within one working day, with questions or a suggested next step."],
+  ["I talk", "A short call to understand the business before anything is proposed."],
 ] as const;
 
 export default function ContactPage() {
@@ -22,8 +22,8 @@ export default function ContactPage() {
     <>
       <PageHero
         eyebrow="Contact"
-        title="Tell us what you're building."
-        lead="A few details are enough to start. No sales script — just a conversation about whether and how we can help."
+        title="Tell me what you're building."
+        lead="A few details are enough to start. No sales script — just a conversation about whether and how I can help."
       />
 
       <section className="border-t border-rule py-20 md:py-28">

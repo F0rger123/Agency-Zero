@@ -3,10 +3,10 @@ import { Reveal } from "../reveal";
 import { Section, SectionHeading } from "../section";
 
 const steps = [
-  ["01", "Discover", "We learn the business, the customers and what is actually getting in the way."],
+  ["01", "Discover", "I learn the business, the customers and what is actually getting in the way."],
   ["02", "Build", "Design and engineering together — software, site and creative made as one system."],
   ["03", "Launch", "Carefully shipped, tested on real devices, and handed over with everything documented."],
-  ["04", "Improve", "We measure, learn and keep refining — the work doesn't stop at go-live."],
+  ["04", "Improve", "I measure, learn and keep refining — the work doesn't stop at go-live."],
 ] as const;
 
 export function ProcessSection() {

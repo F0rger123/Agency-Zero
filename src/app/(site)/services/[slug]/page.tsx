@@ -164,7 +164,7 @@ export default async function ServicePageRoute({ params }: { params: Promise<{ s
         </div>
       </section>
 
-      <CtaBand title={`Talk to us about ${page.title.toLowerCase()}.`} />
+      <CtaBand title={`Talk to me about ${page.title.toLowerCase()}.`} />
     </>
   );
 }

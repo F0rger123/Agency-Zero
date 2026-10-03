@@ -26,7 +26,7 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       "Custom CRMs, internal tools and workflow automation built around how your business actually runs — not the other way around.",
     headline: "Software built around your business, not the reverse.",
     intro:
-      "Off-the-shelf tools force you to bend your process to their screens. We design and build the system your team actually needs: your pipeline, your jobs, your invoices, your reporting — in one place, with the automations that remove the repetitive work.",
+      "Off-the-shelf tools force you to bend your process to their screens. I design and build the system your team actually needs: your pipeline, your jobs, your invoices, your reporting — in one place, with the automations that remove the repetitive work.",
     audience: [
       "Teams running on spreadsheets, inboxes and five disconnected apps",
       "Service businesses who quote, schedule, deliver and invoice by hand",
@@ -42,16 +42,16 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       { title: "Secure by design", body: "Role-based access, private data storage and sensible defaults from the first release." },
     ],
     process: [
-      { title: "Map the workflow", body: "We sit with how work really moves through your business and find the friction." },
+      { title: "Map the workflow", body: "I sit with how work really moves through your business and find the friction." },
       { title: "Design the system", body: "Screens, data and automations designed together and agreed before building." },
       { title: "Build in slices", body: "Working software every few weeks, so you use it and shape it as it grows." },
       { title: "Launch & support", body: "Migration, training and ongoing improvement as the business changes." },
     ],
     faqs: [
-      { q: "Why not just use an existing CRM?", a: "Often you should. We build custom when your process is genuinely different, when you are stitching several tools together, or when the cost of bending to someone else's software is higher than owning your own." },
-      { q: "Do I own the software?", a: "That is agreed up front in the project terms. The aim is that you are never locked in to us." },
+      { q: "Why not just use an existing CRM?", a: "Often you should. I build custom when your process is genuinely different, when you are stitching several tools together, or when the cost of bending to someone else's software is higher than owning your own." },
+      { q: "Do I own the software?", a: "That is agreed up front in the project terms. The aim is that you are never locked in to me." },
       { q: "How long does it take?", a: "A focused first version can be usable in weeks. Larger systems are delivered in stages so value arrives early." },
-      { q: "Can it connect to the tools I already use?", a: "Usually yes. We scope integrations during discovery so there are no surprises." },
+      { q: "Can it connect to the tools I already use?", a: "Usually yes. I scope integrations during discovery so there are no surprises." },
     ],
   },
 
@@ -62,7 +62,7 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       "Custom-designed, fast, responsive websites with motion, conversion thinking and SEO foundations built in.",
     headline: "A website that carries the standard of the business behind it.",
     intro:
-      "Your site is judged in seconds. We design and engineer it from scratch — no templates — so it looks like you, loads quickly on any device, and guides visitors toward getting in touch or buying.",
+      "Your site is judged in seconds. I design and engineer it from scratch — no templates — so it looks like you, loads quickly on any device, and guides visitors toward getting in touch or buying.",
     audience: [
       "Businesses whose website no longer reflects the quality of their work",
       "Brands launching or repositioning who need a strong first impression",
@@ -85,9 +85,9 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
     ],
     faqs: [
       { q: "Do you use templates?", a: "No. Every site is designed and built for the business it represents." },
-      { q: "Will it be easy to update?", a: "Yes — we agree how you will manage content during scoping and build it to suit." },
+      { q: "Will it be easy to update?", a: "Yes — I agree how you will manage content during scoping and build it to suit." },
       { q: "Is SEO included?", a: "Technical and on-page SEO foundations are part of every build. Ongoing SEO is a separate service." },
-      { q: "Can you add a booking, shop or customer portal?", a: "Yes. Those are custom features we scope with you." },
+      { q: "Can you add a booking, shop or customer portal?", a: "Yes. Those are custom features I scope with you." },
     ],
   },
 
@@ -98,7 +98,7 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       "SEO for Google, AI search and local discovery: technical foundations, local presence and content that answers real searches.",
     headline: "Be easier to find — and easier to choose.",
     intro:
-      "People look for businesses in Google, in AI assistants and on maps. We improve the technical health, local presence and content that determine whether you show up — and whether what they find makes them call you. We never promise rankings; we do the work that earns visibility.",
+      "People look for businesses in Google, in AI assistants and on maps. I improve the technical health, local presence and content that determine whether you show up — and whether what they find makes them call you. I never promise rankings; I do the work that earns visibility.",
     audience: [
       "Local and service businesses who rely on being found nearby",
       "Companies whose site is invisible for the things they actually sell",
@@ -111,7 +111,7 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       { title: "Local SEO", body: "Google Business Profile, citations, reviews and location pages for local discovery." },
       { title: "Content that answers questions", body: "Pages and articles built around real customer questions — useful to people and to AI systems." },
       { title: "Authority building", body: "Earning credible mentions and links without shortcuts that risk penalties." },
-      { title: "Reporting you can read", body: "What changed, what it did, and what we do next — in plain language." },
+      { title: "Reporting you can read", body: "What changed, what it did, and what I do next — in plain language." },
     ],
     process: [
       { title: "Audit", body: "Where you stand today, and what is actually holding you back." },
@@ -120,9 +120,9 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       { title: "Measure & refine", body: "Reporting, learning and adjusting month by month." },
     ],
     faqs: [
-      { q: "Can you guarantee first-page rankings?", a: "No — and be wary of anyone who does. Search engines are not ours to control. We commit to the work, the transparency and the reporting." },
-      { q: "How long does SEO take?", a: "Technical fixes can help quickly; competitive terms take months. We will give you an honest expectation after the audit." },
-      { q: "What about AI search?", a: "Clear structure, credible sources and genuinely helpful content help in both traditional and AI-driven search. We build for both." },
+      { q: "Can you guarantee first-page rankings?", a: "No — and be wary of anyone who does. Search engines are not mine to control. I commit to the work, the transparency and the reporting." },
+      { q: "How long does SEO take?", a: "Technical fixes can help quickly; competitive terms take months. I will give you an honest expectation after the audit." },
+      { q: "What about AI search?", a: "Clear structure, credible sources and genuinely helpful content help in both traditional and AI-driven search. I build for both." },
       { q: "Do you do local SEO?", a: "Yes — Google Business Profile, citations and local content are core to the service." },
     ],
   },
@@ -134,7 +134,7 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       "Facebook and Instagram advertising: creative built for the feed, clean tracking and steady testing.",
     headline: "Paid social that is built, tracked and improved properly.",
     intro:
-      "Good Meta advertising is mostly creative, measurement and patience. We build the offer, the creative and the tracking, then test and refine so spend goes to what works. No guarantees about results — just disciplined work and honest reporting.",
+      "Good Meta advertising is mostly creative, measurement and patience. I build the offer, the creative and the tracking, then test and refine so spend goes to what works. No guarantees about results — just disciplined work and honest reporting.",
     audience: [
       "Businesses ready to put budget behind paid social",
       "Brands whose ads look and feel off-brand or tired",
@@ -156,9 +156,9 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       { title: "Optimise", body: "Weekly learning, creative refresh and budget decisions." },
     ],
     faqs: [
-      { q: "What budget do I need?", a: "Enough to learn within a reasonable time. We will suggest a realistic starting range after understanding your goals." },
+      { q: "What budget do I need?", a: "Enough to learn within a reasonable time. I will suggest a realistic starting range after understanding your goals." },
       { q: "Do you make the creative?", a: "Yes — design, copy and video, so ads and brand stay consistent." },
-      { q: "Can you guarantee leads or sales?", a: "No. We control the quality of the work and the testing discipline, not the market." },
+      { q: "Can you guarantee leads or sales?", a: "No. I control the quality of the work and the testing discipline, not the market." },
       { q: "Do I keep the ad account?", a: "Yes. The account and its data stay yours." },
     ],
   },
@@ -170,7 +170,7 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       "Organic social media management: a consistent, on-brand presence with planned content and community care.",
     headline: "A consistent presence that doesn't become your second job.",
     intro:
-      "Showing up regularly and sounding like yourself builds trust. We plan, create, schedule and publish your organic content, and look after the conversation around it, so your channels stay active and on-brand.",
+      "Showing up regularly and sounding like yourself builds trust. I plan, create, schedule and publish your organic content, and look after the conversation around it, so your channels stay active and on-brand.",
     audience: [
       "Businesses who know they should post but don't have the time",
       "Brands whose channels look inconsistent or dormant",
@@ -194,7 +194,7 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
     faqs: [
       { q: "Which platforms do you cover?", a: "Typically Instagram, Facebook, LinkedIn, TikTok and YouTube Shorts — chosen for where your customers are." },
       { q: "Do I approve posts?", a: "Yes. You see the plan and the content before it is published." },
-      { q: "Do you need access to my accounts?", a: "We use proper delegated access so you keep ownership." },
+      { q: "Do you need access to my accounts?", a: "I use proper delegated access so you keep ownership." },
       { q: "Can this pair with video production?", a: "Very well — see Video & content." },
     ],
   },
@@ -206,7 +206,7 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       "Short-form video, on-location shoots and campaign creative that feeds every channel.",
     headline: "Content worth stopping for — produced as a pipeline, not a scramble.",
     intro:
-      "Strong content powers everything else: ads, social, your website. We handle the whole production — ideas, scripting, filming, editing and delivery — in organised batches, so you have a steady supply of work that looks like it belongs to your brand.",
+      "Strong content powers everything else: ads, social, your website. I handle the whole production — ideas, scripting, filming, editing and delivery — in organised batches, so you have a steady supply of work that looks like it belongs to your brand.",
     audience: [
       "Brands who need a steady flow of short-form video",
       "Businesses launching a campaign or new offer",
@@ -229,9 +229,9 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
     ],
     faqs: [
       { q: "Where do you shoot?", a: "At your location or in a studio, whichever suits the content." },
-      { q: "How much content comes from one shoot?", a: "That depends on the plan — we design shoots to produce weeks of content." },
-      { q: "Can you work with footage I already have?", a: "Yes. We edit and repurpose existing material too." },
-      { q: "Do you handle posting?", a: "We can — see Social media." },
+      { q: "How much content comes from one shoot?", a: "That depends on the plan — I design shoots to produce weeks of content." },
+      { q: "Can you work with footage I already have?", a: "Yes. I edit and repurpose existing material too." },
+      { q: "Do you handle posting?", a: "I can — see Social media." },
     ],
   },
 };
