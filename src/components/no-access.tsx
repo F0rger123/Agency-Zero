@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { appPath } from "@/lib/routes";
 import { signOut } from "@/app/actions/auth";
 
 /**
@@ -69,7 +70,8 @@ export function MigrationWarning() {
       <p className="mt-1 text-muted-foreground">
         This version of Agency Zero expects migrations <span className="font-mono">0014</span>–<span className="font-mono">0019</span>.
         Until they are applied, owner-only protection, Total Revenue and website leads are not active. Apply them in the Supabase SQL
-        editor (see <span className="font-mono">supabase/scripts/pending-migrations.sql</span>), then reload.
+        editor (files in <span className="font-mono">supabase/scripts/apply/</span>), then reload. The{" "}
+        <Link href={appPath("/system")} className="underline underline-offset-4">Database status</Link> page shows exactly what is missing.
       </p>
     </div>
   );

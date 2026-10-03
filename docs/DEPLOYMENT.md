@@ -198,14 +198,14 @@ builds, and — depending on the Worker's branch-control settings — can publis
 the app must keep working against the production database as it is *right now*.
 Consequences, learned the hard way (2026-10-03): the new `/app` layout called `is_owner()` before migrations `0014`+ were applied,
 which showed "No access" to the owner. The code now detects a not-yet-migrated database and keeps the CRM usable with a warning
-banner; apply `supabase/scripts/pending-migrations.sql` to remove it. To control what goes live, set Cloudflare → Workers & Pages →
+banner; apply the files in `supabase/scripts/apply/` (in order) to remove it; `/app/system` shows what is missing. To control what goes live, set Cloudflare → Workers & Pages →
 agency-zero → Settings → Builds → *Branch control* (production branch = `main`; non-production branches = preview only).
 
 ## Where the website contact form goes
 
 1. **Always** into the database: `public.leads` (via `submit_lead()`), visible at `/app/leads` in the CRM, with a "new leads" strip on the dashboard.
    (This needs migration `0019` applied. Until then the form shows an "email us" message instead of silently dropping the inquiry.)
-2. **Optionally by email** to you, using Resend (free tier is plenty). Setup:
+2. **Optionally by email** (owner has chosen NOT to use this — leads are read in the CRM only), using Resend (free tier is plenty). Setup:
    1. Create an account at resend.com **with the email you want notifications at** (drummerforger@gmail.com) → API Keys → create a key.
    2. Cloudflare → Workers & Pages → agency-zero → Settings → *Variables and secrets*:
       - `RESEND_API_KEY` (type **Secret**) = the key

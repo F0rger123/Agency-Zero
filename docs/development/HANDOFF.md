@@ -1,5 +1,17 @@
 # Handoff log (newest first)
 
+## 2026-10-03 (4) — Claude — owner could not run the SQL; CRM errors; leads without email
+**Reported**: owner ran `pending-migrations.sql` in the Supabase editor → `42P13 no function body specified`; dashboard shows the generic
+"Something went wrong (ref …)"; many CRM errors. Cannot reproduce in Postgres (the old script runs cleanly as one simple query on a scratch DB),
+so the suspect is the editor / copy-paste mangling a bare `$$`.
+**Changed**: the build script now emits **named dollar tags** (`$m0014x1$` …) and **one file per migration** in `supabase/scripts/apply/`
+(`0014`, `0014b_set_owner`, `0015`…`0019`), each its own transaction; the combined file is kept. All variants verified on a scratch DB.
+New **`/app/system` Database status** page: read-only probe per dependency with the database's exact error and the migration it belongs to;
+linked from the error boundary and the "Database update pending" banner. Dashboard no longer throws when the revenue read model fails.
+Leads: no Resend needed — `submit_lead` → `leads` → `/app/leads` already works once 0019 is applied; email notify stays optional/off.
+**Owner to-do**: run `supabase/scripts/apply/*.sql` in order (0014, 0014b, 0015 … 0019), reload, open `/app/system` and send me any red rows.
+**Unverified**: why the editor produced 42P13; the real production DB state (it may be partially migrated if earlier statements ran separately).
+
 ## 2026-10-03 (3) — Claude — mockup redesign, CrewBoss captures, "Website design" naming
 **Done**: five concept sites re-rendered with genuinely different designs (Halden = warm editorial serif; Northline = blue/yellow lead-gen with
 quote form; Ember & Oak = moody amber serif; Kairo = acid-lime brutalist; Atlas & Reed = green/cream serif + data panel). Device lineup now shows

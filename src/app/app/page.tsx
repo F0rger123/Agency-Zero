@@ -57,9 +57,6 @@ export default async function DashboardPage() {
   ]);
   const newLeads = leadsResponse.error ? 0 : (leadsResponse.count ?? 0);
   const revenue = revenueResponse.error ? null : (revenueResponse.data as RevenueSummary | null);
-  if (revenueResponse.error && !isMissingTable(revenueResponse.error.message) && !revenueResponse.error.message.includes("Could not find the function")) {
-    throw new Error(revenueResponse.error.message);
-  }
 
   const header = (
     <PageHeader

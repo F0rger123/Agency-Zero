@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { appPath } from "@/lib/routes";
+
 export default function AppError({
   error,
   reset,
@@ -23,8 +26,11 @@ export default function AppError({
             (ref: {error.digest})
           </span>
         ) : null}
-        . Retry below — if it keeps failing, check that Supabase is reachable and
-        migrations are applied.
+        . Retry below. If it keeps failing, open the{" "}
+        <Link href={appPath("/system")} className="underline underline-offset-4">
+          Database status
+        </Link>{" "}
+        page: it names the exact migration or error that is the cause.
       </p>
       <button
         type="button"
