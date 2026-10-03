@@ -41,6 +41,10 @@ records what was verified and when.
 | `docs/BUILD_PROGRESS.md` | Historical change log (append-only; no longer the roadmap) |
 | `docs/MASTER_SPEC.md`, `DECISIONS.md`, `DATABASE_PLAN.md`, `DEPLOYMENT.md` | Reference |
 
+## Branching: always finish on `main`
+Owner standing instruction (2026-10-03): when work is complete and checks pass, **push it to `main`** (fast-forward; do not leave finished work
+only on a feature branch). Verify `git fetch` shows `main` is an ancestor first; never force-push.
+
 ## ⚠ A push is a deploy
 Cloudflare Workers Builds builds (and may publish) every push, including feature branches. Never assume "I'll tell the owner to apply
 migrations before deploying" — by then it is already building. Code must tolerate the production database being **behind** (see
