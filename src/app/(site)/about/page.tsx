@@ -12,9 +12,9 @@ import { ServiceGlyph } from "@/components/site/service-glyph";
 import { services, site } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: "About Luke Knight",
+  title: "About Luke Knight, York PA Developer",
   description:
-    "Agency Zero is run by Luke Knight: custom software for businesses, plus the website design, search presence and content that bring customers to them.",
+    "Luke Knight runs Agency Zero in York, PA: custom software and CRMs, website design, SEO, ads and content, built by one person who also answers the phone.",
   alternates: { canonical: "/about" },
 };
 

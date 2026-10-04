@@ -1,5 +1,13 @@
 # Handoff log (newest first)
 
+## 2026-10-04 (5) — Claude — dashboard revenue tiles; public-site SEO/AEO for York, PA
+
+- **Dashboard**: revenue tiles no longer show a grey empty cell (Outstanding now spans the row on mobile) and `Stat` tiles fill their cell (`h-full`, wrapping long amounts).
+- **SEO/AEO (public site only)**: `src/lib/seo.ts` (URL, area data, JSON-LD builders), `src/content/local-seo.ts` (short answers, local FAQs, titles), `src/content/seo-data.json` (areas/services/modifiers). New `/areas` and `/faq` pages, home "Local to York, PA" section, footer service-area line, local titles/descriptions on every page, `en-US`, richer LocalBusiness graph (service-area, no street address), per-page WebPage/Service/FAQPage/Breadcrumb JSON-LD, `robots.ts` explicit AI/search crawlers, stable sitemap, `/llms.txt` + `/llms-full.txt`, US spelling.
+- **Keywords**: `node scripts/generate-keywords.mjs` -> `docs/seo/keywords.csv` (~27k) + `KEYWORDS.md`. Plan and GBP advice: `docs/seo/SEO_PLAN.md`, `docs/seo/LOCAL_SEO.md`.
+- **Config needed**: set `NEXT_PUBLIC_SITE_URL` (real domain) in Cloudflare; optional `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`, `NEXT_PUBLIC_BING_SITE_VERIFICATION`. No migrations (0021 SQL re-given to owner).
+- **Unverified**: Google Rich Results test; the "in person around York" wording needs owner confirmation; `/work` concept mockups still have UK-style copy (Leeds, 0800, GBP) that should become US/York-area.
+
 ## 2026-10-04 (4) — Claude — carousel: glass lens removed, coverflow instead
 
 - `lens-carousel.tsx` / `globals.css`: removed the centre glass lens (SVG displacement filter, ring, blurred glow blob). Slides now run as a coverflow: the centre slide faces front, side slides tilt in 3D, shrink, fade and blur as they flow in from the edges (per-slide `--o`/`--a` CSS vars set on scroll). Scroll-snap, drag, arrows, dots, auto-advance and lightbox unchanged.

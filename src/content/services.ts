@@ -91,7 +91,7 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       { q: "Is SEO included?", a: "The technical and on-page foundations are part of every build: clear page titles and descriptions, sensible headings, fast loading, mobile-friendly layouts, structured data and a sitemap. Ongoing SEO work such as local profiles, content and links is a separate service, which you can add whenever it suits.", bullets: ["Included: titles, descriptions, headings, speed, structured data, sitemap", "Separate: ongoing content, link building and local SEO"] },
       { q: "Can you add a booking system, shop or customer portal?", a: "Yes. Those are custom features I scope with you, and they can connect to your existing tools such as payments, calendars and email. Because I also build CRMs, enquiries and bookings can flow straight into a system you control." },
       { q: "How long does a website take?", a: "A focused site of a handful of pages is typically a few weeks from approved design to launch. Larger sites or custom features take longer, and I give you a timeline in writing with dates for each stage. The biggest factor is usually how quickly content and feedback arrive, so I will tell you what I need and when." },
-      { q: "What do I need to provide?", a: "Your logo and brand colours if you have them, a clear idea of what the site should achieve, and the key facts about your services. I can write the copy and source images with you. If you do not have a brand yet, I can propose a simple direction as part of the design stage." },
+      { q: "What do I need to provide?", a: "Your logo and brand colors if you have them, a clear idea of what the site should achieve, and the key facts about your services. I can write the copy and source images with you. If you do not have a brand yet, I can propose a simple direction as part of the design stage." },
     ],
   },
 
@@ -111,7 +111,7 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
     ],
     includes: [
       { title: "Technical audit & fixes", body: "Crawlability, speed, structure and errors that quietly hold a site back." },
-      { title: "On-page optimisation", body: "Titles, headings, content and internal links aligned to how people search." },
+      { title: "On-page optimization", body: "Titles, headings, content and internal links aligned to how people search." },
       { title: "Local SEO", body: "Google Business Profile, citations, reviews and location pages for local discovery." },
       { title: "Content that answers questions", body: "Pages and articles built around real customer questions — useful to people and to AI systems." },
       { title: "Authority building", body: "Earning credible mentions and links without shortcuts that risk penalties." },
@@ -152,7 +152,7 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       { title: "Creative production", body: "Static, carousel and short-form video creative designed for the feed." },
       { title: "Campaign build", body: "Structure, targeting, placements and budgets set up cleanly." },
       { title: "Tracking & attribution", body: "Pixel, conversions and lead tracking you can trust." },
-      { title: "Testing & optimisation", body: "Ongoing creative and audience testing with clear decisions." },
+      { title: "Testing & optimization", body: "Ongoing creative and audience testing with clear decisions." },
       { title: "Reporting", body: "Spend, leads and cost per result explained without jargon." },
     ],
     process: [
@@ -216,7 +216,7 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       "Short-form video, on-location shoots and campaign creative that feeds every channel.",
     headline: "Content worth stopping for — produced as a pipeline, not a scramble.",
     intro:
-      "Strong content powers everything else: ads, social, your website. I handle the whole production — ideas, scripting, filming, editing and delivery — in organised batches, so you have a steady supply of work that looks like it belongs to your brand.",
+      "Strong content powers everything else: ads, social, your website. I handle the whole production — ideas, scripting, filming, editing and delivery — in organized batches, so you have a steady supply of work that looks like it belongs to your brand.",
     audience: [
       "Brands who need a steady flow of short-form video",
       "Businesses launching a campaign or new offer",

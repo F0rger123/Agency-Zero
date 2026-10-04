@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { areas } from "@/lib/seo";
 import { nav, services, site } from "@/lib/site-config";
 import { InstagramButton } from "./instagram-button";
 import { TypingToggle } from "./typed-text";
@@ -29,6 +30,16 @@ export function SiteFooter() {
                 </Link>
               </li>
             ))}
+            <li>
+              <Link href="/areas" className="u-link">
+                Areas served
+              </Link>
+            </li>
+            <li>
+              <Link href="/faq" className="u-link">
+                FAQ
+              </Link>
+            </li>
           </ul>
         </div>
 
@@ -50,6 +61,20 @@ export function SiteFooter() {
           <div className="mt-5">
             <InstagramButton />
           </div>
+        </div>
+      </div>
+
+      <div className="border-t border-rule">
+        <div className="site-wrap py-8">
+          <p className="t-label">Serving York, PA and nearby</p>
+          <p className="mt-3 max-w-4xl text-sm leading-relaxed text-ash">
+            Web design, custom software and CRMs, SEO, Meta ads and social media for businesses in{" "}
+            {areas
+              .filter((area) => area.tier <= 3)
+              .map((area) => area.name)
+              .join(", ")}
+            , and across Central Pennsylvania.
+          </p>
         </div>
       </div>
 

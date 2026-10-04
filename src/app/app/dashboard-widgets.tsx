@@ -72,8 +72,8 @@ export type DashboardSummary = {
 
 function Stat({ label, value, note }: { label: string; value: string | number; note?: string }) {
   return (
-    <div className="bg-background p-6">
-      <p className="text-3xl font-semibold tracking-tight">{value}</p>
+    <div className="h-full min-w-0 bg-background p-5 sm:p-6">
+      <p className="break-words text-2xl font-semibold tracking-tight sm:text-3xl">{value}</p>
       <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
         {label}
       </p>
@@ -105,8 +105,8 @@ export function RevenueCards({ revenue, mrrCents, currency }: { revenue: Revenue
         <>
           <ul className="mt-4 grid grid-cols-2 gap-px border border-border bg-border lg:grid-cols-4">
             <li className="col-span-2 lg:col-span-1">
-              <div className="bg-background p-6">
-                <p className="text-4xl font-semibold tracking-tight">
+              <div className="h-full min-w-0 bg-background p-5 sm:p-6">
+                <p className="break-words text-3xl sm:text-4xl font-semibold tracking-tight">
                   {moneyLabel(revenue.total_revenue_cents, revenue.currency)}
                 </p>
                 <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-foreground">Total revenue</p>
@@ -126,7 +126,7 @@ export function RevenueCards({ revenue, mrrCents, currency }: { revenue: Revenue
             <li>
               <Stat label="Monthly recurring" value={moneyLabel(mrrCents, currency)} />
             </li>
-            <li>
+            <li className="col-span-2 lg:col-span-1">
               <Stat label="Outstanding" value={moneyLabel(revenue.outstanding_cents, revenue.currency)} note="Issued, unpaid" />
             </li>
           </ul>

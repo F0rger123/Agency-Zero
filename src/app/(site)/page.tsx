@@ -13,18 +13,29 @@ import { SoftwareSection } from "@/components/site/sections/software-section";
 import { WebsitesSection } from "@/components/site/sections/websites-section";
 import { WorkSection } from "@/components/site/sections/work-section";
 import { TypeRotator } from "@/components/site/typed-text";
+import { areas, breadcrumbJsonLd, webPageJsonLd } from "@/lib/seo";
 import { services } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: { absolute: "Agency Zero — Software, website design, SEO & content" },
+  title: { absolute: "Agency Zero | Web Design, Custom Software & SEO in York, PA" },
   description:
-    "Custom software and CRMs, website design, SEO, Meta ads, social media and video content for businesses, run by Luke Knight.",
+    "York, PA digital agency run by Luke Knight: custom software and CRMs, website design, SEO, Meta ads, social media management and video for small businesses in York County and Central Pennsylvania.",
   alternates: { canonical: "/" },
+  openGraph: { url: "/" },
 };
 
 export default function HomePage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([
+            webPageJsonLd("/", "Agency Zero: web design, custom software and SEO in York, PA", "York, PA digital agency run by Luke Knight."),
+            breadcrumbJsonLd([{ name: "Home", path: "/" }]),
+          ]),
+        }}
+      />
       <Hero />
       <BrandMoment />
       <Marquee items={["Custom software", "Website design", "SEO", "Meta ads", "Social media", "Video content"]} />
@@ -35,6 +46,7 @@ export default function HomePage() {
       <ContentSection />
       <WorkSection />
       <ProcessSection />
+      <LocalSection />
       <CtaSection />
     </>
   );
@@ -105,6 +117,46 @@ function Hero() {
             ))}
           </ul>
         </Reveal>
+      </div>
+    </section>
+  );
+}
+
+function LocalSection() {
+  const nearby = areas.filter((area) => area.tier <= 3 && area.slug !== "york").slice(0, 14);
+  return (
+    <section className="border-t border-rule py-20 md:py-28">
+      <div className="site-wrap grid gap-10 lg:grid-cols-12">
+        <Reveal className="lg:col-span-4">
+          <p className="t-label">Local to York, PA</p>
+        </Reveal>
+        <div className="lg:col-span-8">
+          <Reveal delay={80}>
+            <h2 className="speakable t-title !text-[clamp(1.4rem,2.3vw,2.1rem)] !leading-snug">
+              Agency Zero is a York, PA web design, custom software and digital marketing agency, serving York County and Central Pennsylvania.
+            </h2>
+          </Reveal>
+          <Reveal delay={160}>
+            <p className="t-body mt-6 max-w-2xl">
+              Looking for a website builder, software developer, CRM builder, SEO company, social media manager or Meta ads manager near
+              you? I work with small businesses in York, {nearby.slice(0, 6).map((area) => area.name).join(", ")} and across the region, in
+              person where it helps and by video call anywhere.
+            </p>
+            <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm text-mist">
+              {nearby.map((area) => (
+                <li key={area.slug}>{area.name}</li>
+              ))}
+            </ul>
+            <div className="mt-10 flex flex-wrap gap-4">
+              <Link href="/areas" className="btn">
+                Areas I serve <span className="arrow" aria-hidden>→</span>
+              </Link>
+              <Link href="/faq" className="btn">
+                Common questions <span className="arrow" aria-hidden>→</span>
+              </Link>
+            </div>
+          </Reveal>
+        </div>
       </div>
     </section>
   );

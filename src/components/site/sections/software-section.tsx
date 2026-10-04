@@ -8,7 +8,7 @@ const benefits = [
   ["Less repetitive work", "Recurring admin becomes an automation instead of a Friday-afternoon chore."],
   ["Fewer disconnected tools", "Leads, quotes, projects, invoices and reporting in one place."],
   ["Built around your workflow", "Your stages, your language, your rules — not a template's."],
-  ["Directly customisable", "When the business changes, the software changes with it."],
+  ["Directly customizable", "When the business changes, the software changes with it."],
 ] as const;
 
 /** Signature moment #4 — the custom-software feature, with the code backdrop. */

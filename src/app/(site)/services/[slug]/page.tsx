@@ -8,9 +8,9 @@ import { PageHero } from "@/components/site/page-hero";
 import { Reveal } from "@/components/site/reveal";
 import { ServiceGlyph } from "@/components/site/service-glyph";
 import { servicePages } from "@/content/services";
-import { services, site, type ServiceSlug } from "@/lib/site-config";
-
-const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://agencyzero.com").replace(/\/$/, "");
+import { localFaqs, serviceSeo, shortAnswers } from "@/content/local-seo";
+import { absolute, breadcrumbJsonLd, faqJsonLd, siteUrl, webPageJsonLd } from "@/lib/seo";
+import { services, type ServiceSlug } from "@/lib/site-config";
 
 export function generateStaticParams() {
   return services.map((service) => ({ slug: service.slug }));
@@ -20,11 +20,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const page = servicePages[slug as ServiceSlug];
   if (!page) return {};
+  const seo = serviceSeo[slug as ServiceSlug];
   return {
-    title: page.title,
-    description: page.metaDescription,
+    title: seo.title,
+    description: seo.description,
     alternates: { canonical: `/services/${slug}` },
-    openGraph: { title: `${page.title} — Agency Zero`, description: page.metaDescription },
+    openGraph: { title: seo.title, description: seo.description, url: `/services/${slug}` },
   };
 }
 
@@ -34,36 +35,29 @@ export default async function ServicePageRoute({ params }: { params: Promise<{ s
   const meta = services.find((s) => s.slug === slug);
   if (!page || !meta) notFound();
 
-  const jsonLd = {
+  const seo = serviceSeo[slug as ServiceSlug];
+  const faqs = [...page.faqs, ...localFaqs[slug as ServiceSlug]];
+  const path = `/services/${slug}`;
+  const serviceLd = {
     "@context": "https://schema.org",
     "@type": "Service",
+    "@id": `${absolute(path)}#service`,
     name: page.title,
-    description: page.metaDescription,
-    provider: { "@type": "ProfessionalService", name: site.name, url: base },
-    url: `${base}/services/${slug}`,
-  };
-  const breadcrumbLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: base },
-      { "@type": "ListItem", position: 2, name: "Services", item: `${base}/services` },
-      { "@type": "ListItem", position: 3, name: page.title, item: `${base}/services/${slug}` },
-    ],
-  };
-  const faqLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: page.faqs.map((faq) => ({
-      "@type": "Question",
-      name: faq.q,
-      acceptedAnswer: { "@type": "Answer", text: faq.a },
-    })),
+    serviceType: seo.serviceType,
+    description: seo.description,
+    provider: { "@id": `${siteUrl}/#business` },
+    areaServed: [{ "@type": "City", name: "York, PA" }, { "@type": "AdministrativeArea", name: "York County, PA" }, { "@type": "State", name: "Pennsylvania" }],
+    url: absolute(path),
   };
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([jsonLd, faqLd, breadcrumbLd]) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([
+            serviceLd,
+            webPageJsonLd(path, seo.title, seo.description),
+            faqJsonLd(faqs),
+            breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Services", path: "/services" }, { name: page.title, path }]),
+          ]) }} />
 
       <PageHero
         eyebrow={`${meta.index} — ${page.title}`}
@@ -77,6 +71,21 @@ export default async function ServicePageRoute({ params }: { params: Promise<{ s
           )
         }
       />
+
+      <section className="border-t border-rule py-12 md:py-16">
+        <div className="site-wrap grid gap-6 lg:grid-cols-12">
+          <p className="t-label lg:col-span-4">The short answer</p>
+          <div className="lg:col-span-8">
+            <p className="speakable t-title !text-[clamp(1.15rem,1.7vw,1.5rem)] !leading-snug">{shortAnswers[slug as ServiceSlug]}</p>
+            <p className="t-label mt-6">
+              Serving York, PA and nearby —{" "}
+              <Link href="/areas" className="u-link">
+                see the areas I cover
+              </Link>
+            </p>
+          </div>
+        </div>
+      </section>
 
       <section className="border-t border-rule py-24 md:py-32">
         <div className="site-wrap grid gap-16 lg:grid-cols-12">
@@ -131,7 +140,7 @@ export default async function ServicePageRoute({ params }: { params: Promise<{ s
             <p className="t-label">Questions</p>
           </Reveal>
           <div className="lg:col-span-8">
-            <Faq items={page.faqs} />
+            <Faq items={faqs} />
           </div>
         </div>
       </section>

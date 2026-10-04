@@ -6,8 +6,9 @@ import { site } from "@/lib/site-config";
 import { ContactForm } from "./contact-form";
 
 export const metadata: Metadata = {
-  title: "Contact",
-  description: "Start a project with Agency Zero — tell me what you need and I'll reply within one working day.",
+  title: "Contact a York, PA Web Designer",
+  description:
+    "Start a project with Agency Zero in York, PA. Tell me about your website, custom software, SEO or ads project and I'll reply within one working day.",
   alternates: { canonical: "/contact" },
 };
 

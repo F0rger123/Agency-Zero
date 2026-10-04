@@ -9,9 +9,9 @@ import { ServiceGlyph } from "@/components/site/service-glyph";
 import { services } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: "Services",
+  title: "Web Design, Software & SEO Services, York PA",
   description:
-    "Custom software and CRMs, website design, SEO, Meta ads, social media and video content — six disciplines delivered as one system.",
+    "Custom software and CRMs, website design, SEO, Meta ads, social media management and video for York, PA businesses: six services delivered as one system by one person.",
   alternates: { canonical: "/services" },
 };
 

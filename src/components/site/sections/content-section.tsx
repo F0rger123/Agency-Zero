@@ -16,7 +16,7 @@ const process = [
   ["Shoot day", "One planned session captures weeks of video and photos, so you give up a day, not every week."],
   ["Planning", "Ideas and hooks come from what your customers actually ask, laid out in a calendar you can see."],
   ["On schedule", "Every task has a date and an owner. Nothing slips, and you are never chasing me for an update."],
-  ["Consistency", "The same look, voice and posting rhythm every week, so people start to recognise you."],
+  ["Consistency", "The same look, voice and posting rhythm every week, so people start to recognize you."],
 ] as const;
 
 /** A sample month plan: purely illustrative of how organic + paid are planned together. */

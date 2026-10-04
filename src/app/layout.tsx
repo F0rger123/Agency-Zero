@@ -20,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en-US" className="h-full antialiased">
       <body className="min-h-full bg-background font-sans text-foreground">
         {children}
       </body>

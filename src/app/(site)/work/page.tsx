@@ -12,8 +12,9 @@ import { webConcepts } from "@/content/concepts";
 import { adCreative, contentReel } from "@/content/media";
 
 export const metadata: Metadata = {
-  title: "Work",
-  description: "Selected Agency Zero work: the CrewBoss CRM, plus concept website designs, short-form video and Meta ad creative.",
+  title: "Work: Custom CRM, Websites & Ads",
+  description:
+    "Selected Agency Zero work from York, PA: the CrewBoss custom CRM, concept website designs, short-form video and Meta ad creative.",
   alternates: { canonical: "/work" },
 };
 

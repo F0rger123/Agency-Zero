@@ -11,14 +11,14 @@ import { Photo } from "../photo";
  */
 const skills = [
   ["Technical audit & fixes", "Crawlability, speed, structure, broken links and errors that quietly hold a site back."],
-  ["On-page optimisation", "Titles, headings, copy and internal links aligned to how people actually search."],
+  ["On-page optimization", "Titles, headings, copy and internal links aligned to how people actually search."],
   ["Local SEO", "Google Business Profile, citations, reviews and location pages for “near me” searches."],
   ["Content that answers", "Pages built around real customer questions — useful to people and quotable by AI."],
   ["Authority", "Earning credible mentions and links the slow, safe way."],
   ["Reporting", "What changed, what it did, and what happens next — in plain language."],
 ] as const;
 
-const flow = ["Audit", "Fix foundations", "Publish & optimise", "Build authority", "Report & refine"] as const;
+const flow = ["Audit", "Fix foundations", "Publish & optimize", "Build authority", "Report & refine"] as const;
 
 export function SeoSection() {
   return (
@@ -26,7 +26,7 @@ export function SeoSection() {
       <div className="site-wrap">
         <SectionHeading
           effect="words"
-          eyebrow="03 — SEO optimisation"
+          eyebrow="03 — SEO optimization"
           title="Get found on Google, maps and AI search."
           lead="Customers now look for a business in three places at once. I make sure yours is clear, credible and easy to find in all of them, and that what they find makes them get in touch."
         />

@@ -3,65 +3,49 @@ import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
+import { siteGraph, siteUrl } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 
+const title = "Agency Zero — Web Design, Custom Software & SEO in York, PA";
+const description =
+  "York, PA digital agency: custom software and CRMs, website design, SEO, Meta ads, social media management and video. One person, the whole job. Serving York County and Central Pennsylvania.";
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://agencyzero.com"),
-  title: {
-    default: "Agency Zero — Software, website design, search & content",
-    template: "%s — Agency Zero",
-  },
-  description:
-    "Agency Zero builds custom software and CRMs, premium website design, SEO, Meta ads, social media and video content for businesses that want better systems and a stronger presence.",
+  metadataBase: new URL(siteUrl),
+  title: { default: title, template: "%s | Agency Zero" },
+  description,
   applicationName: site.name,
-  authors: [{ name: site.owner }],
+  authors: [{ name: site.owner, url: `${siteUrl}/about` }],
   creator: site.owner,
+  publisher: site.name,
+  category: "Digital marketing and software development",
+  alternates: { canonical: "/" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
+  },
   openGraph: {
     type: "website",
     siteName: site.name,
-    locale: "en_GB",
-    title: "Agency Zero — Software, website design, search & content",
-    description: "Custom software, website design, SEO, paid media and content — built as one system.",
-    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "Agency Zero — software, website design, search and content" }],
+    locale: "en_US",
+    title,
+    description: "Custom software, website design, SEO, Meta ads, social media and video for York, PA businesses, built as one system.",
+    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "Agency Zero: software, website design, SEO and content in York, PA" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Agency Zero — Software, website design, search & content",
-    description: "Custom software, website design, SEO, paid media and content — built as one system.",
+    title,
+    description: "Custom software, website design, SEO, Meta ads and content for York, PA businesses.",
     images: ["/og.jpg"],
   },
-};
-
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://agencyzero.com").replace(/\/$/, "");
-
-/** Site-wide structured data: the business, its owner and the website. Only facts that are on the pages. */
-const structuredData = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "ProfessionalService",
-      "@id": `${siteUrl}/#business`,
-      name: site.name,
-      url: siteUrl,
-      image: `${siteUrl}/og.jpg`,
-      email: site.email,
-      description:
-        "Custom software and CRMs, website design, SEO, Meta ads, social media and video content for businesses.",
-      founder: { "@id": `${siteUrl}/#owner` },
-      sameAs: [site.instagram],
-      knowsAbout: ["Custom software", "CRM development", "Website design", "Search engine optimisation", "Meta advertising", "Social media content"],
-    },
-    {
-      "@type": "Person",
-      "@id": `${siteUrl}/#owner`,
-      name: site.owner,
-      jobTitle: "Founder",
-      worksFor: { "@id": `${siteUrl}/#business` },
-      url: `${siteUrl}/about`,
-      sameAs: [site.instagram],
-    },
-    { "@type": "WebSite", "@id": `${siteUrl}/#website`, url: siteUrl, name: site.name, publisher: { "@id": `${siteUrl}/#business` } },
-  ],
+  // Geo hints (low weight, harmless). No coordinates or street address are published.
+  other: { "geo.region": "US-PA", "geo.placename": "York, Pennsylvania" },
+  // Set these env vars after claiming the site in Search Console / Bing Webmaster Tools.
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
+    other: process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION } : undefined,
+  },
 };
 
 export const viewport: Viewport = { themeColor: "#000000", colorScheme: "dark" };
@@ -79,7 +63,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       <noscript>
         <style>{`.reveal{opacity:1!important;transform:none!important}.fx-word,.fx-inner{opacity:1!important;transform:none!important;filter:none!important}.menu-item{opacity:1!important;transform:none!important}`}</style>
       </noscript>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteGraph) }} />
       <div className="site-texture" aria-hidden />
       <div className="scroll-progress" aria-hidden />
       <SiteNav />
