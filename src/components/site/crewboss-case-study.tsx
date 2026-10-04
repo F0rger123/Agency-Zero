@@ -41,21 +41,29 @@ export function CrewbossCaseStudy() {
                   separate places.
                 </dd>
               </div>
-              <div>
-                <dt className="t-label">What I built</dt>
-                <dd className="mt-3 grid gap-x-6 gap-y-2 text-sm text-mist sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                  {[
-                    "Scheduling and crew assignment",
-                    "Estimates, invoices and Stripe payments",
-                    "Customer portal with e-sign and pay",
-                    "Mobile field portal and checklists",
-                    "Live crew tracking",
-                    "Automations and an AI assistant",
-                  ].map((item) => (
-                    <span key={item} className="flex gap-3"><span className="text-ash">—</span>{item}</span>
-                  ))}
-                </dd>
-              </div>
+              {[
+                [
+                  "Automations that do the repeat work",
+                  "New-lead replies, review requests, overdue-invoice reminders and 90-day re-service nudges run on their own once you set them up.",
+                ],
+                [
+                  "An AI assistant that texts, reviews and schedules",
+                  "It can text customers for you, ask for reviews, schedule jobs, manage the calendar and send invoices. It acts on your real data and asks before it does anything.",
+                ],
+                [
+                  "Jobs, calendar and invoices in one place",
+                  "Drag jobs onto the calendar, assign crew, send estimates customers can sign and pay online, and see who is paid and who is owed.",
+                ],
+                [
+                  "Help growing the business",
+                  "Referral links, automatic review requests and clear numbers on revenue and jobs show you what is working, so you learn how to grow.",
+                ],
+              ].map(([title, body]) => (
+                <div key={title}>
+                  <dt className="font-medium tracking-tight">{title}</dt>
+                  <dd className="t-body mt-2 !text-[0.92rem]">{body}</dd>
+                </div>
+              ))}
             </dl>
           </Reveal>
 
@@ -69,14 +77,6 @@ export function CrewbossCaseStudy() {
           </Reveal>
         </div>
 
-        <Reveal delay={80} className="mt-12 md:mt-16">
-          <figure>
-            <div className="overflow-hidden border border-rule-strong bg-coal">
-              <Photo src={crewboss.field.src} alt={crewboss.field.alt} width={crewboss.field.width} height={crewboss.field.height} className="w-full" />
-            </div>
-            <figcaption className="t-label mt-3">Mobile field portal: checklists, photos, clock in and out</figcaption>
-          </figure>
-        </Reveal>
       </div>
     </section>
   );

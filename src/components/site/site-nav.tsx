@@ -13,7 +13,7 @@ import { SiteWordmark } from "./wordmark";
  */
 export function SiteNav() {
   const pathname = usePathname();
-  // The home page opens clean: no logo and no link row, just a Menu button (the hero says "Agency Zero").
+  // On the home page the hero already says "Agency Zero", so the wordmark is left out; the link row stays.
   const isHome = pathname === "/";
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -57,7 +57,7 @@ export function SiteNav() {
         <div className="site-wrap flex h-16 items-center justify-between md:h-[4.5rem]">
           {isHome ? <span aria-hidden /> : <SiteWordmark />}
 
-          <nav aria-label="Primary" className={`${isHome ? "hidden" : "hidden md:flex"} items-center gap-10`}>
+          <nav aria-label="Primary" className="hidden items-center gap-10 md:flex">
             {nav.map((item) => {
               const active = item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
@@ -79,7 +79,7 @@ export function SiteNav() {
             </Link>
             <button
               type="button"
-              className={`t-label !text-bone ${isHome ? "" : "md:hidden"}`}
+              className="t-label !text-bone md:hidden"
               aria-expanded={open}
               aria-controls="mobile-menu"
               onClick={() => setOpen((value) => !value)}
@@ -101,7 +101,7 @@ export function SiteNav() {
         data-open={open}
         aria-hidden={!open}
         inert={!open}
-        className={`fixed inset-0 z-40 bg-ink pt-24 transition-[opacity,visibility,transform] duration-500 ease-[var(--ease-out)] ${isHome ? "" : "md:hidden"} ${
+        className={`fixed inset-0 z-40 bg-ink pt-24 transition-[opacity,visibility,transform] duration-500 ease-[var(--ease-out)] md:hidden ${
           open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-3 opacity-0"
         }`}
       >

@@ -3,6 +3,7 @@ import { BarsDivider } from "@/components/site/bars-divider";
 import { CrewbossCaseStudy } from "@/components/site/crewboss-case-study";
 import { DotField } from "@/components/site/dot-field";
 import { GlassCarousel } from "@/components/site/glass-carousel";
+import { LensCarousel } from "@/components/site/lens-carousel";
 import { PageHero } from "@/components/site/page-hero";
 import { Reveal } from "@/components/site/reveal";
 import { CtaSection } from "@/components/site/sections/cta-section";
@@ -48,16 +49,13 @@ export default function WorkPage() {
             </p>
           </Reveal>
           <Reveal className="mt-10 md:mt-16">
-            <GlassCarousel
+            <LensCarousel
               label="Concept website designs"
-              seconds={75}
               items={webConcepts.map((concept) => ({
                 src: concept.src,
                 alt: concept.alt,
                 title: concept.name,
                 kind: concept.kind,
-                width: 2160,
-                height: 1350,
                 tag: concept.concept ? "Concept" : undefined,
               }))}
             />
@@ -71,11 +69,11 @@ export default function WorkPage() {
             <p className="t-label">Concept · Video and ads</p>
           </Reveal>
           <h2 className="t-display mt-6 max-w-[18ch]">
-            <TextEffect text="Content and ads that look like the brand." effect="words" className="block" />
+            <TextEffect text="Short videos and ads that bring in customers." effect="words" className="block" />
           </h2>
           <Reveal delay={100}>
             <p className="t-lead mt-8 max-w-xl">
-              Short-form video for Instagram and Facebook Reels, and Meta ads with the offer, hook and call to action planned first.
+              Concept short videos for Instagram and Facebook, and Meta ads designed to get people to book, register or message.
             </p>
           </Reveal>
           <Reveal className="mt-10 md:mt-16">

@@ -37,8 +37,8 @@ export function SeoSection() {
               <Photo
                 src="/images/mockups/seo-search.jpg"
                 alt="A search results page for 'emergency plumber near me' with a map of local businesses, an AI-written answer that cites the business, and the business's profile on a phone"
-                width={2000}
-                height={1250}
+                width={3200}
+                height={2000}
                 className="w-full"
               />
             </div>

@@ -26,7 +26,6 @@ export const crewboss = {
   url: "https://smocks-crm.pages.dev/",
   hero: { src: "/images/work/crewboss-hero.jpg", alt: "CrewBoss home page: \"Run your pressure washing business like a boss\" above the owner dashboard with revenue, active jobs, crew on shift and today's schedule", width: 2880, height: 2240 },
   features: { src: "/images/work/crewboss-features.jpg", alt: "CrewBoss features: scheduling and crew assignment, estimates, invoices and payments, Stripe, client portal, drag-and-drop automations, the Alfred AI assistant, mobile field portal, live crew tracking and job photos", width: 2400, height: 3112 },
-  field: { src: "/images/work/crewboss-field.jpg", alt: "CrewBoss mobile field portal on a phone: today's jobs, a job checklist and a clock-out button, with the reasons it is built for the field", width: 2400, height: 1140 },
 };
 
 export const work: WorkItem[] = [

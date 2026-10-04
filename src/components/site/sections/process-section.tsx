@@ -3,10 +3,10 @@ import { Reveal } from "../reveal";
 import { Section, SectionHeading } from "../section";
 
 const steps = [
-  ["01", "Discover", "I learn the business, the customers and what is actually getting in the way."],
-  ["02", "Build", "Design and engineering together — software, site and creative made as one system."],
-  ["03", "Launch", "Carefully shipped, tested on real devices, and handed over with everything documented."],
-  ["04", "Improve", "I measure, learn and keep refining — the work doesn't stop at go-live."],
+  ["01", "Getting you customers", "A website, search presence and ads that bring in people who are ready to buy."],
+  ["02", "Growing your social media", "Regular, on-brand content that builds an audience that knows and trusts you."],
+  ["03", "Managing the day to day", "Replies to messages, comments and enquiries, and a plan that keeps everything moving."],
+  ["04", "You do your job", "You get on with the work you are good at. A short, plain report keeps you in the picture."],
 ] as const;
 
 export function ProcessSection() {
@@ -15,9 +15,9 @@ export function ProcessSection() {
       <div className="site-wrap">
         <SectionHeading
           effect="typing"
-          eyebrow="Process"
-          title="From first call to launch, in four steps."
-          lead="Every project runs the same way, so you always know what is happening and what comes next."
+          eyebrow="How I help"
+          title="You run your business. I will bring in the customers."
+          lead="Worry about the job you are good at. I take care of customer acquisition, social media growth and the management that goes with them, so you can stay focused on your customers."
         />
       </div>
 
@@ -26,8 +26,8 @@ export function ProcessSection() {
         <div className="absolute inset-y-0 left-0 w-[12%] bg-gradient-to-r from-coal to-transparent" aria-hidden />
         <div className="absolute inset-y-0 right-0 w-[12%] bg-gradient-to-l from-coal to-transparent" aria-hidden />
         <div className="site-wrap relative flex h-full items-end justify-between pb-2">
-          <p className="t-label">Your brief</p>
-          <p className="t-label">The finished work</p>
+          <p className="t-label">All the marketing to-dos</p>
+          <p className="t-label">Handled, so you can get on</p>
         </div>
       </div>
 

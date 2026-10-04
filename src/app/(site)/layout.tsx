@@ -80,6 +80,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
         <style>{`.reveal{opacity:1!important;transform:none!important}.fx-word,.fx-inner{opacity:1!important;transform:none!important;filter:none!important}.menu-item{opacity:1!important;transform:none!important}`}</style>
       </noscript>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+      <div className="site-texture" aria-hidden />
       <div className="scroll-progress" aria-hidden />
       <SiteNav />
       <main id="main">{children}</main>

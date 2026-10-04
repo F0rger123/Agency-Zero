@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { adCreative, contentReel } from "@/content/media";
+import { contentReel, leadCreative } from "@/content/media";
 import { MediaFrame } from "../media-frame";
 import { Reveal } from "../reveal";
 import { Section, SectionHeading } from "../section";
@@ -12,13 +12,11 @@ const channels = [
   ["Campaign creative", "/services/content"],
 ] as const;
 
-const pipeline = [
-  ["01", "Concept", "Angles and hooks built from what your customers actually ask."],
-  ["02", "Script", "Short, specific scripts and shot lists — nothing improvised on the day."],
-  ["03", "Shoot", "One planned session captures weeks of footage and stills."],
-  ["04", "Edit", "Cut, captioned and formatted for each platform, with a review step."],
-  ["05", "Publish", "Scheduled organic posts and ad-ready cuts, on-brand every time."],
-  ["06", "Learn", "What held attention gets repeated; what didn't gets dropped."],
+const process = [
+  ["Shoot day", "One planned session captures weeks of video and photos, so you give up a day, not every week."],
+  ["Planning", "Ideas and hooks come from what your customers actually ask, laid out in a calendar you can see."],
+  ["On schedule", "Every task has a date and an owner. Nothing slips, and you are never chasing me for an update."],
+  ["Consistency", "The same look, voice and posting rhythm every week, so people start to recognise you."],
 ] as const;
 
 /** A sample month plan: purely illustrative of how organic + paid are planned together. */
@@ -72,6 +70,44 @@ export function ContentSection() {
             <div className="grid grid-cols-3 gap-3 md:gap-5">
               {contentReel.map((media, i) => (
                 <Reveal key={media.caption} delay={i * 120} className={i === 1 ? "mt-8 md:mt-14" : i === 2 ? "mt-3 md:mt-6" : ""}>
+                  {/* Hover (desktop): the phone zooms in and swings the opposite way to how it is angled. */}
+                  <div className="phone-hover" style={{ "--rot": i === 1 ? "-4deg" : "4deg" } as React.CSSProperties}>
+                    <MediaFrame media={media} />
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ads and the leads they bring in */}
+        <div className="mt-28 border-t border-rule pt-24">
+          <div className="grid gap-12 lg:grid-cols-12">
+            <div className="lg:col-span-5">
+              <Reveal>
+                <p className="t-label">Paid social</p>
+                <h3 className="t-title mt-6 max-w-[16ch]">Ads that look like they belong to your brand.</h3>
+                <p className="t-body mt-6 max-w-md">
+                  Static, carousel and short-form ads, designed for the feed, with the offer and the call to action planned first.
+                  Each one asks people to do something: book a call, register, send a message.
+                </p>
+                <p className="t-body mt-4 max-w-md">
+                  Then the replies come in. Direct messages and comments are answered quickly, so interest turns into bookings and
+                  sign-ups instead of fading away.
+                </p>
+              </Reveal>
+              <ul className="mt-8 grid grid-cols-2 gap-px border border-rule bg-rule text-sm">
+                {["Ads that ask for the click", "Replies to DMs and comments", "Sign-up and enquiry tracking", "Weekly learning"].map((t, i) => (
+                  <Reveal key={t} as="li" delay={i * 60} className="bg-coal px-4 py-4">
+                    <span className="t-label mr-3">0{i + 1}</span>
+                    {t}
+                  </Reveal>
+                ))}
+              </ul>
+            </div>
+            <div className="grid grid-cols-2 gap-4 md:gap-6 lg:col-span-7">
+              {leadCreative.map((media, i) => (
+                <Reveal key={media.caption} delay={i * 90} className={i % 2 === 1 ? "mt-8 md:mt-12" : ""}>
                   <MediaFrame media={media} />
                 </Reveal>
               ))}
@@ -79,47 +115,18 @@ export function ContentSection() {
           </div>
         </div>
 
-        {/* ads */}
-        <div className="mt-28 grid items-center gap-12 border-t border-rule pt-24 lg:grid-cols-12">
-          <Reveal className="order-2 grid grid-cols-2 gap-4 md:gap-6 lg:order-1 lg:col-span-7">
-            {adCreative.map((media, i) => (
-              <div key={media.caption} className={i === 1 ? "mt-8 md:mt-14" : ""}>
-                <MediaFrame media={media} />
-              </div>
-            ))}
-          </Reveal>
-          <div className="order-1 lg:order-2 lg:col-span-5">
-            <Reveal>
-              <p className="t-label">Paid social</p>
-              <h3 className="t-title mt-6 max-w-[16ch]">Ads that look like they belong to your brand.</h3>
-              <p className="t-body mt-6 max-w-md">
-                Static, carousel and short-form creative designed for the feed, with the offer, hook and call to action planned
-                before anything is produced. Then tested, measured and refreshed.
-              </p>
-            </Reveal>
-            <ul className="mt-8 grid grid-cols-2 gap-px border border-rule bg-rule text-sm">
-              {["Hook & offer", "Creative variants", "Pixel & tracking", "Weekly learning"].map((t, i) => (
-                <Reveal key={t} as="li" delay={i * 60} className="bg-coal px-4 py-4">
-                  <span className="t-label mr-3">0{i + 1}</span>
-                  {t}
-                </Reveal>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {/* pipeline */}
+        {/* how it gets done */}
         <div className="mt-28 border-t border-rule pt-24">
           <Reveal>
-            <p className="t-label">The pipeline</p>
-            <h3 className="t-title mt-6 max-w-[22ch]">From idea to published — one organised process.</h3>
+            <p className="t-label">How the content gets done</p>
+            <h3 className="t-title mt-6 max-w-[22ch]">Planned, shot and posted without it taking over your week.</h3>
           </Reveal>
-          <ol className="mt-12 grid gap-px border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-6">
-            {pipeline.map(([n, title, body], i) => (
-              <Reveal as="li" key={n} delay={i * 60} className="bg-coal p-6">
-                <p className="t-label">{n}</p>
-                <p className="mt-8 text-lg tracking-tight">{title}</p>
-                <p className="t-body mt-2 !text-[0.85rem] !leading-6">{body}</p>
+          <ol className="mt-12 grid gap-px border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-4">
+            {process.map(([title, body], i) => (
+              <Reveal as="li" key={title} delay={i * 70} className="bg-coal p-7">
+                <p className="t-label">0{i + 1}</p>
+                <p className="mt-8 text-xl tracking-tight">{title}</p>
+                <p className="t-body mt-3 !text-[0.9rem] !leading-6">{body}</p>
               </Reveal>
             ))}
           </ol>

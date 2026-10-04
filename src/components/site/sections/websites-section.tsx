@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GlassCarousel } from "../glass-carousel";
+import { LensCarousel } from "../lens-carousel";
 import { webConcepts } from "@/content/concepts";
 import { DotField } from "../dot-field";
 import { Photo } from "../photo";
@@ -34,16 +34,13 @@ export function WebsitesSection() {
         />
 
         <Reveal className="mt-12 md:mt-20">
-          <GlassCarousel
+          <LensCarousel
             label="Concept website designs"
-            seconds={70}
             items={webConcepts.map((concept) => ({
               src: concept.src,
               alt: concept.alt,
               title: concept.name,
               kind: concept.kind,
-              width: 2160,
-              height: 1350,
               tag: concept.concept ? "Concept" : undefined,
             }))}
           />
@@ -128,14 +125,17 @@ export function WebsitesSection() {
             title="Set up for search from day one"
             delay={210}
             visual={
-              <div className="flex h-full flex-col justify-center">
-                <p className="font-mono text-[0.62rem] text-ash">northline-plumbing › boiler-repair</p>
-                <p className="mt-1 text-base leading-snug text-bone underline decoration-rule-strong underline-offset-4">Boiler repair in Leeds — same-day callouts</p>
-                <p className="mt-1 text-sm leading-5 text-mist">Gas Safe registered engineers. Price agreed before work starts.</p>
-              </div>
+              <ul className="flex h-full flex-col justify-center gap-2.5 text-sm">
+                {["Clear page titles", "Short descriptions people want to click", "Address, hours and map included", "Quick to load on a phone"].map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-mist">
+                    <span className="grid size-4 shrink-0 place-items-center border border-bone/60 text-[0.55rem] text-bone" aria-hidden>✓</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
             }
           >
-            Every page has a clear title and description, so Google can show your business properly when people search.
+            Every page is written and built so Google can show your business properly when people search for what you do.
           </Detail>
         </div>
 
