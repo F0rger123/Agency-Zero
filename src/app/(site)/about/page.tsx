@@ -41,7 +41,7 @@ export default function AboutPage() {
           eyebrow="About Luke"
           effect="none"
           title="Hi, I'm Luke Knight."
-          lead="I run Agency Zero on my own. I build custom software for businesses, and the website design, search work and content that bring customers to them."
+          lead="I started Agency Zero on my own because I saw a gap: too many businesses are paying agency prices for bloated teams and average work. I do it differently, and I do it myself."
         />
       </div>
 
@@ -54,17 +54,33 @@ export default function AboutPage() {
       <section className="border-t border-rule py-24 md:py-32">
         <div className="site-wrap grid gap-16 lg:grid-cols-12">
           <Reveal className="lg:col-span-4">
-            <p className="t-label">Who runs it</p>
+            <p className="t-label">My story</p>
           </Reveal>
           <Reveal delay={100} className="space-y-6 lg:col-span-7">
-            <p className="t-title max-w-[26ch]">Software, websites and marketing, made by one person so they fit together.</p>
+            <p className="t-title max-w-[26ch]">I started Agency Zero because I saw a hole in the market.</p>
             <p className="t-body max-w-xl">
-              Agency Zero is run by {site.owner}. I design, write the code and produce the content myself, which is why the CRM, the
-              website and the campaign for the same client look and feel like one thing.
+              Many businesses carry huge overhead, still don&apos;t deliver a good product, and charge far too much for it. You end up
+              paying for the offices, the account managers and the layers of meetings, when what you wanted was the work.
             </p>
             <p className="t-body max-w-xl">
-              I also build my own products. <Link href="/work" className="u-link text-bone">CrewBoss</Link>, a CRM for pressure-washing
-              businesses, is live, and what I learn building it goes back into client work.
+              So I built Agency Zero the other way round. It&apos;s just me: no overhead to cover, no hand-offs, and a price that
+              reflects the work instead of the building around it. I design, write the code and produce the content myself, which is
+              why the software, the website and the campaign for the same client look and feel like one thing.
+            </p>
+            <p className="t-body max-w-xl">
+              I genuinely like helping people, and I like giving time back to the people I work with. If I can take a job off your
+              plate and do it properly, so you can get on with running your business, that is a good day.
+            </p>
+            <p className="t-title !text-[1.5rem] max-w-[30ch] pt-4">On AI: a coworker, not a replacement.</p>
+            <p className="t-body max-w-xl">
+              AI is a powerful tool and I use it every day. But I build my tools on purpose so that AI works alongside people, as a
+              coworker that drafts, sorts and handles the repetitive work, while a person makes the decisions and keeps the human
+              touch. Your customers can tell the difference. Both matter, the human side and the AI, and the best results come from
+              using each for what it is good at.
+            </p>
+            <p className="t-body max-w-xl">
+              I also build my own products. <Link href="/work" className="u-link text-bone">CrewBoss</Link>, a CRM for
+              pressure-washing businesses, is live, and its AI assistant works exactly this way: it asks before it acts.
             </p>
             <p className="t-body max-w-xl">
               The quickest way to reach me is email at <a href={`mailto:${site.email}`} className="u-link text-bone">{site.email}</a>,

@@ -2,6 +2,7 @@
 
 import { useActionState, useState, type ReactNode } from "react";
 import { submitLeadAction, type LeadState } from "./actions";
+import { ContactWizard } from "./contact-wizard";
 import { BUDGETS, SERVICE_OPTIONS, SOCIAL_FIELDS, TIMELINES } from "./options";
 
 const initial: LeadState = {};
@@ -21,8 +22,7 @@ function Step({ number, title, hint, children }: { number: string; title: string
   );
 }
 
-/** Premium project-inquiry form. Works without JS (progressive enhancement via the server action). */
-export function ContactForm() {
+function LongForm() {
   const [state, action, pending] = useActionState(submitLeadAction, initial);
   const [startedAt] = useState(() => Date.now());
   const [noWebsite, setNoWebsite] = useState(false);
@@ -189,5 +189,20 @@ export function ContactForm() {
         )}
       </div>
     </form>
+  );
+}
+
+/**
+ * Project inquiry. Phones get a one-question-per-screen wizard (no scrolling); tablets and desktops get the full form.
+ * Both submit the same fields to the same server action, and each works without JS.
+ */
+export function ContactForm() {
+  return (
+    <>
+      <div className="hidden md:block">
+        <LongForm />
+      </div>
+      <ContactWizard />
+    </>
   );
 }

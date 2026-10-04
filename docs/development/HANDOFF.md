@@ -1,5 +1,16 @@
 # Handoff log (newest first)
 
+## 2026-10-04 (3) — Claude — About story + mobile contact wizard
+
+**Changed**
+- `/about`: intro expanded into a personal story (gap in the market, overhead/overcharging, likes helping and saving time, AI as a coworker not a replacement). No invented figures.
+- `/contact` on phones (<768px): one-question-per-screen wizard (`contact-wizard.tsx`), 8 steps, native selects, Next/Back, progress bar, no scrolling. Ends on a full-screen decode animation ("Signal sent. / We begin at zero.") and a "Back to home" button. Desktop keeps the long form. Both post the same `submitLeadAction` / `submit_lead` fields.
+- The site header is hidden while the wizard is mounted (CSS `:has([data-contact-wizard])`) because the page-fade template creates a stacking context that put the nav above the wizard.
+
+**Verified**: lint, tsc, tests, build; Playwright 390x780 through every step against a mock Supabase.
+**Unverified**: real submission against production, real iOS keyboard/viewport behaviour.
+**Migrations/config**: none (0020/0021 still need applying if not already).
+
 ## 2026-10-04 (2) — Claude — feedback round: lens carousel, lead-gen ads, reframed sections
 Home nav link row restored (logo still omitted on home). `LensCarousel` (`lens-carousel.tsx`) replaces the website slider on home + Work: snap-scroll row, centre glass lens (Chromium refracts via SVG `feDisplacementMap` backdrop-filter with RGB split; other browsers get a frosted ring), drag/arrows/dots/keys, slow auto-advance until touched, click-to-zoom lightbox, blurred glow behind the active slide. The 21st.dev page does not expose source (it is WebGL/three/GSAP), so this is an original CSS/SVG take. Subtle global background texture (`.site-texture`: faint grid + two slow light pools). Websites cards: 4th card now a plain checklist. SEO visual re-rendered at 2x with larger text. Content section: reel phones zoom+swing on hover (`.phone-hover`), ads block now shows lead-gen (Meta "work with us" and "register" ads, an Instagram DM thread, comments → sign-ups: `lead-*.html`, `ad-work/register.html`), pipeline simplified to 4 plain cards (shoot day, planning, on schedule, consistency); calendar + call sheet kept. Process section reframed ("You run your business. I will bring in the customers."). Work: CrewBoss gets automations / AI assistant / calendar+invoices / growth copy, field screenshot removed, "Short videos and ads that bring in customers." No migrations.
 

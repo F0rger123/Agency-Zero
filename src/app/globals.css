@@ -1026,3 +1026,61 @@ html:has(.site) {
     animation: none;
   }
 }
+
+/* Contact wizard (phones) ─────────────────────────────────────────────────── */
+@keyframes wizard-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(36px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes wizard-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-36px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.wizard-from-right {
+  animation: wizard-from-right 0.45s var(--ease-out) both;
+}
+.wizard-from-left {
+  animation: wizard-from-left 0.45s var(--ease-out) both;
+}
+@keyframes wizard-fade {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.wizard-fade {
+  opacity: 0;
+  animation: wizard-fade 0.9s var(--ease-out) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wizard-from-right,
+  .wizard-from-left,
+  .wizard-fade {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* On phones the contact wizard owns the whole screen: hide the site header/menu behind it. */
+@media (max-width: 767px) {
+  body:has([data-contact-wizard]) .site > header,
+  body:has([data-contact-wizard]) header.fixed {
+    display: none;
+  }
+}
