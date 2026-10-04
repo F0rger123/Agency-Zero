@@ -1,5 +1,11 @@
 # Handoff log (newest first)
 
+## 2026-10-04 (6) — Claude — MRR in monthly revenue; noindex until domain set; setup checklist
+
+- Dashboard "Revenue this month" = payments received this month + MRR (note shows the split). Caveat: if a recurring client's monthly payment is also recorded as a payment it counts twice; record only one-off fees as payments. UI-only, no migration.
+- `src/lib/seo.ts`: removed the `agencyzero.com` fallback (that domain belongs to someone else, registered 2010, expires 2026-12-08). With `NEXT_PUBLIC_SITE_URL` unset the site is `noindex` and `robots.txt` disallows all. Set it as a Cloudflare BUILD variable and redeploy to go live in search.
+- `docs/seo/SETUP_CHECKLIST.md`: domain, Cloudflare custom domain, Search Console, Bing, Google Business Profile (service-area, address hidden), listings, email, measurement.
+
 ## 2026-10-04 (5) — Claude — dashboard revenue tiles; public-site SEO/AEO for York, PA
 
 - **Dashboard**: revenue tiles no longer show a grey empty cell (Outstanding now spans the row on mobile) and `Stat` tiles fill their cell (`h-full`, wrapping long amounts).

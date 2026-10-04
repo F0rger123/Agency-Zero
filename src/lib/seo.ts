@@ -2,7 +2,13 @@ import type { FaqItem } from "@/components/site/faq";
 import seoData from "@/content/seo-data.json";
 import { services, site } from "@/lib/site-config";
 
-export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://agencyzero.com").replace(/\/$/, "");
+/**
+ * Public origin, from NEXT_PUBLIC_SITE_URL (a BUILD-time variable: set it in Cloudflare Workers Builds, then rebuild).
+ * Until it is set the site tells search engines NOT to index it, so a preview or workers.dev address never competes with
+ * (or points canonicals at) the real domain.
+ */
+export const siteConfigured = Boolean(process.env.NEXT_PUBLIC_SITE_URL);
+export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
 
 export const home = seoData.home;
 export const areas = seoData.areas;

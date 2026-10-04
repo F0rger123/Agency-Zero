@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { siteUrl } from "@/lib/seo";
+import { siteConfigured, siteUrl } from "@/lib/seo";
 
 const privatePaths = ["/app", "/login", "/auth", "/q/", "/c/"];
 
@@ -14,6 +14,7 @@ const crawlers = [
 ];
 
 export default function robots(): MetadataRoute.Robots {
+  if (!siteConfigured) return { rules: [{ userAgent: "*", disallow: "/" }] };
   return {
     rules: [
       { userAgent: "*", allow: "/", disallow: privatePaths },

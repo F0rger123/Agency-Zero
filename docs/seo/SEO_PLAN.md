@@ -20,10 +20,10 @@ Scope: the **public marketing site only** (not the CRM, which is `noindex` and b
 - **No rankings promises.** No fake review/rating markup.
 
 ## Do next (owner)
-1. Set `NEXT_PUBLIC_SITE_URL` to the real domain in Cloudflare. (Default fallback is `https://agencyzero.com`, which may not be yours.)
+1. Buy a domain and set `NEXT_PUBLIC_SITE_URL` to it (build variable in Cloudflare). **Until it is set the site is `noindex` and `robots.txt` disallows everything**, on purpose. Follow `SETUP_CHECKLIST.md`.
 2. Search Console + Bing verification and sitemap submission (see `LOCAL_SEO.md`).
 3. Decide on a Google Business Profile (see `LOCAL_SEO.md`).
-4. Confirm the wording "in person around York where that helps" is true for you, or tell me and I will change it.
+4. (Done) Owner confirmed customers are met mostly in person, so the "in person around York" wording stands.
 5. Replace the placeholder concept designs on `/work` with real York-area projects when you have them. Real, local client work
    (with permission), testimonials and case studies are the strongest ranking and conversion signals you can add.
 6. Get reviews and links: Google reviews, local directories, chamber of commerce, client sites linking back ("Website by Agency Zero").

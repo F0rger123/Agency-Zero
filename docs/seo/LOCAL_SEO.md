@@ -15,6 +15,8 @@ rules.** Check Google's current guidelines before you start, because they change
 - One profile per business, and one for each real location. Don't create several profiles for several towns.
 
 ## Recommendation
+Owner confirmed: customers are met mostly in person, some online. That qualifies as a service-area business, so **create the profile**. Full steps: `SETUP_CHECKLIST.md` section 4.
+
 1. If you meet clients in person around York (coffee shop meetings, on-site visits, shoots), you qualify as a service-area business.
    Create the profile, **hide the address**, set the service area to York County plus the nearby towns you really travel to.
 2. If everything is genuinely remote, don't force it. Skip Google and use the "no address needed" listings below, and

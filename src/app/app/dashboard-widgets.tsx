@@ -94,6 +94,9 @@ export type RevenueSummary = {
  * Revenue = money actually received (non-voided payments), never quoted value
  * or unpaid invoices. Source: `public.get_revenue_summary()` (migration 0018).
  * `revenue === null` means the migration is not applied yet — say so honestly.
+ * "Revenue this month" = payments received this month + monthly recurring (MRR, counted as expected income for the
+ * month). If a recurring client's monthly payment is also recorded as a payment, it counts twice: record only
+ * one-off fees as payments and let recurring come from MRR.
  */
 export function RevenueCards({ revenue, mrrCents, currency }: { revenue: RevenueSummary | null; mrrCents: number; currency: string }) {
   return (
@@ -120,7 +123,8 @@ export function RevenueCards({ revenue, mrrCents, currency }: { revenue: Revenue
             <li>
               <Stat
                 label="Revenue this month"
-                value={moneyLabel(revenue.revenue_this_month_cents, revenue.currency)}
+                value={moneyLabel(revenue.revenue_this_month_cents + mrrCents, revenue.currency)}
+                note={`${moneyLabel(revenue.revenue_this_month_cents, revenue.currency)} received + ${moneyLabel(mrrCents, currency)} recurring`}
               />
             </li>
             <li>
