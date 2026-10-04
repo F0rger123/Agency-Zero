@@ -23,6 +23,7 @@ export default function ServicesPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_40%,transparent_20%,#000_85%)]" aria-hidden />
         <PageHero
           eyebrow="Services"
+          effect="typing"
           title="Six disciplines. One standard."
           lead="Most businesses stitch these together from different vendors. I build and run them together, so your software, site, search presence and content all pull in the same direction."
         />

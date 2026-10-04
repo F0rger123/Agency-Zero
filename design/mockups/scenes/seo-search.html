@@ -1,0 +1,40 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../base.css">
+<style>
+/* "Get found" visual: a search results page with a map pack, an AI answer card and a business profile on a phone. */
+.bg{position:absolute;inset:0;background:radial-gradient(70% 80% at 30% 20%,#243a6b,#0b0f1c 62%,#05060a)}
+.win{position:absolute;left:70px;top:90px;width:1000px;height:700px;border-radius:16px;background:#fff;color:#202124;overflow:hidden;box-shadow:0 70px 120px -30px #000,0 0 0 1px #ffffff22;transform:rotate(-1.5deg)}
+.bar{height:44px;background:#eceef1;display:flex;align-items:center;gap:8px;padding:0 16px}.bar i{width:11px;height:11px;border-radius:50%;background:#c7cbd1}
+.url{margin-left:14px;flex:1;height:26px;border-radius:13px;background:#fff;font-size:12px;color:#5f6368;display:flex;align-items:center;padding:0 14px}
+.search{margin:22px 28px 0;height:50px;border-radius:25px;border:1px solid #dfe1e5;box-shadow:0 2px 8px #0001;display:flex;align-items:center;padding:0 22px;font-size:18px;gap:14px}
+.search b{font-weight:400;color:#202124}.search span{color:#9aa0a6;font-size:20px}
+.tabs{display:flex;gap:26px;margin:14px 30px 0;font-size:14px;color:#5f6368;border-bottom:1px solid #ebedf0}.tabs span{padding:10px 0}.tabs .on{color:#1a73e8;border-bottom:3px solid #1a73e8}
+.pack{margin:18px 28px 0;display:grid;grid-template-columns:400px 1fr;border:1px solid #e3e5e8;border-radius:12px;overflow:hidden}
+.map{position:relative;height:250px}.map svg{position:absolute;inset:0}
+.list div{padding:11px 16px;border-bottom:1px solid #eef0f2}.list div:last-child{border:0}.list b{display:block;font-size:15px;color:#1a0dab;font-weight:500}.list small{font-size:12px;color:#5f6368}.star{color:#fbbc04;letter-spacing:1px;font-size:12px}
+.list .you{background:#f3f7ff}.list .you b::after{content:"  ● Your business";font-size:10px;color:#1a73e8;margin-left:6px}
+.res{margin:16px 30px 0}.res small{font-size:12px;color:#188038}.res h4{font-size:20px;font-weight:400;color:#1a0dab;margin:3px 0}.res p{font-size:14px;color:#4d5156;line-height:1.5;max-width:780px}
+.ai{position:absolute;right:50px;top:150px;width:470px;border-radius:24px;padding:26px;color:#f4f6ff;background:linear-gradient(150deg,rgba(255,255,255,.2),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.35);backdrop-filter:blur(20px);box-shadow:0 50px 90px -20px #000,inset 0 1px 0 rgba(255,255,255,.5);transform:rotate(1.5deg)}
+.ai h5{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#bcd0ff;font-weight:600;display:flex;align-items:center;gap:8px}.ai h5::before{content:"✦";font-size:16px;color:#8ab4ff}
+.q{margin-top:14px;font-size:15px;color:#cfd8f7}.a{margin-top:12px;font-size:17px;line-height:1.55}.a em{font-style:normal;background:#ffffff26;padding:1px 7px;border-radius:6px}.a sup{font-size:11px;background:#8ab4ff;color:#0b1330;border-radius:5px;padding:1px 5px;margin-left:3px;font-weight:700}
+.src{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}.src span{font-size:12px;border:1px solid #ffffff44;border-radius:999px;padding:6px 12px;background:#00000030}.src span.top{background:#fff;color:#0b1330;border-color:#fff;font-weight:600}
+.phone{position:absolute;right:120px;top:430px;width:290px;height:560px;border-radius:44px;padding:10px;background:linear-gradient(145deg,#3a3a3a,#0d0d0d 45%,#262626);box-shadow:0 70px 110px -20px #000,inset 0 0 0 1.5px #ffffff22;transform:rotate(3deg)}
+.scr{position:relative;width:100%;height:100%;border-radius:35px;background:#fff;color:#202124;overflow:hidden}
+.ph1{height:150px;background:linear-gradient(135deg,#0a2fd6,#1c47ff 60%,#ffd400);position:relative}.ph1 b{position:absolute;left:18px;bottom:14px;color:#fff;font-size:22px;letter-spacing:-.02em}
+.pn{padding:16px 18px}.pn h3{font-size:19px}.pn .r{margin-top:6px;font-size:13px;color:#5f6368}.pn .r .star{margin-right:6px}
+.btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}.btns span{border:1px solid #dadce0;border-radius:18px;text-align:center;padding:9px 0;font-size:12px;color:#1a73e8;font-weight:600}.btns .p{background:#1a73e8;color:#fff;border-color:#1a73e8}
+.row{margin-top:14px;font-size:13px;color:#3c4043;line-height:1.7}.row b{color:#188038;font-weight:600}
+.cap{position:absolute;left:70px;bottom:52px;font-family:"M";font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#9fb2e8}
+</style></head><body data-w="1600" data-h="1000" data-scale="1.25" data-q="88">
+<div class="edit vig"><div class="bg"></div>
+ <div class="win"><div class="bar"><i></i><i></i><i></i><div class="url">search.example/results?q=emergency+plumber+near+me</div></div>
+  <div class="search"><span>⌕</span><b>emergency plumber near me</b></div>
+  <div class="tabs"><span class="on">All</span><span>Maps</span><span>Reviews</span><span>Images</span><span>News</span></div>
+  <div class="pack"><div class="map"><svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice"><rect width="400" height="250" fill="#e8eaed"/><rect x="0" y="0" width="140" height="90" fill="#cde8d0"/><path d="M260 250 C300 200 340 190 400 170 L400 250Z" fill="#aecbfa"/><g stroke="#fff" stroke-width="10" fill="none"><path d="M0 130H400M120 0V250M280 0V250"/></g><g stroke="#f6c26b" stroke-width="5" fill="none"><path d="M0 200 C120 160 260 120 400 60"/></g><g><path d="M200 108a16 16 0 1 1 32 0c0 14-16 36-16 36s-16-22-16-36z" transform="translate(-30 0)" fill="#ea4335"/><circle cx="186" cy="108" r="6" fill="#fff"/><path d="M0 0" /><path d="M300 78a12 12 0 1 1 24 0c0 11-12 26-12 26s-12-15-12-26z" fill="#9aa0a6"/><path d="M70 150a12 12 0 1 1 24 0c0 11-12 26-12 26s-12-15-12-26z" fill="#9aa0a6"/></g></svg></div>
+   <div class="list"><div class="you"><b>Northline Plumbing &amp; Heating</b><small><span class="star">★★★★★</span> 4.9 (312) · Plumber · Open 24 hours</small></div><div><b>City Heating Services</b><small><span class="star">★★★★☆</span> 4.4 (96) · Heating engineer · Opens 8 am</small></div><div><b>Another Plumber Ltd</b><small><span class="star">★★★★☆</span> 4.2 (58) · Plumber · Closed</small></div></div></div>
+  <div class="res"><small>northline-plumbing › emergency-plumber</small><h4>Emergency Plumber Leeds, Same-Day Callouts | Northline</h4><p>Burst pipe or no heating? Gas Safe registered engineers across Leeds. Fixed price agreed before we start. Book online in two minutes.</p></div>
+  <div class="res"><small>directory.example › plumbers › leeds</small><h4>Top 10 Plumbers in Leeds, Compare Quotes</h4><p>Find and compare local tradespeople. Sponsored listings may appear first.</p></div>
+ </div>
+ <div class="ai"><h5>AI answer</h5><div class="q">Who can fix a burst pipe tonight in Leeds?</div><div class="a">For an out-of-hours burst pipe, pick a registered plumber that offers <em>same-day callouts</em> and a fixed price. <em>Northline Plumbing &amp; Heating</em><sup>1</sup> covers Leeds 24 hours and explains its pricing up front<sup>2</sup>.</div><div class="src"><span class="top">1 · northline-plumbing</span><span>2 · northline pricing</span><span>3 · gassaferegister</span></div></div>
+ <div class="phone"><div class="scr"><div class="ph1"><b>Northline</b></div><div class="pn"><h3>Northline Plumbing &amp; Heating</h3><div class="r"><span class="star">★★★★★</span> 4.9 · 312 reviews</div><div class="r">Plumber in Leeds · Open 24 hours</div><div class="btns"><span class="p">Call</span><span>Directions</span><span>Website</span></div><div class="row"><b>Open now</b> · Emergency callouts<br>Gas Safe registered<br>“Arrived within the hour and fixed it first go.”</div></div></div></div>
+ <div class="cap">How customers find you: search · maps · AI answers</div>
+</div></body></html>

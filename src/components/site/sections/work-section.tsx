@@ -9,6 +9,7 @@ export function WorkSection() {
     <Section id="work">
       <div className="site-wrap">
         <SectionHeading
+          effect="blur"
           eyebrow="Selected work"
           title="Proof beats promises."
           lead="Each project is shown as the problem, what I delivered and what changed. CrewBoss, a CRM I built, is live. The two concept projects show how I would approach other kinds of work."

@@ -15,7 +15,7 @@ export type ServicePage = {
   audience: string[];
   includes: { title: string; body: string }[];
   process: { title: string; body: string }[];
-  faqs: { q: string; a: string }[];
+  faqs: { q: string; a: string; bullets?: string[] }[];
 };
 
 export const servicePages: Record<ServiceSlug, ServicePage> = {
@@ -48,10 +48,12 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       { title: "Launch & support", body: "Migration, training and ongoing improvement as the business changes." },
     ],
     faqs: [
-      { q: "Why not just use an existing CRM?", a: "Often you should. I build custom when your process is genuinely different, when you are stitching several tools together, or when the cost of bending to someone else's software is higher than owning your own." },
-      { q: "Do I own the software?", a: "That is agreed up front in the project terms. The aim is that you are never locked in to me." },
-      { q: "How long does it take?", a: "A focused first version can be usable in weeks. Larger systems are delivered in stages so value arrives early." },
-      { q: "Can it connect to the tools I already use?", a: "Usually yes. I scope integrations during discovery so there are no surprises." },
+      { q: "Why not just use an existing CRM?", a: "Often you should. Off-the-shelf tools are cheaper and faster when your process is ordinary. Custom software starts to make sense when your process is genuinely different, when you are stitching several tools together with spreadsheets, or when the cost of bending your work to someone else's screens keeps growing. I will tell you honestly which side of that line you are on after a short discovery conversation.", bullets: ["Good reasons to go custom: unusual workflow, several tools that do not talk to each other, or a CRM your team avoids using", "Good reasons not to: a standard sales pipeline and a team happy with a mainstream tool"] },
+      { q: "Do I own the software?", a: "Ownership and hand-over are agreed in writing before work starts. The aim is that you are never locked in to me: the code is documented, the data stays in an account you control, and another developer could pick it up. If you want me to host and maintain it, that is a separate, clearly priced option rather than a hidden dependency." },
+      { q: "How long does it take, and what does it cost?", a: "A focused first version, such as one pipeline, the key screens and the main automations, can be usable in a few weeks. Larger systems are delivered in stages so value arrives early and you can change direction as you learn. I give a fixed scope and price for each stage after discovery, so you know what you are paying for before anything is built." },
+      { q: "Can it connect to the tools I already use?", a: "Usually yes. Common connections include accounting, email, calendars, payments such as Stripe, forms and spreadsheets. I list every integration during discovery and flag any that depend on a third party's limits, so there are no surprises midway through.", bullets: ["Typical examples: Stripe, Google Workspace, accounting software, email and SMS, website forms"] },
+      { q: "What happens if my process changes later?", a: "That is the point of building it around you. Because the system is yours, stages, fields and automations can be adjusted without waiting for a vendor roadmap. Small changes after launch are quick, and larger ones are scoped like any other stage." },
+      { q: "Is my data safe?", a: "Access is limited to the people you choose, data is stored in a private database, and backups are part of the setup. I design permissions from the first release rather than adding them later, and I will explain plainly where your data lives and who can see it." },
     ],
   },
 
@@ -84,10 +86,12 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       { title: "Launch & improve", body: "Careful release, measurement, and iteration once real visitors arrive." },
     ],
     faqs: [
-      { q: "Do you use templates?", a: "No. Every site is designed and built for the business it represents." },
-      { q: "Will it be easy to update?", a: "Yes — I agree how you will manage content during scoping and build it to suit." },
-      { q: "Is SEO included?", a: "Technical and on-page SEO foundations are part of every build. Ongoing SEO is a separate service." },
-      { q: "Can you add a booking, shop or customer portal?", a: "Yes. Those are custom features I scope with you." },
+      { q: "Do you use templates?", a: "No. Every site is designed and built for the business it represents, starting from your customers and what you need them to do: call, book, enquire or buy. You will see a design direction in context before the full build, so the look is agreed early." },
+      { q: "Will it be easy to update?", a: "Yes. During scoping we agree who will edit the site and how often, then I build the editing to suit, from simple text and image changes to a full content system if you publish regularly. You will get a short walkthrough and written notes so you are not dependent on me for everyday changes." },
+      { q: "Is SEO included?", a: "The technical and on-page foundations are part of every build: clear page titles and descriptions, sensible headings, fast loading, mobile-friendly layouts, structured data and a sitemap. Ongoing SEO work such as local profiles, content and links is a separate service, which you can add whenever it suits.", bullets: ["Included: titles, descriptions, headings, speed, structured data, sitemap", "Separate: ongoing content, link building and local SEO"] },
+      { q: "Can you add a booking system, shop or customer portal?", a: "Yes. Those are custom features I scope with you, and they can connect to your existing tools such as payments, calendars and email. Because I also build CRMs, enquiries and bookings can flow straight into a system you control." },
+      { q: "How long does a website take?", a: "A focused site of a handful of pages is typically a few weeks from approved design to launch. Larger sites or custom features take longer, and I give you a timeline in writing with dates for each stage. The biggest factor is usually how quickly content and feedback arrive, so I will tell you what I need and when." },
+      { q: "What do I need to provide?", a: "Your logo and brand colours if you have them, a clear idea of what the site should achieve, and the key facts about your services. I can write the copy and source images with you. If you do not have a brand yet, I can propose a simple direction as part of the design stage." },
     ],
   },
 
@@ -120,10 +124,12 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       { title: "Measure & refine", body: "Reporting, learning and adjusting month by month." },
     ],
     faqs: [
-      { q: "Can you guarantee first-page rankings?", a: "No — and be wary of anyone who does. Search engines are not mine to control. I commit to the work, the transparency and the reporting." },
-      { q: "How long does SEO take?", a: "Technical fixes can help quickly; competitive terms take months. I will give you an honest expectation after the audit." },
-      { q: "What about AI search?", a: "Clear structure, credible sources and genuinely helpful content help in both traditional and AI-driven search. I build for both." },
-      { q: "Do you do local SEO?", a: "Yes — Google Business Profile, citations and local content are core to the service." },
+      { q: "Can you guarantee first-page rankings?", a: "No, and be wary of anyone who does. Search engines decide rankings and no outside party controls them. What I commit to is the work, the transparency and the reporting: a clear audit, fixes done properly, and a plain-language report of what changed and what it did." },
+      { q: "How long does SEO take?", a: "Technical fixes can help within weeks. Competitive searches usually take months, and local searches often move faster than national ones. After the audit I give you an honest expectation for your market rather than a promise, and we review it as results come in." },
+      { q: "What about AI search?", a: "AI tools tend to quote pages that are clear, well structured and genuinely helpful, from sources that look credible. The same work that helps in Google, such as plain answers to real customer questions, good structure and consistent business details, helps you get cited by AI assistants too. I build for both.", bullets: ["Clear pages that answer real questions", "Consistent business details across the web", "Reviews and credible mentions"] },
+      { q: "Do you do local SEO?", a: "Yes. Local search is often the fastest win for businesses that serve an area. It covers your Google Business Profile, accurate listings, reviews, location pages and content about the places you work." },
+      { q: "What will I get each month?", a: "A short report in plain English: what was done, what changed in visibility and enquiries, and what happens next. No dashboards full of numbers that do not matter. If you want a call to talk it through, that is part of the service." },
+      { q: "Do I need a new website for SEO?", a: "Not always. Many sites can be improved in place. If the site is slow, hard to edit or built in a way that limits search visibility, I will say so and show you what a rebuild would change and what it would not." },
     ],
   },
 
@@ -156,10 +162,12 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       { title: "Optimise", body: "Weekly learning, creative refresh and budget decisions." },
     ],
     faqs: [
-      { q: "What budget do I need?", a: "Enough to learn within a reasonable time. I will suggest a realistic starting range after understanding your goals." },
-      { q: "Do you make the creative?", a: "Yes — design, copy and video, so ads and brand stay consistent." },
-      { q: "Can you guarantee leads or sales?", a: "No. I control the quality of the work and the testing discipline, not the market." },
-      { q: "Do I keep the ad account?", a: "Yes. The account and its data stay yours." },
+      { q: "What budget do I need?", a: "Enough to learn within a reasonable time. Ads need some spend to show what works, and the right amount depends on your market and goal. After understanding your goals I suggest a realistic starting range, and I would rather start modestly and scale what works than overspend on guesses." },
+      { q: "Do you make the creative?", a: "Yes. Design, copy and short video, so ads and brand stay consistent. Each campaign starts with the offer, the hook and the call to action, then several creative variants are tested against each other so you learn which message lands.", bullets: ["Static images and carousels", "Short-form video", "Copy, offer and call to action"] },
+      { q: "Can you guarantee leads or sales?", a: "No. I control the quality of the work, the tracking and the testing discipline, not the market or your offer's appeal to customers. What you get is clear measurement, steady testing and honest reporting, so decisions rest on data." },
+      { q: "Do I keep the ad account?", a: "Yes. The ad account, the pixel and the data stay yours. I work through delegated access, so you can see everything and remove my access at any time." },
+      { q: "How will I know it is working?", a: "Tracking is set up before launch so enquiries, calls or sales are recorded properly. You get a regular report that shows spend, results, cost per result and what I am changing next, in plain language." },
+      { q: "How is this different from boosting a post?", a: "Boosting is a quick way to show one post to more people. Campaigns let me choose who sees the ad, test different offers and creative, track real results and stop what does not work. That usually means less wasted spend." },
     ],
   },
 
@@ -192,10 +200,12 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       { title: "Publish & learn", body: "Posting, engagement and monthly review." },
     ],
     faqs: [
-      { q: "Which platforms do you cover?", a: "Typically Instagram, Facebook, LinkedIn, TikTok and YouTube Shorts — chosen for where your customers are." },
-      { q: "Do I approve posts?", a: "Yes. You see the plan and the content before it is published." },
-      { q: "Do you need access to my accounts?", a: "I use proper delegated access so you keep ownership." },
-      { q: "Can this pair with video production?", a: "Very well — see Video & content." },
+      { q: "Which platforms do you cover?", a: "Typically Instagram and Facebook, and where it suits the business also TikTok, LinkedIn and YouTube Shorts. I recommend platforms by where your customers actually spend time, not by what is fashionable, and it is fine to start with one." },
+      { q: "Do I approve posts?", a: "Yes. You see the plan and the content before it is published, and you can ask for changes. Once we know each other's taste you can choose lighter approvals, but nothing goes out without your agreement." },
+      { q: "Do you need access to my accounts?", a: "I use proper delegated access, such as Meta Business access, so you keep ownership. I never need your passwords, and you can remove my access whenever you like." },
+      { q: "How much content do I get?", a: "That depends on the plan, but it is agreed in advance as a clear number of posts, reels or stories per month. Content is planned as a calendar, so you can see what is coming and why." },
+      { q: "Can this pair with video production?", a: "Very well. A shoot day can produce weeks of short videos and photos, which are then edited and scheduled across your channels. See Video and content for how that works." },
+      { q: "Will you reply to comments and messages?", a: "I can. Community replies keep a business feeling alive, and I can handle comments and routine messages in your tone while passing anything important or sensitive back to you." },
     ],
   },
 
@@ -228,10 +238,12 @@ export const servicePages: Record<ServiceSlug, ServicePage> = {
       { title: "Deliver", body: "Platform-ready files and a library to pull from." },
     ],
     faqs: [
-      { q: "Where do you shoot?", a: "At your location or in a studio, whichever suits the content." },
-      { q: "How much content comes from one shoot?", a: "That depends on the plan — I design shoots to produce weeks of content." },
-      { q: "Can you work with footage I already have?", a: "Yes. I edit and repurpose existing material too." },
-      { q: "Do you handle posting?", a: "I can — see Social media." },
+      { q: "Where do you shoot?", a: "At your location or in a studio, whichever suits the content. For trades, venues and shops, shooting on site usually looks most authentic. I plan the shot list beforehand so the day runs efficiently." },
+      { q: "How much content comes from one shoot?", a: "That depends on the plan, but shoots are designed to produce weeks of content: short vertical videos, photos and clips for ads, social and your website. I tell you the expected output before you book." },
+      { q: "Can you work with footage I already have?", a: "Yes. I can edit and repurpose existing video and photos, add captions and branding, and cut versions for each platform. Phone footage is often a good starting point if it is shot with a few simple guidelines." },
+      { q: "Do you handle posting?", a: "I can. Posting and community management are part of the Social media service, and the two work best together. You can also take the finished files and post them yourself." },
+      { q: "What does the process look like?", a: "First a short planning call to agree goals and ideas, then a shot list, then the shoot, then editing and review rounds, then delivery in the formats you need. You see drafts before anything is final." },
+      { q: "Do you do voiceover, music and captions?", a: "Captions are standard because most people watch with the sound off. Music is licensed for commercial use, and voiceover can be recorded where it helps the message." },
     ],
   },
 };

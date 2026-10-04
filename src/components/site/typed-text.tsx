@@ -2,13 +2,18 @@
 
 import { useEffect, useRef, useState, type ElementType } from "react";
 
+/** True when the visitor has switched typing animations off (see TypingToggle) or prefers reduced motion. */
+function typingDisabled(): boolean {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return true;
+  return document.documentElement.dataset.typing === "off";
+}
+
 /**
- * Typewriter text. Types the string out once, the first time it scrolls into view.
+ * Typewriter text, played once when it scrolls into view.
  *
- * Accessibility and SEO: the full text is always in the DOM for screen readers and crawlers
- * (`sr-only`); the animated copy is `aria-hidden`. Space for the full text is reserved with a CSS
- * pseudo-element, so typing never shifts the layout. Under reduced motion, or without JS, the full text
- * is shown immediately.
+ * The whole string is always in the DOM in normal flow: typed characters are visible and the rest is
+ * transparent, so wrapping, height and surrounding layout never change while it types (nothing is
+ * overlaid or absolutely positioned) and screen readers / crawlers read the full text once.
  */
 export function TypedText({
   text,
@@ -28,19 +33,15 @@ export function TypedText({
   as?: ElementType;
 }) {
   const ref = useRef<HTMLElement>(null);
-  const [count, setCount] = useState(0);
-  const [caretOn, setCaretOn] = useState(true);
+  // null = not started (SSR / before hydration): show the text so nothing is ever missing.
+  const [count, setCount] = useState<number | null>(null);
+  const [caretOn, setCaretOn] = useState(false);
 
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || typeof IntersectionObserver === "undefined") {
-      const id = requestAnimationFrame(() => {
-        setCount(text.length);
-        setCaretOn(false);
-      });
-      return () => cancelAnimationFrame(id);
-    }
+    if (typingDisabled() || typeof IntersectionObserver === "undefined") return;
+    const holdFrame = requestAnimationFrame(() => setCount(0));
     let interval = 0;
     let startTimer = 0;
     let hideTimer = 0;
@@ -50,12 +51,13 @@ export function TypedText({
         observer.disconnect();
         startTimer = window.setTimeout(() => {
           let shown = 0;
+          setCaretOn(true);
           interval = window.setInterval(() => {
             shown += 1;
             setCount(shown);
             if (shown >= text.length) {
               window.clearInterval(interval);
-              hideTimer = window.setTimeout(() => setCaretOn(false), 1600);
+              hideTimer = window.setTimeout(() => setCaretOn(false), 1400);
             }
           }, speed);
         }, delay);
@@ -64,6 +66,7 @@ export function TypedText({
     );
     observer.observe(node);
     return () => {
+      cancelAnimationFrame(holdFrame);
       observer.disconnect();
       window.clearTimeout(startTimer);
       window.clearTimeout(hideTimer);
@@ -71,21 +74,19 @@ export function TypedText({
     };
   }, [text, speed, delay]);
 
+  const shown = count === null ? text.length : count;
   return (
-    <Tag ref={ref} className={`typed relative ${className}`}>
-      <span className="sr-only">{text}</span>
-      <span aria-hidden className="typed-full" data-text={text} />
-      {/* The typed characters live in an attribute and are painted by CSS, so the DOM text is the heading once. */}
-      <span aria-hidden className="typed-live" data-typed={text.slice(0, count)}>
-        {caret && caretOn ? <span className="typed-caret caret" /> : null}
-      </span>
+    <Tag ref={ref} className={className}>
+      <span>{text.slice(0, shown)}</span>
+      {caret && caretOn ? <span aria-hidden className="typed-caret caret" /> : null}
+      <span className="text-transparent">{text.slice(shown)}</span>
     </Tag>
   );
 }
 
 /**
  * Types a phrase, holds it, deletes it, then moves to the next one, forever.
- * The first phrase is the accessible / no-JS text; reduced motion shows it statically.
+ * The first phrase is the accessible / no-JS text; reduced motion or the typing toggle shows it statically.
  */
 export function TypeRotator({
   phrases,
@@ -104,7 +105,7 @@ export function TypeRotator({
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (typingDisabled()) return;
     const id = requestAnimationFrame(() => setAnimate(true));
     return () => cancelAnimationFrame(id);
   }, []);
@@ -148,5 +149,40 @@ export function TypeRotator({
       <span aria-hidden className="typed-live-inline" data-typed={animate ? shown : phrases[0]} />
       {animate ? <span aria-hidden className="typed-caret caret" /> : null}
     </span>
+  );
+}
+
+/** Footer switch: lets visitors turn the typing animations off (remembered on this device). */
+export function TypingToggle() {
+  const [on, setOn] = useState(true);
+
+  useEffect(() => {
+    let stored: string | null = null;
+    try {
+      stored = window.localStorage.getItem("az-typing");
+    } catch {
+      /* storage can be blocked; default to on */
+    }
+    const enabled = stored !== "off";
+    document.documentElement.dataset.typing = enabled ? "on" : "off";
+    const id = requestAnimationFrame(() => setOn(enabled));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const toggle = () => {
+    const next = !on;
+    setOn(next);
+    document.documentElement.dataset.typing = next ? "on" : "off";
+    try {
+      window.localStorage.setItem("az-typing", next ? "on" : "off");
+    } catch {
+      /* ignore */
+    }
+  };
+
+  return (
+    <button type="button" onClick={toggle} aria-pressed={on} className="u-link t-label">
+      Typing animation: {on ? "On" : "Off"}
+    </button>
   );
 }

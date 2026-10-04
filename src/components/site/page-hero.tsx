@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Reveal } from "./reveal";
-import { TypedText } from "./typed-text";
+import { ScrambleText, TextEffect, type TextEffectName } from "./text-effect";
 
 /** Header for inner pages: eyebrow, large headline, lead, optional aside visual. */
 export function PageHero({
@@ -8,7 +8,9 @@ export function PageHero({
   title,
   lead,
   aside,
+  effect = "mask",
 }: {
+  effect?: TextEffectName | "none";
   eyebrow: string;
   title: ReactNode;
   lead?: ReactNode;
@@ -22,11 +24,11 @@ export function PageHero({
           <Reveal>
             <p className="t-label mb-8 flex items-center gap-4">
               <span className="inline-block size-1.5 rounded-full bg-bone" aria-hidden />
-              <TypedText text={eyebrow} speed={22} />
+              <ScrambleText text={eyebrow} />
             </p>
           </Reveal>
           <Reveal delay={90}>
-            <h1 className="t-display max-w-[18ch]">{typeof title === "string" ? <TypedText text={title} className="block" speed={30} delay={250} /> : title}</h1>
+            <h1 className="t-display max-w-[18ch]">{typeof title === "string" && effect !== "none" ? <TextEffect text={title} effect={effect} className="block" delay={200} /> : title}</h1>
           </Reveal>
           {lead ? (
             <Reveal delay={190}>

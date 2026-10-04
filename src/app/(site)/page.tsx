@@ -12,7 +12,7 @@ import { ServicesSection } from "@/components/site/sections/services-section";
 import { SoftwareSection } from "@/components/site/sections/software-section";
 import { WebsitesSection } from "@/components/site/sections/websites-section";
 import { WorkSection } from "@/components/site/sections/work-section";
-import { TypeRotator, TypedText } from "@/components/site/typed-text";
+import { TypeRotator } from "@/components/site/typed-text";
 import { services } from "@/lib/site-config";
 
 export const metadata: Metadata = {
@@ -55,33 +55,30 @@ function Hero() {
 
       <div className="site-wrap pb-10 md:pb-14">
         <Reveal>
-          <p className="t-label mb-8 flex items-center gap-4">
+          <p className="t-label mb-6 flex items-center gap-4">
             <span className="inline-block size-1.5 rounded-full bg-bone" aria-hidden />
-            <TypedText text="Agency Zero — software, website design, search & content" speed={20} />
+            Software · Website design · SEO · Content
           </p>
         </Reveal>
 
         <Reveal delay={90}>
-          <h1 className="t-display max-w-[15ch] md:max-w-[17ch]">
-            <TypedText text="I build the software, websites and marketing behind better businesses." className="block" speed={26} delay={350} />
-          </h1>
+          <h1 className="t-display !text-[clamp(3.4rem,14.5vw,15rem)] !leading-[0.92] !tracking-[-0.055em]">Agency Zero</h1>
         </Reveal>
 
         <div className="mt-10 grid items-end gap-10 md:mt-14 md:grid-cols-12">
-          <Reveal delay={200} className="md:col-span-5">
-            <p className="t-label mb-5">
+          <Reveal delay={200} className="md:col-span-6">
+            <p className="t-title max-w-[26ch] !text-[clamp(1.4rem,2.4vw,2.1rem)]">
+              I build the software, websites and marketing behind better businesses.
+            </p>
+            <p className="t-label mt-6">
               Right now I&apos;m building{" "}
               <TypeRotator
                 className="text-bone"
                 phrases={["a custom CRM", "a new website", "an SEO plan", "a Meta ads campaign", "short-form video"]}
               />
             </p>
-            <p className="t-lead max-w-md">
-              Custom software. Website design. SEO. Paid media. Content. One person, one standard — so the work around your
-              business finally fits together.
-            </p>
           </Reveal>
-          <Reveal delay={300} className="md:col-span-7 md:justify-self-end">
+          <Reveal delay={300} className="md:col-span-6 md:justify-self-end">
             <div className="flex flex-wrap gap-4">
               <Link href="/contact" className="btn btn-solid">
                 Start a project <span className="arrow" aria-hidden>→</span>

@@ -50,6 +50,7 @@ export function ContentSection() {
         <div className="grid gap-16 lg:grid-cols-12">
           <div className="lg:col-span-5">
             <SectionHeading
+          effect="mask"
               className="!grid-cols-1 !gap-6"
               eyebrow="04–06 — Ads, social & content"
               title="Attention, produced properly."

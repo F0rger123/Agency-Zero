@@ -14,6 +14,7 @@ export function ProcessSection() {
     <Section id="process" className="overflow-hidden bg-coal">
       <div className="site-wrap">
         <SectionHeading
+          effect="typing"
           eyebrow="Process"
           title="From first call to launch, in four steps."
           lead="Every project runs the same way, so you always know what is happening and what comes next."

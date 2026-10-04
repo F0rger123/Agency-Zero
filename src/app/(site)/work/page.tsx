@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { BarsDivider } from "@/components/site/bars-divider";
-import { BrowserGallery } from "@/components/site/browser-gallery";
 import { CrewbossCaseStudy } from "@/components/site/crewboss-case-study";
 import { DotField } from "@/components/site/dot-field";
-import { MediaFrame } from "@/components/site/media-frame";
+import { GlassCarousel } from "@/components/site/glass-carousel";
 import { PageHero } from "@/components/site/page-hero";
 import { Reveal } from "@/components/site/reveal";
-import { TypedText } from "@/components/site/typed-text";
 import { CtaSection } from "@/components/site/sections/cta-section";
+import { TextEffect } from "@/components/site/text-effect";
+import { webConcepts } from "@/content/concepts";
 import { adCreative, contentReel } from "@/content/media";
 
 export const metadata: Metadata = {
@@ -37,43 +37,63 @@ export default function WorkPage() {
         <div className="site-wrap">
           <Reveal>
             <p className="t-label">Concept · Website design</p>
-            <h2 className="t-display mt-6 max-w-[18ch]"><TypedText text="Five businesses, five different websites." className="block" speed={24} /></h2>
+          </Reveal>
+          <h2 className="t-display mt-6 max-w-[18ch]">
+            <TextEffect text="Five businesses, five different websites." effect="blur" className="block" />
+          </h2>
+          <Reveal delay={100}>
             <p className="t-lead mt-8 max-w-xl">
               Each concept is designed around what that business needs visitors to do: call, book, enquire or join. None of them is a
               template.
             </p>
           </Reveal>
-          <Reveal className="mt-16 md:mt-24">
-            <BrowserGallery />
+          <Reveal className="mt-10 md:mt-16">
+            <GlassCarousel
+              label="Concept website designs"
+              seconds={75}
+              items={webConcepts.map((concept) => ({
+                src: concept.src,
+                alt: concept.alt,
+                title: concept.name,
+                kind: concept.kind,
+                width: 2160,
+                height: 1350,
+                tag: concept.concept ? "Concept" : undefined,
+              }))}
+            />
           </Reveal>
         </div>
       </section>
 
-      <section id="content" className="border-t border-rule bg-coal py-24 md:py-36">
+      <section id="content" className="relative overflow-hidden border-t border-rule bg-coal py-24 md:py-36">
         <div className="site-wrap">
           <Reveal>
             <p className="t-label">Concept · Video and ads</p>
-            <h2 className="t-display mt-6 max-w-[18ch]"><TypedText text="Content and ads that look like the brand." className="block" speed={24} /></h2>
+          </Reveal>
+          <h2 className="t-display mt-6 max-w-[18ch]">
+            <TextEffect text="Content and ads that look like the brand." effect="words" className="block" />
+          </h2>
+          <Reveal delay={100}>
             <p className="t-lead mt-8 max-w-xl">
               Short-form video for Instagram and Facebook Reels, and Meta ads with the offer, hook and call to action planned first.
             </p>
           </Reveal>
-
-          <div className="mt-16 grid grid-cols-3 gap-3 md:mt-24 md:gap-6">
-            {contentReel.map((media, i) => (
-              <Reveal key={media.caption} delay={i * 120} className={i === 1 ? "mt-8 md:mt-16" : i === 2 ? "mt-4 md:mt-8" : ""}>
-                <MediaFrame media={media} />
-              </Reveal>
-            ))}
-          </div>
-
-          <div className="mx-auto mt-20 grid max-w-3xl grid-cols-2 gap-4 md:mt-28 md:gap-8">
-            {adCreative.map((media, i) => (
-              <Reveal key={media.caption} delay={i * 120} className={i === 1 ? "mt-8 md:mt-14" : ""}>
-                <MediaFrame media={media} />
-              </Reveal>
-            ))}
-          </div>
+          <Reveal className="mt-10 md:mt-16">
+            <GlassCarousel
+              label="Concept short-form video and Meta ad creative"
+              aspect="4/5"
+              seconds={55}
+              items={[...contentReel, ...adCreative].map((media) => ({
+                src: media.image ?? "",
+                alt: media.caption,
+                title: media.label,
+                kind: media.caption,
+                width: media.ratio === "2/3" ? 1200 : 1500,
+                height: media.ratio === "2/3" ? 1800 : 1875,
+                tag: "Concept",
+              }))}
+            />
+          </Reveal>
         </div>
       </section>
 

@@ -17,3 +17,14 @@ export const BUDGETS = [
   "$50k+",
   "Not sure yet",
 ] as const;
+
+export const TIMELINES = ["As soon as possible", "In the next 1–3 months", "Just exploring for now"] as const;
+
+/** Social profiles people can paste (a link or an @handle). */
+export const SOCIAL_FIELDS = [
+  { name: "social_instagram", label: "Instagram", placeholder: "instagram.com/yourbusiness or @yourbusiness" },
+  { name: "social_facebook", label: "Facebook", placeholder: "facebook.com/yourbusiness" },
+  { name: "social_tiktok", label: "TikTok", placeholder: "tiktok.com/@yourbusiness" },
+  { name: "social_linkedin", label: "LinkedIn", placeholder: "linkedin.com/company/yourbusiness" },
+  { name: "social_other", label: "Another link", placeholder: "Anywhere else people find you" },
+] as const;

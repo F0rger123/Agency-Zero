@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { BrowserGallery } from "../browser-gallery";
+import { GlassCarousel } from "../glass-carousel";
+import { webConcepts } from "@/content/concepts";
 import { DotField } from "../dot-field";
 import { Photo } from "../photo";
 import { Reveal } from "../reveal";
@@ -26,13 +27,26 @@ export function WebsitesSection() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_25%,#000_80%)]" aria-hidden />
       <div className="site-wrap relative">
         <SectionHeading
+          effect="blur"
           eyebrow="02 — Website design"
           title="A website is the first thing your customers judge."
           lead="Every site is designed and built from scratch for the business behind it, never from a template. These are five concept designs for different kinds of business. Each has its own look and its own job: more calls, more bookings, more enquiries."
         />
 
-        <Reveal className="mt-16 md:mt-24">
-          <BrowserGallery />
+        <Reveal className="mt-12 md:mt-20">
+          <GlassCarousel
+            label="Concept website designs"
+            seconds={70}
+            items={webConcepts.map((concept) => ({
+              src: concept.src,
+              alt: concept.alt,
+              title: concept.name,
+              kind: concept.kind,
+              width: 2160,
+              height: 1350,
+              tag: concept.concept ? "Concept" : undefined,
+            }))}
+          />
         </Reveal>
 
         {/* responsive proof */}

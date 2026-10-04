@@ -2,7 +2,7 @@ import Link from "next/link";
 import { LayeredText } from "../layered-text";
 import { Particles } from "../particles";
 import { Reveal } from "../reveal";
-import { TypedText } from "../typed-text";
+import { TextEffect } from "../text-effect";
 
 export function CtaSection({
   line1 = "Your business doesn't need more noise.",
@@ -21,12 +21,12 @@ export function CtaSection({
       <div className="depth-bottom absolute inset-0 -z-10" aria-hidden />
       <div className="site-wrap">
         <Reveal>
-          <p className="t-display !text-ash"><TypedText text={line1} className="block" speed={26} /></p>
+          <p className="t-display !text-ash"><TextEffect text={line1} effect="words" className="block" /></p>
         </Reveal>
         <Reveal delay={120}>
-          <p className="t-display mt-2"><TypedText text={line2} className="block" speed={30} delay={900} /></p>
+          <p className="t-display mt-2"><TextEffect text={line2} effect="mask" className="block" delay={500} /></p>
         </Reveal>
-        <Reveal delay={200} className="mt-2 max-w-full overflow-visible">
+        <Reveal delay={200} className="mt-6 max-w-full overflow-visible md:mt-10">
           <LayeredText text={word} className="t-mega !text-[clamp(4rem,17vw,19rem)] !leading-[0.9]" />
         </Reveal>
         <Reveal delay={320} className="mt-14 flex flex-wrap items-center gap-6">

@@ -1,46 +1,50 @@
 import { ScrollScene } from "./scroll-scene";
 
 /**
- * About-page signature moment: a tall sticky scene (same technique as BrandMoment).
- * The owner's name drifts as a giant outline behind, while "ONE PERSON." and
- * "THE WHOLE JOB." slide in from opposite sides, then the statement resolves.
- * CSS-variable driven (see ScrollScene), so it adds no React renders.
+ * About-page signature moment: scroll-linked word highlight.
+ *
+ * A tall sticky scene holds one large statement. As you scroll, each word lights up in turn, from dim grey to
+ * full white, so the sentence is "read" at the speed you scroll. Behind it, the name sits as a faint outline.
+ * Nothing moves sideways or overlaps: words keep their place and only their brightness changes. The progress
+ * comes from ScrollScene's `--s` variable, so there are no React renders while scrolling. Under reduced motion
+ * `--s` rests at 0.5 and half the sentence reads as lit, which is still legible.
  */
-export function PersonMoment({ name, statement }: { name: string; statement: string }) {
+export function PersonMoment({ name, headline, statement }: { name: string; headline: string; statement: string }) {
+  const lead = headline.split(" ");
+  const rest = statement.split(" ");
+  const total = lead.length + rest.length;
+  const wordStyle = (index: number) => ({
+    opacity: `clamp(0.14, calc((var(--s) * ${total + 4} - ${index}) * 0.8 + 0.14), 1)`,
+    transition: "opacity 0.15s linear",
+  });
   return (
-    <ScrollScene className="relative h-[240svh] border-t border-rule bg-ink">
-      <div className="sticky top-0 flex h-[100svh] flex-col items-center justify-start overflow-hidden pt-[18svh]">
+    <ScrollScene className="relative h-[260svh] border-t border-rule bg-ink">
+      <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden">
         <div className="depth-bottom absolute inset-0" aria-hidden />
-
-        <div
+        <p
           aria-hidden
-          className="t-mega absolute left-1/2 top-[10%] w-max select-none whitespace-nowrap text-transparent [-webkit-text-stroke:1px_rgb(255_255_255/0.14)] will-change-transform"
-          style={{ transform: "translateX(calc(-50% + (var(--s) - 0.5) * -30vw))" }}
+          className="t-mega pointer-events-none absolute inset-x-0 bottom-[6%] select-none whitespace-nowrap text-center text-transparent [-webkit-text-stroke:1px_rgb(255_255_255/0.08)]"
         >
           {name.toUpperCase()}
-        </div>
-
-        <div className="site-wrap relative z-10 flex w-full flex-col leading-none">
-          <span className="t-mega block whitespace-nowrap !text-[clamp(2.4rem,9.5vw,10.5rem)] will-change-transform" style={{ transform: "translateX(calc((0.5 - var(--s)) * 22vw))" }}>
-            ONE PERSON.
-          </span>
-          <span
-            className="t-mega block whitespace-nowrap !text-[clamp(2.4rem,9.5vw,10.5rem)] will-change-transform"
-            style={{ transform: "translateX(calc((var(--s) - 0.5) * 22vw + 4vw))" }}
-          >
-            THE WH<span className="text-bone/40">O</span>LE JOB.
-          </span>
-        </div>
-
-        <div
-          className="site-wrap absolute inset-x-0 bottom-[7%] z-30 grid items-end gap-6 md:grid-cols-12"
-          style={{
-            opacity: "clamp(0, calc((var(--s) - 0.45) * 4), 1)",
-            transform: "translateY(calc((1 - clamp(0, (var(--s) - 0.45) * 4, 1)) * 40px))",
-          }}
-        >
-          <p className="t-label md:col-span-3">No hand-offs</p>
-          <p className="t-title !text-[clamp(1.3rem,2.4vw,2.2rem)] max-w-[34ch] md:col-span-9">{statement}</p>
+        </p>
+        <div className="site-wrap relative z-10">
+          <p className="t-label mb-8">No hand-offs</p>
+          <h2 className="t-display max-w-5xl">
+            {lead.map((word, index) => (
+              <span key={`h-${index}`} style={wordStyle(index)}>
+                {word}
+                {index < lead.length - 1 ? " " : ""}
+              </span>
+            ))}
+          </h2>
+          <p className="t-title mt-8 max-w-3xl !text-[clamp(1.3rem,2.5vw,2.2rem)] !leading-[1.3]">
+            {rest.map((word, index) => (
+              <span key={`s-${index}`} style={wordStyle(lead.length + index)}>
+                {word}
+                {index < rest.length - 1 ? " " : ""}
+              </span>
+            ))}
+          </p>
         </div>
       </div>
     </ScrollScene>

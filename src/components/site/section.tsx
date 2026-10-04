@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Reveal } from "./reveal";
-import { TypedText } from "./typed-text";
+import { ScrambleText, TextEffect, type TextEffectName } from "./text-effect";
 
 /** Standard vertical rhythm for every section. */
 export function Section({
@@ -27,7 +27,9 @@ export function SectionHeading({
   title,
   lead,
   className = "",
+  effect = "words",
 }: {
+  effect?: TextEffectName;
   eyebrow: string;
   title: ReactNode;
   lead?: ReactNode;
@@ -36,11 +38,11 @@ export function SectionHeading({
   return (
     <div className={`grid gap-8 md:grid-cols-12 ${className}`}>
       <Reveal className="md:col-span-3">
-        <p className="t-label"><TypedText text={eyebrow} speed={22} /></p>
+        <p className="t-label"><ScrambleText text={eyebrow} /></p>
       </Reveal>
       <div className="md:col-span-9">
         <Reveal delay={80}>
-          <h2 className="t-display max-w-[18ch]">{typeof title === "string" ? <TypedText text={title} className="block" speed={24} delay={150} /> : title}</h2>
+          <h2 className="t-display max-w-[18ch]">{typeof title === "string" ? <TextEffect text={title} effect={effect} className="block" /> : title}</h2>
         </Reveal>
         {lead ? (
           <Reveal delay={160}>

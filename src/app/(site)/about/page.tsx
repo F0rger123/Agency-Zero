@@ -6,7 +6,7 @@ import { InstagramButton } from "@/components/site/instagram-button";
 import { PageHero } from "@/components/site/page-hero";
 import { PersonMoment } from "@/components/site/person-moment";
 import { Reveal } from "@/components/site/reveal";
-import { TypedText } from "@/components/site/typed-text";
+import { TextEffect } from "@/components/site/text-effect";
 import { CtaSection } from "@/components/site/sections/cta-section";
 import { ServiceGlyph } from "@/components/site/service-glyph";
 import { services, site } from "@/lib/site-config";
@@ -39,6 +39,7 @@ export default function AboutPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_40%,transparent_20%,#000_85%)]" aria-hidden />
         <PageHero
           eyebrow="About Luke"
+          effect="none"
           title="Hi, I'm Luke Knight."
           lead="I run Agency Zero on my own. I build custom software for businesses, and the website design, search work and content that bring customers to them."
         />
@@ -46,6 +47,7 @@ export default function AboutPage() {
 
       <PersonMoment
         name="Luke Knight"
+        headline="One person. The whole job."
         statement="You talk to the person who designs, builds and publishes your work. Nothing gets lost between a salesperson, a manager and a developer."
       />
 
@@ -79,7 +81,7 @@ export default function AboutPage() {
         <div className="site-wrap">
           <Reveal>
             <p className="t-label">What I do</p>
-            <h2 className="t-display mt-6 max-w-[16ch]"><TypedText text="Six things, one standard." className="block" speed={24} /></h2>
+            <h2 className="t-display mt-6 max-w-[16ch]"><TextEffect text="Six things, one standard." effect="words" className="block" /></h2>
           </Reveal>
           <ul className="mt-14 grid gap-px border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-3">
             {services.map((service, i) => (
@@ -105,7 +107,7 @@ export default function AboutPage() {
         <div className="site-wrap">
           <Reveal>
             <p className="t-label">How a project runs</p>
-            <h2 className="t-display mt-6 max-w-[18ch]"><TypedText text="Four steps, and you always know which one you are on." className="block" speed={24} /></h2>
+            <h2 className="t-display mt-6 max-w-[18ch]"><TextEffect text="Four steps, and you always know which one you are on." effect="words" className="block" /></h2>
           </Reveal>
           <ol className="mt-14 grid gap-px border border-rule bg-rule md:grid-cols-4">
             {steps.map(([n, title, body], i) => (

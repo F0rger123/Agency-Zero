@@ -13,6 +13,8 @@ import { SiteWordmark } from "./wordmark";
  */
 export function SiteNav() {
   const pathname = usePathname();
+  // The home page opens clean: no logo and no link row, just a Menu button (the hero says "Agency Zero").
+  const isHome = pathname === "/";
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -53,11 +55,11 @@ export function SiteNav() {
         }`}
       >
         <div className="site-wrap flex h-16 items-center justify-between md:h-[4.5rem]">
-          <SiteWordmark />
+          {isHome ? <span aria-hidden /> : <SiteWordmark />}
 
-          <nav aria-label="Primary" className="hidden items-center gap-10 md:flex">
+          <nav aria-label="Primary" className={`${isHome ? "hidden" : "hidden md:flex"} items-center gap-10`}>
             {nav.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const active = item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
                   key={item.href}
@@ -72,12 +74,12 @@ export function SiteNav() {
           </nav>
 
           <div className="flex items-center gap-6">
-            <Link href="/app" className="u-link t-label hidden lg:inline">
+            <Link href="/app" className="u-link t-label hidden sm:inline">
               Agency login
             </Link>
             <button
               type="button"
-              className="t-label !text-bone md:hidden"
+              className={`t-label !text-bone ${isHome ? "" : "md:hidden"}`}
               aria-expanded={open}
               aria-controls="mobile-menu"
               onClick={() => setOpen((value) => !value)}
@@ -99,7 +101,7 @@ export function SiteNav() {
         data-open={open}
         aria-hidden={!open}
         inert={!open}
-        className={`fixed inset-0 z-40 bg-ink pt-24 transition-[opacity,visibility,transform] duration-500 ease-[var(--ease-out)] md:hidden ${
+        className={`fixed inset-0 z-40 bg-ink pt-24 transition-[opacity,visibility,transform] duration-500 ease-[var(--ease-out)] ${isHome ? "" : "md:hidden"} ${
           open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-3 opacity-0"
         }`}
       >

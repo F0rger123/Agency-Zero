@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CrmMockup } from "@/components/site/crm-mockup";
+import { Faq } from "@/components/site/faq";
 import { CtaBand } from "@/components/site/cta-band";
 import { PageHero } from "@/components/site/page-hero";
 import { Reveal } from "@/components/site/reveal";
@@ -130,19 +131,7 @@ export default async function ServicePageRoute({ params }: { params: Promise<{ s
             <p className="t-label">Questions</p>
           </Reveal>
           <div className="lg:col-span-8">
-            <div className="divide-y divide-rule border-y border-rule">
-              {page.faqs.map((faq) => (
-                <details key={faq.q} className="group py-6">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-lg tracking-tight [&::-webkit-details-marker]:hidden">
-                    {faq.q}
-                    <span className="t-label transition-transform duration-300 group-open:rotate-45" aria-hidden>
-                      +
-                    </span>
-                  </summary>
-                  <p className="t-body mt-4 max-w-2xl">{faq.a}</p>
-                </details>
-              ))}
-            </div>
+            <Faq items={page.faqs} />
           </div>
         </div>
       </section>

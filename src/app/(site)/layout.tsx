@@ -77,7 +77,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
         Skip to content
       </a>
       <noscript>
-        <style>{`.reveal{opacity:1!important;transform:none!important}.typed-full::before{visibility:visible!important}.typed-live{display:none}.menu-item{opacity:1!important;transform:none!important}`}</style>
+        <style>{`.reveal{opacity:1!important;transform:none!important}.fx-word,.fx-inner{opacity:1!important;transform:none!important;filter:none!important}.menu-item{opacity:1!important;transform:none!important}`}</style>
       </noscript>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       <div className="scroll-progress" aria-hidden />
