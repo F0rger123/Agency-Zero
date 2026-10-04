@@ -6,23 +6,11 @@ import { Photo } from "./photo";
 export type LensItem = { src: string; alt: string; title: string; kind: string; tag?: string };
 
 /**
- * Liquid-glass lens carousel (inspired by the "liquid glass carousel" pattern: an infinite-feeling, snap-scrolling row of
- * images seen through a refracting glass lens, click to zoom). Original implementation, no WebGL or animation library:
- *
- *  - the row is a native scroll-snap container, so touch, trackpad and keyboard scrolling just work, plus drag with a mouse,
- *    arrow buttons and a slow auto-advance that stops as soon as you interact;
- *  - a glass lens is fixed at the centre. In Chromium it refracts and magnifies what passes under it (an SVG displacement
- *    filter used as a backdrop-filter, with red/green/blue split for the chromatic rim); elsewhere it falls back to a clear
- *    frosted ring, so nothing breaks;
- *  - the image behind the current slide glows softly in the background;
- *  - clicking a slide opens it large.
+ * Coverflow-style carousel: a native scroll-snap row (touch, trackpad, keyboard, mouse drag, arrow buttons, slow
+ * auto-advance that stops on interaction). The centre slide faces you; slides on either side tilt away, shrink, fade and
+ * blur as if flowing in from the edges. Each slide gets `--o` (signed distance from centre in slide widths) and `--a`
+ * (its absolute value, capped) on scroll, and CSS does the rest. Clicking the centre slide opens it large.
  */
-const MAP =
-  "data:image/svg+xml;utf8," +
-  encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><defs><linearGradient id='x' x1='0' x2='1' y1='0' y2='0'><stop offset='0' stop-color='#f00'/><stop offset='1' stop-color='#000'/></linearGradient><linearGradient id='y' x1='0' x2='0' y1='0' y2='1'><stop offset='0' stop-color='#0f0'/><stop offset='1' stop-color='#000'/></linearGradient></defs><rect width='256' height='256' fill='#000'/><rect width='256' height='256' fill='url(#x)'/><rect width='256' height='256' fill='url(#y)' style='mix-blend-mode:screen'/></svg>`,
-  );
-
 export function LensCarousel({ items, label }: { items: LensItem[]; label: string }) {
   const track = useRef<HTMLUListElement>(null);
   const [active, setActive] = useState(0);
@@ -54,7 +42,10 @@ export function LensCarousel({ items, label }: { items: LensItem[]; label: strin
       let bestDistance = Infinity;
       Array.from(node.children).forEach((child, index) => {
         const slide = child as HTMLElement;
-        const distance = Math.abs(slide.offsetLeft + slide.clientWidth / 2 - centre);
+        const signed = (slide.offsetLeft + slide.clientWidth / 2 - centre) / slide.clientWidth;
+        const distance = Math.abs(signed);
+        slide.style.setProperty("--o", Math.max(-2.5, Math.min(2.5, signed)).toFixed(3));
+        slide.style.setProperty("--a", Math.min(distance, 2).toFixed(3));
         if (distance < bestDistance) {
           bestDistance = distance;
           best = index;
@@ -107,27 +98,6 @@ export function LensCarousel({ items, label }: { items: LensItem[]; label: strin
 
   return (
     <div className="lens-carousel relative -mx-[var(--site-pad)] py-10" role="region" aria-roledescription="carousel" aria-label={label}>
-      {/* SVG filter used by the lens (Chromium refracts through it; other browsers ignore it) */}
-      <svg width="0" height="0" className="absolute" aria-hidden focusable="false">
-        <filter id="az-lens" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
-          <feImage href={MAP} x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="map" />
-          <feDisplacementMap in="SourceGraphic" in2="map" scale="36" xChannelSelector="R" yChannelSelector="G" result="dr" />
-          <feColorMatrix in="dr" type="matrix" values="1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0" result="r" />
-          <feDisplacementMap in="SourceGraphic" in2="map" scale="42" xChannelSelector="R" yChannelSelector="G" result="dg" />
-          <feColorMatrix in="dg" type="matrix" values="0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0" result="g" />
-          <feDisplacementMap in="SourceGraphic" in2="map" scale="48" xChannelSelector="R" yChannelSelector="G" result="db" />
-          <feColorMatrix in="db" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0" result="b" />
-          <feBlend in="r" in2="g" mode="screen" result="rg" />
-          <feBlend in="rg" in2="b" mode="screen" />
-        </filter>
-      </svg>
-
-      <div className="lens-glow" aria-hidden>
-        {items.map((item, index) => (
-          <span key={item.title} style={{ backgroundImage: `url(${item.src})`, opacity: index === active ? 1 : 0 }} />
-        ))}
-      </div>
-
       <ul
         ref={track}
         className="lens-track"
@@ -195,10 +165,6 @@ export function LensCarousel({ items, label }: { items: LensItem[]; label: strin
           </li>
         ))}
       </ul>
-
-      <div className="lens" aria-hidden>
-        <span className="lens-ring" />
-      </div>
 
       <div className="mt-6 flex items-center justify-center gap-5">
         <button type="button" className="lens-btn" aria-label="Previous design" onClick={() => { touch(); go(active - 1); }}>

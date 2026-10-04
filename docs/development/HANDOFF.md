@@ -1,5 +1,10 @@
 # Handoff log (newest first)
 
+## 2026-10-04 (4) — Claude — carousel: glass lens removed, coverflow instead
+
+- `lens-carousel.tsx` / `globals.css`: removed the centre glass lens (SVG displacement filter, ring, blurred glow blob). Slides now run as a coverflow: the centre slide faces front, side slides tilt in 3D, shrink, fade and blur as they flow in from the edges (per-slide `--o`/`--a` CSS vars set on scroll). Scroll-snap, drag, arrows, dots, auto-advance and lightbox unchanged.
+- Verified: lint, tsc, build; desktop and 390px screenshots, no horizontal overflow. No migrations.
+
 ## 2026-10-04 (3) — Claude — About story + mobile contact wizard
 
 **Changed**
