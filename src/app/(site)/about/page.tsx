@@ -12,9 +12,9 @@ import { ServiceGlyph } from "@/components/site/service-glyph";
 import { services, site } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: "About Luke Knight, York PA Developer",
+  title: "About Luke Knight and Agency Zero",
   description:
-    "Luke Knight runs Agency Zero in York, PA: custom software and CRMs, website design, SEO, ads and content, built by one person who also answers the phone.",
+    "Luke Knight runs Agency Zero from York, PA. He builds websites, custom software and CRMs, and runs the SEO, ads, social media and video that go with them, for businesses locally and remotely.",
   alternates: { canonical: "/about" },
 };
 
@@ -25,7 +25,7 @@ const principles = [
 ] as const;
 
 const steps = [
-  ["01", "You tell me what you need", "A short message or call. I ask questions until I understand the business and what is getting in the way."],
+  ["01", "You tell me what you need", "A short message or call. I ask questions until I understand your business and what's getting in the way."],
   ["02", "I plan it", "A clear scope, price and timeline in writing before any work starts."],
   ["03", "I build it", "Design, code and content made together, with regular updates you can follow."],
   ["04", "We launch and I stay on", "Tested on real devices, handed over properly, and improved after launch."],
@@ -38,53 +38,51 @@ export default function AboutPage() {
         <DotField />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_40%,transparent_20%,#000_85%)]" aria-hidden />
         <PageHero
-          eyebrow="About Luke"
+          eyebrow="About"
           effect="none"
           title="Hi, I'm Luke Knight."
-          lead="I started Agency Zero on my own because I saw a gap: too many businesses are paying agency prices for bloated teams and average work. I do it differently, and I do it myself."
+          lead="I run Agency Zero, a small studio that builds websites, custom software and the marketing around them. I'm based in York, PA and work with businesses anywhere."
         />
       </div>
 
       <PersonMoment
         name="Luke Knight"
         headline="One person. The whole job."
-        statement="You talk to the person who designs, builds and publishes your work. Nothing gets lost between a salesperson, a manager and a developer."
+        statement="You talk to the person who plans, designs and builds your work. Nothing gets lost between a salesperson, a manager and a developer."
       />
 
       <section className="border-t border-rule py-24 md:py-32">
         <div className="site-wrap grid gap-16 lg:grid-cols-12">
           <Reveal className="lg:col-span-4">
-            <p className="t-label">My story</p>
+            <p className="t-label">Why Agency Zero exists</p>
           </Reveal>
           <Reveal delay={100} className="space-y-6 lg:col-span-7">
-            <p className="t-title max-w-[26ch]">I started Agency Zero because I saw a hole in the market.</p>
+            <p className="t-title max-w-[26ch]">Most businesses are held back by pieces that don&apos;t fit together.</p>
             <p className="t-body max-w-xl">
-              Many businesses carry huge overhead, still don&apos;t deliver a good product, and charge far too much for it. You end up
-              paying for the offices, the account managers and the layers of meetings, when what you wanted was the work.
+              A website that looks average, software that doesn&apos;t match how the work really happens, marketing that comes in bursts, and a
+              different vendor for each of them. None of it was designed to work as one system, so the business ends up working around its own tools.
             </p>
             <p className="t-body max-w-xl">
-              So I built Agency Zero the other way round. It&apos;s just me: no overhead to cover, no hand-offs, and a price that
-              reflects the work instead of the building around it. I design, write the code and produce the content myself, which is
-              why the software, the website and the campaign for the same client look and feel like one thing.
+              Agency Zero exists to fix those things together. I build custom websites, CRMs and business software, and I run the SEO, ads, social media and
+              video that bring people in. Because it&apos;s the same person doing all of it, the pieces are built to fit.
             </p>
             <p className="t-body max-w-xl">
-              I genuinely like helping people, and I like giving time back to the people I work with. If I can take a job off your
-              plate and do it properly, so you can get on with running your business, that is a good day.
+              I work directly with the businesses I take on. I&apos;d rather learn how you actually operate and build around it than push you into a generic
+              system, and I like giving people their time back.
             </p>
             <p className="t-title !text-[1.5rem] max-w-[30ch] pt-4">On AI: a coworker, not a replacement.</p>
             <p className="t-body max-w-xl">
-              AI is a powerful tool and I use it every day. But I build my tools on purpose so that AI works alongside people, as a
-              coworker that drafts, sorts and handles the repetitive work, while a person makes the decisions and keeps the human
-              touch. Your customers can tell the difference. Both matter, the human side and the AI, and the best results come from
-              using each for what it is good at.
+              I use AI every day, as a tool for repetitive work, not as a substitute for judgment or for the human side of a business. The tools I build keep a
+              person in charge: AI drafts, sorts and suggests, and a person decides. Your customers can tell the difference.
             </p>
             <p className="t-body max-w-xl">
-              I also build my own products. <Link href="/work" className="u-link text-bone">CrewBoss</Link>, a CRM for
-              pressure-washing businesses, is live, and its AI assistant works exactly this way: it asks before it acts.
+              I also build my own products. <Link href="/work" className="u-link text-bone">CrewBoss</Link>, a CRM for pressure-washing businesses, is live,
+              and its AI assistant works this way: it asks before it acts.
             </p>
             <p className="t-body max-w-xl">
-              The quickest way to reach me is email at <a href={`mailto:${site.email}`} className="u-link text-bone">{site.email}</a>,
-              and I post my work on Instagram.
+              I&apos;m based in the York, PA area and available for in-person work around the region. Most of what I do works just as well remotely, so I work with
+              businesses outside Pennsylvania too. The quickest way to reach me is{" "}
+              <a href={`mailto:${site.email}`} className="u-link text-bone">{site.email}</a>.
             </p>
             <InstagramButton className="mt-2" />
           </Reveal>
@@ -97,7 +95,8 @@ export default function AboutPage() {
         <div className="site-wrap">
           <Reveal>
             <p className="t-label">What I do</p>
-            <h2 className="t-display mt-6 max-w-[16ch]"><TextEffect text="Six things, one standard." effect="words" className="block" /></h2>
+            <h2 className="t-display mt-6 max-w-[16ch]"><TextEffect text="What I can build for you." effect="words" className="block" /></h2>
+            <p className="t-lead mt-6 max-w-xl">Consulting and coaching are available too, where they fit: a review of your site, search or marketing with a clear list of what to fix, or help for your team to run it yourselves.</p>
           </Reveal>
           <ul className="mt-14 grid gap-px border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-3">
             {services.map((service, i) => (
@@ -155,7 +154,7 @@ export default function AboutPage() {
       </section>
 
       <CtaSection
-        line1="Good marketing starts with one conversation."
+        line1="Good work starts with one conversation."
         line2="Let's build it"
         word="together."
         secondary={{ href: "/work", label: "or see the work first" }}

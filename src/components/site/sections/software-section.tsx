@@ -33,7 +33,7 @@ export function SoftwareSection() {
               </h2>
             </Reveal>
             <Reveal delay={170}>
-              <p className="t-title mt-6 !text-[clamp(1.5rem,2.6vw,2.6rem)] !text-ash">We build the software around your business.</p>
+              <p className="t-title mt-6 !text-[clamp(1.5rem,2.6vw,2.6rem)] !text-ash">I build the software around how you already work.</p>
             </Reveal>
 
             <dl className="mt-14 grid gap-px border border-rule bg-rule sm:grid-cols-2">

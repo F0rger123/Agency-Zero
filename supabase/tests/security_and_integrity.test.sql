@@ -387,6 +387,41 @@ select pg_temp.expect_error($q$select public.get_project_phases('60000000-0000-0
 select pg_temp.expect_error($q$select public.move_project_phase(gen_random_uuid(), 1)$q$, 'permission denied');
 reset role;
 
+-- ── passkeys (0026) ────────────────────────────────────────────────────────
+reset role;
+reset request.jwt.claim.sub;
+-- the server (service role / table owner) registers credentials
+insert into public.passkeys (user_id, credential_id, public_key, name) values
+  ('00000000-0000-0000-0000-0000000000a1', 'cred-owner-1', 'pk-owner-1', 'Pixel 8 Pro'),
+  ('00000000-0000-0000-0000-0000000000b2', 'cred-stranger-1', 'pk-stranger-1', 'Stranger phone');
+insert into public.passkey_challenges (challenge, purpose) values ('abc', 'login');
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';   -- owner
+do $$ begin
+  assert (select count(*) from public.passkeys) = 1, 'owner sees only their own passkey';
+  assert (select name from public.passkeys limit 1) = 'Pixel 8 Pro', 'own passkey visible';
+end $$;
+update public.passkeys set name = 'Work phone';
+do $$ begin assert (select name from public.passkeys) = 'Work phone', 'owner can rename their passkey'; end $$;
+select pg_temp.expect_error($q$update public.passkeys set counter = 99$q$, 'permission denied');
+select pg_temp.expect_error($q$update public.passkeys set public_key = 'x'$q$, 'permission denied');
+select pg_temp.expect_error($q$insert into public.passkeys (user_id, credential_id, public_key, name) values ('00000000-0000-0000-0000-0000000000a1', 'c2', 'k', 'x')$q$, 'permission denied');
+select pg_temp.expect_error($q$select * from public.passkey_challenges$q$, 'permission denied');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';   -- stranger (not owner/team)
+do $$ begin assert (select count(*) from public.passkeys) = 0, 'a non-owner sees no passkeys, not even their own'; end $$;
+reset role;
+set role anon;
+select pg_temp.expect_error($q$select * from public.passkeys$q$, 'permission denied');
+select pg_temp.expect_error($q$select * from public.passkey_challenges$q$, 'permission denied');
+reset role;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';   -- owner removes it
+delete from public.passkeys;
+do $$ begin assert (select count(*) from public.passkeys) = 0, 'owner can remove their passkey'; end $$;
+reset role;
+delete from public.passkey_challenges;
+delete from public.passkeys;
+
 -- ── marketing campaigns + social posts (0021) ──────────────────────────────
 reset role;
 reset request.jwt.claim.sub;

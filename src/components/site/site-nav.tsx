@@ -17,6 +17,8 @@ export function SiteNav() {
   const isHome = pathname === "/";
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  // Tapping a link in the mobile menu closes it instantly (no fade) so the destination is what you see.
+  const [instant, setInstant] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -27,7 +29,10 @@ export function SiteNav() {
 
   useEffect(() => {
     // Close the mobile menu on navigation.
-    const id = requestAnimationFrame(() => setOpen(false));
+    const id = requestAnimationFrame(() => {
+      setOpen(false);
+      setInstant(false);
+    });
     return () => cancelAnimationFrame(id);
   }, [pathname]);
 
@@ -74,6 +79,11 @@ export function SiteNav() {
           </nav>
 
           <div className="flex items-center gap-6">
+            {pathname !== "/contact" ? (
+              <Link href="/contact" className="btn btn-solid !h-10 !px-5 max-md:hidden">
+                Let&apos;s talk <span className="arrow" aria-hidden>→</span>
+              </Link>
+            ) : null}
             <button
               type="button"
               className="t-label !text-bone md:hidden"
@@ -98,7 +108,7 @@ export function SiteNav() {
         data-open={open}
         aria-hidden={!open}
         inert={!open}
-        className={`fixed inset-0 z-40 bg-ink pt-24 transition-[opacity,visibility,transform] duration-500 ease-[var(--ease-out)] md:hidden ${
+        className={`fixed inset-0 z-40 bg-ink pt-24 transition-[opacity,visibility,transform] ease-[var(--ease-out)] md:hidden ${instant ? "duration-0" : "duration-500"} ${
           open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-3 opacity-0"
         }`}
       >
@@ -106,7 +116,7 @@ export function SiteNav() {
           <ul className="flex flex-col">
             {nav.map((item, index) => (
               <li key={item.href} className="menu-item border-b border-rule" style={{ "--i": index } as React.CSSProperties}>
-                <Link href={item.href} className="flex items-baseline justify-between py-5 t-title">
+                <Link href={item.href} onClick={() => setInstant(true)} className="flex items-baseline justify-between py-5 t-title">
                   {item.label}
                   <span className="t-label">0{index + 1}</span>
                 </Link>
@@ -114,7 +124,7 @@ export function SiteNav() {
             ))}
           </ul>
           <div className="menu-item mt-auto flex items-center justify-between" style={{ "--i": nav.length } as React.CSSProperties}>
-            <Link href="/contact" className="btn btn-solid">
+            <Link href="/contact" onClick={() => setInstant(true)} className="btn btn-solid">
               Let&apos;s talk <span className="arrow">→</span>
             </Link>
           </div>

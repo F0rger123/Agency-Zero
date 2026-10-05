@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -74,8 +75,10 @@ export default async function SettingsPage() {
           <Row label="User ID" value={user?.id ?? ""} />
         </dl>
         <p className="mt-2 text-xs text-muted-foreground">
-          Sign-in security (password reset, email confirmation) is managed in your
-          Supabase project — see supabase/README.md.
+          Password reset and email confirmation are managed in your Supabase project (see supabase/README.md).{" "}
+          <Link href="/app/settings/security" className="underline decoration-border underline-offset-4">
+            Security &amp; passkeys →
+          </Link>
         </p>
       </section>
 

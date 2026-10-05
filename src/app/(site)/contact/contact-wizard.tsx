@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
+import { SiteSelect } from "@/components/site/site-select";
 import { submitLeadAction, type LeadState } from "./actions";
 import { BUDGETS, SERVICE_OPTIONS, TIMELINES } from "./options";
 
@@ -87,6 +88,7 @@ export function ContactWizard() {
     return () => cancelAnimationFrame(frame);
   }, [step]);
 
+  const setField = (key: keyof typeof values) => (value: string) => setValues((current) => ({ ...current, [key]: value }));
   const set = (key: keyof typeof values) => (event: { target: { value: string } }) => setValues((current) => ({ ...current, [key]: event.target.value }));
 
   const problem = (index: number): string => {
@@ -230,20 +232,12 @@ export function ContactWizard() {
         <div data-step="4" className={stepClass(4)}>
           <p className="t-title !text-[1.9rem] !leading-[1.1]">Budget and timing.</p>
           <p className="t-body mt-3 !text-[0.92rem]">A rough idea is plenty.</p>
-          <label htmlFor="w-budget" className="t-label mt-8 block">Budget range</label>
-          <select id="w-budget" name="budget" value={values.budget} onChange={set("budget")} className="field">
-            <option value="">Choose one…</option>
-            {BUDGETS.map((budget) => (
-              <option key={budget} value={budget}>{budget}</option>
-            ))}
-          </select>
-          <label htmlFor="w-timeline" className="t-label mt-8 block">When would you like to start?</label>
-          <select id="w-timeline" name="timeline" value={values.timeline} onChange={set("timeline")} className="field">
-            <option value="">Choose one…</option>
-            {TIMELINES.map((timeline) => (
-              <option key={timeline} value={timeline}>{timeline}</option>
-            ))}
-          </select>
+          <div className="mt-8">
+            <SiteSelect name="budget" label="Budget range" options={BUDGETS} value={values.budget} onChange={setField("budget")} placeholder="Choose a range" />
+          </div>
+          <div className="mt-8">
+            <SiteSelect name="timeline" label="When would you like to start?" options={TIMELINES} value={values.timeline} onChange={setField("timeline")} placeholder="Choose a timeframe" />
+          </div>
         </div>
 
         {/* 5 website */}

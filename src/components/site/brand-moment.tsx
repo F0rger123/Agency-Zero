@@ -59,7 +59,7 @@ export function BrandMoment() {
         >
           <p className="t-label md:col-span-3">My premise</p>
           <p className="t-title md:col-span-9 max-w-[22ch] md:max-w-[28ch]">
-            Zero is where every business starts. I build what carries it to the next hundred.
+            Every business starts at zero. I build the systems that take it further.
           </p>
         </div>
       </div>

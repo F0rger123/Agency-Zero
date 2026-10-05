@@ -131,5 +131,5 @@ export async function submitLeadAction(_previous: LeadState, formData: FormData)
     console.error("[lead] email notification failed:", notified.reason);
   }
 
-  return { success: "Thanks — your message is in. I'll reply within one working day." };
+  return { success: "Thanks, your message is in. I'll reply within one business day." };
 }

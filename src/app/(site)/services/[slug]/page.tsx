@@ -46,7 +46,7 @@ export default async function ServicePageRoute({ params }: { params: Promise<{ s
     serviceType: seo.serviceType,
     description: seo.description,
     provider: { "@id": `${siteUrl}/#business` },
-    areaServed: [{ "@type": "City", name: "York, PA" }, { "@type": "AdministrativeArea", name: "York County, PA" }, { "@type": "State", name: "Pennsylvania" }],
+    areaServed: [{ "@type": "City", name: "York, PA" }, { "@type": "AdministrativeArea", name: "York County, PA" }, { "@type": "State", name: "Pennsylvania" }, { "@type": "Country", name: "United States" }],
     url: absolute(path),
   };
 
@@ -77,10 +77,10 @@ export default async function ServicePageRoute({ params }: { params: Promise<{ s
           <p className="t-label lg:col-span-4">The short answer</p>
           <div className="lg:col-span-8">
             <p className="speakable t-title !text-[clamp(1.15rem,1.7vw,1.5rem)] !leading-snug">{shortAnswers[slug as ServiceSlug]}</p>
-            <p className="t-label mt-6">
-              Serving York, PA and nearby —{" "}
-              <Link href="/areas" className="u-link">
-                see the areas I cover
+            <p className="t-body mt-6 max-w-2xl !text-[0.95rem]">
+              {page.where}{" "}
+              <Link href="/areas" className="u-link text-bone">
+                Where I work
               </Link>
             </p>
           </div>
@@ -162,7 +162,7 @@ export default async function ServicePageRoute({ params }: { params: Promise<{ s
         </div>
       </section>
 
-      <CtaBand title={`Talk to me about ${page.title.toLowerCase()}.`} />
+      <CtaBand title={page.ctaTitle} />
     </>
   );
 }

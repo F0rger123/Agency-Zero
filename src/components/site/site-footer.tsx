@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { areas } from "@/lib/seo";
 import { nav, services, site } from "@/lib/site-config";
 import { InstagramButton } from "./instagram-button";
 import { SiteWordmark } from "./wordmark";
@@ -11,8 +10,7 @@ export function SiteFooter() {
         <div className="md:col-span-5">
           <SiteWordmark />
           <p className="t-body mt-6 max-w-sm">
-            Software, website design, search, paid media and content — built as one system for businesses that want to be
-            taken seriously.
+            Websites, custom software, SEO, ads and content, built as one system for businesses that want to be taken seriously.
           </p>
           <a href={`mailto:${site.email}`} className="u-link t-title mt-10 inline-block break-all !text-[clamp(1.2rem,2.2vw,1.9rem)]">
             {site.email}
@@ -65,21 +63,20 @@ export function SiteFooter() {
 
       <div className="border-t border-rule">
         <div className="site-wrap py-8">
-          <p className="t-label">Serving York, PA and nearby</p>
-          <p className="mt-3 max-w-4xl text-sm leading-relaxed text-ash">
-            Web design, custom software and CRMs, SEO, Meta ads and social media for businesses in{" "}
-            {areas
-              .filter((area) => area.tier <= 3)
-              .map((area) => area.name)
-              .join(", ")}
-            , and across Central Pennsylvania.
+          <p className="t-label">Based in York, PA</p>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ash">
+            Available for in-person work around the York area and the surrounding region. Websites, software, SEO, Meta ads and social media are delivered
+            remotely, so businesses anywhere are welcome.{" "}
+            <Link href="/areas" className="u-link text-bone">
+              Where I work
+            </Link>
           </p>
         </div>
       </div>
 
       <div className="border-t border-rule">
         <div className="site-wrap flex flex-wrap items-center justify-between gap-4 py-6">
-          <p className="t-label">© {new Date().getFullYear()} {site.name} · York, PA marketing &amp; web agency · theagencyzero.com</p>
+          <p className="t-label">© {new Date().getFullYear()} {site.name} · York, PA · theagencyzero.com</p>
           <div className="flex flex-wrap items-center gap-6">
             <Link href="/app" className="u-link t-label">
               Agency login

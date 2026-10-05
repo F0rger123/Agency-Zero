@@ -218,3 +218,19 @@ agency-zero → Settings → Builds → *Branch control* (production branch = `m
 
 The **"Prefer email?"** link and footer use `site.email` in `src/lib/site-config.ts` (currently agencyzeroteam@gmail.com) — change it there.
 
+
+## Passkey sign-in for the CRM (migration 0026)
+
+Passkeys (fingerprint, face unlock, Windows Hello, device PIN) are optional; passwords always keep working.
+
+1. Apply `supabase/migrations/0026_passkeys.sql` (Supabase SQL editor). `/app/system` then shows `table passkeys` as OK.
+2. Cloudflare → Workers & Pages → `agency-zero` → Settings → **Variables and secrets** → add an encrypted **Secret**
+   `SUPABASE_SERVICE_ROLE_KEY` = Supabase → Project Settings → API → `service_role` key. Never a `NEXT_PUBLIC_` variable, never committed.
+   Redeploy. Until it exists the login page simply shows the password form and Settings → Security says passkeys are off.
+3. Sign in with your password, open **Settings → Security**, name the device and press **Add passkey**. Repeat on each device
+   (phone, laptop). Keep at least your password as the fallback.
+4. Passkeys are bound to the domain they were created on (`theagencyzero.com`). One created on a `workers.dev` address will not work on the real domain.
+
+How it is kept safe: the device does the biometric check; the app stores only a public key. Registration requires an existing authorized session; sign-in
+requires a valid signature over a single-use 5-minute challenge, an exact-origin match, and that the account is still in `app_owner`/`app_team`. The service-role
+key is only used after that verification (and for challenge bookkeeping), and only inside the `/api/passkey/*` route handlers.

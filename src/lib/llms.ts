@@ -7,9 +7,9 @@ import { services, site } from "@/lib/site-config";
 export function llmsIndex(): string {
   return `# ${site.name}
 
-> Agency Zero (also written Agency Zer0; website theagencyzero.com) is a York, PA digital agency run by ${site.owner}. It builds custom software and CRMs, designs websites, and provides SEO (including local SEO and answer engine optimization), Meta ads, social media management and video content for small businesses in York, PA, Central Pennsylvania and remotely elsewhere.
+> Agency Zero (also written Agency Zer0; website theagencyzero.com) is an agency run by ${site.owner}, based in York, PA. It builds custom software, CRMs and websites, and provides SEO and AI-search optimization (AEO), Meta ads, social media management and video content. In-person work (shoots, meetings) is available around York, PA and nearby; most services are delivered remotely, so businesses outside Pennsylvania are welcome too.
 
-Contact: ${site.email} (replies within one working day). Instagram: ${site.instagram}
+Contact: ${site.email} (replies within one business day). Instagram: ${site.instagram}
 
 ## Pages
 - [Home](${siteUrl}/): overview of the agency and its six services
@@ -43,7 +43,7 @@ export function llmsFull(): string {
 
   return `# ${site.name}: full overview
 
-${site.name} is a York, PA digital agency run by ${site.owner}. One person designs, builds and manages each project. Services: custom software and CRMs, website design, SEO, Meta ads, social media management, and video and content production.
+${site.name} is an agency based in York, PA and run by ${site.owner}. One person designs, builds and manages each project. Services: custom software and CRMs, websites, SEO and AI-search optimization (AEO), Meta ads, social media management, video and content production, and consulting or coaching where it fits.
 
 Contact: ${site.email}
 Website: ${siteUrl}
@@ -51,9 +51,9 @@ Website: ${siteUrl}
 ## Services
 ${serviceText}
 
-## Areas served
+## Where Agency Zero works (in person)
 ${areaText}
-Work is delivered remotely, so businesses elsewhere in Pennsylvania and beyond can also work with ${site.name}.
+In-person work is available in the York, PA area and nearby. Most services are delivered remotely, so businesses outside Pennsylvania can also work with ${site.name}.
 
 ## Frequently asked questions
 ${faqText}

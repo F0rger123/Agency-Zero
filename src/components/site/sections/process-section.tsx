@@ -3,10 +3,10 @@ import { Reveal } from "../reveal";
 import { Section, SectionHeading } from "../section";
 
 const steps = [
-  ["01", "Getting you customers", "A website, search presence and ads that bring in people who are ready to buy."],
+  ["01", "Getting in front of customers", "A website, search presence and ads that reach people who are ready to buy."],
   ["02", "Growing your social media", "Regular, on-brand content that builds an audience that knows and trusts you."],
-  ["03", "Managing the day to day", "Replies to messages, comments and enquiries, and a plan that keeps everything moving."],
-  ["04", "You do your job", "You get on with the work you are good at. A short, plain report keeps you in the picture."],
+  ["03", "Managing the day to day", "Replies to messages, comments and inquiries, and a plan that keeps everything moving."],
+  ["04", "You get on with your job", "A short, plain report keeps you in the picture while you do the work you're good at."],
 ] as const;
 
 export function ProcessSection() {
@@ -16,8 +16,8 @@ export function ProcessSection() {
         <SectionHeading
           effect="typing"
           eyebrow="How I help"
-          title="You run your business. I will bring in the customers."
-          lead="Worry about the job you are good at. I take care of customer acquisition, social media growth and the management that goes with them, so you can stay focused on your customers."
+          title="You run the business. I handle the marketing that supports it."
+          lead="Getting in front of new customers, growing your social accounts and the day-to-day management that goes with them, handled in one place so you can stay focused on your customers."
         />
       </div>
 

@@ -45,7 +45,7 @@ export default function WorkPage() {
           </h2>
           <Reveal delay={100}>
             <p className="t-lead mt-8 max-w-xl">
-              Each concept is designed around what that business needs visitors to do: call, book, enquire or join. None of them is a
+              Each concept is designed around what that business needs visitors to do: call, book, inquire or join. None of them is a
               template.
             </p>
           </Reveal>
@@ -70,7 +70,7 @@ export default function WorkPage() {
             <p className="t-label">Concept · Video and ads</p>
           </Reveal>
           <h2 className="t-display mt-6 max-w-[18ch]">
-            <TextEffect text="Short videos and ads that bring in customers." effect="words" className="block" />
+            <TextEffect text="Short videos and ads built to get people to act." effect="words" className="block" />
           </h2>
           <Reveal delay={100}>
             <p className="t-lead mt-8 max-w-xl">

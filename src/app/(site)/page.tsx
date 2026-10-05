@@ -10,16 +10,17 @@ import { ProcessSection } from "@/components/site/sections/process-section";
 import { SeoSection } from "@/components/site/sections/seo-section";
 import { ServicesSection } from "@/components/site/sections/services-section";
 import { SoftwareSection } from "@/components/site/sections/software-section";
+import { WhereSection } from "@/components/site/sections/where-section";
 import { WebsitesSection } from "@/components/site/sections/websites-section";
 import { WorkSection } from "@/components/site/sections/work-section";
 import { TypeRotator } from "@/components/site/typed-text";
-import { areas, breadcrumbJsonLd, webPageJsonLd } from "@/lib/seo";
+import { breadcrumbJsonLd, webPageJsonLd } from "@/lib/seo";
 import { services } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: { absolute: "Agency Zero | Web Design, Custom Software & SEO in York, PA" },
+  title: { absolute: "Agency Zero | Websites, Custom Software & Marketing in York, PA" },
   description:
-    "Agency Zero is a York, PA marketing agency and web design company run by Luke Knight: custom software and CRMs, website design, SEO, Meta ads, social media and video for small businesses in York County and Central Pennsylvania.",
+    "Agency Zero is a York, PA agency run by Luke Knight. Custom websites, software and CRMs, SEO and AI search, Meta ads, social media and video, in person around York and remotely for businesses anywhere.",
   alternates: { canonical: "/" },
   openGraph: { url: "/" },
 };
@@ -31,7 +32,7 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify([
-            webPageJsonLd("/", "Agency Zero: web design, custom software and SEO in York, PA", "York, PA digital agency run by Luke Knight."),
+            webPageJsonLd("/", "Agency Zero: web design, custom software and SEO in York, PA", "Agency Zero is an agency based in York, PA that builds websites and custom software and runs SEO, Meta ads, social media and video."),
             breadcrumbJsonLd([{ name: "Home", path: "/" }]),
           ]),
         }}
@@ -46,7 +47,7 @@ export default function HomePage() {
       <ContentSection />
       <WorkSection />
       <ProcessSection />
-      <LocalSection />
+      <WhereSection />
       <CtaSection />
     </>
   );
@@ -69,7 +70,7 @@ function Hero() {
         <Reveal>
           <p className="t-label mb-6 flex items-center gap-4">
             <span className="inline-block size-1.5 rounded-full bg-bone" aria-hidden />
-            Websites · SEO · Meta ads · Social · Software
+            Based in York, PA · Built to work anywhere
           </p>
         </Reveal>
 
@@ -80,7 +81,7 @@ function Hero() {
         <div className="mt-10 grid items-end gap-10 md:mt-14 md:grid-cols-12">
           <Reveal delay={200} className="md:col-span-6">
             <p className="t-title max-w-[26ch] !text-[clamp(1.4rem,2.4vw,2.1rem)]">
-              I build the software, websites and marketing behind better businesses.
+              I build the websites, software and marketing behind better businesses.
             </p>
             <p className="t-label mt-6">
               Right now I&apos;m building{" "}
@@ -117,46 +118,6 @@ function Hero() {
             ))}
           </ul>
         </Reveal>
-      </div>
-    </section>
-  );
-}
-
-function LocalSection() {
-  const nearby = areas.filter((area) => area.tier <= 3 && area.slug !== "york").slice(0, 14);
-  return (
-    <section className="border-t border-rule py-20 md:py-28">
-      <div className="site-wrap grid gap-10 lg:grid-cols-12">
-        <Reveal className="lg:col-span-4">
-          <p className="t-label">Local to York, PA</p>
-        </Reveal>
-        <div className="lg:col-span-8">
-          <Reveal delay={80}>
-            <h2 className="speakable t-title !text-[clamp(1.4rem,2.3vw,2.1rem)] !leading-snug">
-              Agency Zero is a York, PA web design, custom software and digital marketing agency, serving York County and Central Pennsylvania.
-            </h2>
-          </Reveal>
-          <Reveal delay={160}>
-            <p className="t-body mt-6 max-w-2xl">
-              Looking for a website builder, software developer, CRM builder, SEO company, social media manager or Meta ads manager near
-              you? I work with small businesses in York, {nearby.slice(0, 6).map((area) => area.name).join(", ")} and across the region, in
-              person where it helps and by video call anywhere.
-            </p>
-            <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm text-mist">
-              {nearby.map((area) => (
-                <li key={area.slug}>{area.name}</li>
-              ))}
-            </ul>
-            <div className="mt-10 flex flex-wrap gap-4">
-              <Link href="/areas" className="btn">
-                Areas I serve <span className="arrow" aria-hidden>→</span>
-              </Link>
-              <Link href="/faq" className="btn">
-                Common questions <span className="arrow" aria-hidden>→</span>
-              </Link>
-            </div>
-          </Reveal>
-        </div>
       </div>
     </section>
   );

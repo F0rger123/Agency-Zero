@@ -30,7 +30,7 @@ export function WebsitesSection() {
           effect="blur"
           eyebrow="02 — Website design"
           title="A website is the first thing your customers judge."
-          lead="Every site is designed and built from scratch for the business behind it, never from a template. These are five concept designs for different kinds of business. Each has its own look and its own job: more calls, more bookings, more enquiries."
+          lead="Every site is designed and built from scratch for the business behind it, never from a template. These are five concept designs for different kinds of business. Each has its own look and its own job: more calls, more bookings, more inquiries."
         />
 
         <Reveal className="mt-12 md:mt-20">

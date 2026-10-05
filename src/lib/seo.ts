@@ -89,11 +89,13 @@ export const siteGraph = {
       logo: { "@type": "ImageObject", url: `${siteUrl}/logo.png`, width: 512, height: 512 },
       email: site.email,
       description:
-        "Agency Zero is a York, PA digital agency run by Luke Knight: custom software and CRMs, website design, SEO, Meta ads, social media management and video content for small businesses in York and across Pennsylvania.",
+        "Agency Zero is a York, PA agency run by Luke Knight: custom software and CRMs, websites, SEO and AI-search optimization, Meta ads, social media management and video content. Available in person around York and delivered remotely for businesses anywhere.",
       slogan: "Software, websites and marketing behind better businesses.",
       founder: { "@id": `${siteUrl}/#owner` },
       address: { "@type": "PostalAddress", addressLocality: home.city, addressRegion: home.stateCode, addressCountry: "US" },
+      // In-person work is local (York, PA and the surrounding region); remote work is available to businesses across the US.
       areaServed: [
+        { "@type": "Country", name: "United States" },
         { "@type": "State", name: home.state },
         ...placeNodes,
       ],

@@ -1,5 +1,20 @@
 # Handoff log (newest first)
 
+## 2026-10-06 — Claude — public site copy/positioning pass, contact flow, CRM passkeys
+
+**Database**: the owner's `/app/system` showed 0002–0025 all OK, so **no existing migration is re-run**. The only new SQL is **`0026_passkeys.sql`** (new feature; additive; reversible with `drop table public.passkey_challenges, public.passkeys;`). Passkeys also need the Cloudflare Secret `SUPABASE_SERVICE_ROLE_KEY` (see `docs/DEPLOYMENT.md`); without it the app just shows the password form.
+
+**Public site**
+- "Let's talk" glitch fixed. Causes: `/contact` opened with a very tall hero and a scroll-revealed form; the mobile menu faded out over the destination; the page fade (`animation: both`) kept a stacking context that trapped the fixed mobile form under the footer. Now: compact contact header, form on screen immediately, no reveals, menu closes instantly on tap, fade shortened to 0.2s with `backwards` fill, footer hidden under the mobile wizard. A "Let's talk" button was added to the desktop nav (hidden on /contact). Measured ~200ms to a visible, stable form.
+- New accessible `SiteSelect` (ARIA select-only combobox, keyboard + typeahead, 52px options, check + inversion for the selected row) used for the mobile wizard's budget/timeline (the native selects were the "poor dropdown").
+- Copy audit: services, hero, section headings, About (rewritten), areas, FAQ, footer, work, contact; US spelling; consulting/coaching mentioned where it fits; no invented facts.
+- Location: "Based in York, PA. Built to work anywhere." (`WhereSection`, `/areas`, footer, contact, service pages, FAQ, structured data, llms.txt). Service titles/descriptions now target broad intent; `areaServed` includes the United States; no "worldwide".
+
+**CRM**
+- Passkeys: `/api/passkey/*` (register options/verify need a signed-in authorized session; login options/verify are public but require a valid signed assertion + `app_owner`/`app_team`), Settings → Security (add/rename/remove), redesigned monochrome login with a keystroke/scan glitch (event-driven; never reads or renders the password; reduced-motion safe), "Use password instead" fallback.
+- Red audit: no red brand accents exist in the CRM; the only red is `text-red-700` on a failing row of `/app/system` (a real error, kept).
+- Verified end to end with a Chromium virtual authenticator against a mock Supabase (register → sign out → passkey sign-in → /app). Unverified against real Supabase and real devices.
+
 ## 2026-10-05 (8) — Claude — project phases + templates per service
 
 **Migration to apply: `0025_project_phases_and_templates.sql`** (after 0023/0024). Additive; the app degrades with a "needs 0025" hint if it is missing, and `/app/system` has probes.

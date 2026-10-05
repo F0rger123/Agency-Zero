@@ -28,3 +28,9 @@ Scope: the **public marketing site only** (not the CRM, which is `noindex` and b
    (with permission), testimonials and case studies are the strongest ranking and conversion signals you can add.
 6. Get reviews and links: Google reviews, local directories, chamber of commerce, client sites linking back ("Website by Agency Zero").
 7. Publish helpful local content now and then (e.g. "What a website costs for a York, PA contractor") using the question list in `KEYWORDS.md`.
+
+## 2026-10-06 update: positioning and remote clients
+The site now says "Based in York, PA. Built to work anywhere." Service pages and titles target broad intent (custom CRM development, SEO and AEO,
+Meta ads management, etc.); York/PA stays in descriptions, the `/areas` page and structured data (`areaServed` includes the United States). For
+local searches the Google Business Profile service area still lists York and nearby places; remote clients come from the broad service pages.
+Brand work is in `BRAND_SEARCH.md`.

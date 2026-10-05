@@ -185,7 +185,7 @@ function LongForm() {
             {state.error}
           </p>
         ) : (
-          <p className="t-label">I reply within one working day.</p>
+          <p className="t-label">I reply within one business day.</p>
         )}
       </div>
     </form>

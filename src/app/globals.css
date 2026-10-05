@@ -598,7 +598,9 @@ html:has(.site) {
   }
 }
 .page-in {
-  animation: page-in 0.55s var(--ease-out) both;
+  /* `backwards` (not `both`): once finished the element holds no animated opacity, so it never keeps a stacking context
+     that would trap fixed overlays (the mobile contact form) underneath the footer. */
+  animation: page-in 0.2s var(--ease-out) backwards;
 }
 
 /* Scroll progress line (CSS scroll-driven; ignored where unsupported) ────── */
@@ -1014,7 +1016,333 @@ html:has(.site) {
 /* On phones the contact wizard owns the whole screen: hide the site header/menu behind it. */
 @media (max-width: 767px) {
   body:has([data-contact-wizard]) .site > header,
-  body:has([data-contact-wizard]) header.fixed {
+  body:has([data-contact-wizard]) header.fixed,
+  body:has([data-contact-wizard]) .site > footer {
     display: none;
+  }
+}
+
+/* Public form select (SiteSelect) ─────────────────────────────────────────── */
+.site .site-select-button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.5rem;
+  margin-top: 0.25rem;
+  padding: 0.9rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-rule-strong);
+  background: transparent;
+  color: var(--color-bone);
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.3s var(--ease-out);
+}
+.site .site-select-button[data-empty="true"] {
+  color: var(--color-ash);
+}
+.site .site-select-button:hover {
+  border-bottom-color: var(--color-mist);
+}
+.site .site-select-button:focus-visible,
+.site .site-select-button[data-open="true"] {
+  outline: none;
+  border-bottom-color: var(--color-bone);
+}
+.site .site-select-button:focus-visible {
+  box-shadow: 0 1px 0 0 var(--color-bone);
+}
+.site .site-select-chevron {
+  width: 0.8rem;
+  height: 0.55rem;
+  flex: none;
+  color: var(--color-mist);
+  transition: transform 0.3s var(--ease-out);
+}
+.site .site-select-button[data-open="true"] .site-select-chevron {
+  transform: rotate(180deg);
+}
+.site .site-select-list {
+  margin-top: 0.5rem;
+  max-height: min(22rem, 52svh);
+  overflow-y: auto;
+  border: 1px solid var(--color-rule-strong);
+  background: var(--color-coal);
+  outline: none;
+  animation: select-open 0.22s var(--ease-out) both;
+}
+.site .site-select-list[hidden] {
+  display: none;
+}
+@keyframes select-open {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.site .site-select-option {
+  display: flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-rule);
+  color: var(--color-mist);
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+.site .site-select-option:last-child {
+  border-bottom: 0;
+}
+.site .site-select-option[data-active="true"] {
+  background: rgb(255 255 255 / 0.07);
+  color: var(--color-bone);
+}
+.site .site-select-option[aria-selected="true"] {
+  background: var(--color-bone);
+  color: var(--color-ink);
+}
+@media (prefers-reduced-motion: reduce) {
+  .site .site-select-list {
+    animation: none;
+  }
+}
+
+/* CRM sign-in (monochrome glitch) ─────────────────────────────────────────── */
+.az-login {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  background: #000;
+  color: #fff;
+  z-index: 100;
+}
+.az-stage {
+  position: relative;
+  display: inline-block;
+  align-self: flex-start;
+  overflow: hidden;
+  padding: 0.35rem 0;
+}
+.az-wordmark {
+  position: relative;
+  display: inline-block;
+  margin: 0;
+  font-size: clamp(2.6rem, 13vw, 4.4rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+}
+.az-dim {
+  opacity: 0.45;
+}
+.az-wordmark::before,
+.az-wordmark::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.az-wordmark::before {
+  color: rgb(255 255 255 / 0.6);
+  animation: az-glitch-a 7s steps(1) infinite;
+}
+.az-wordmark::after {
+  color: rgb(255 255 255 / 0.32);
+  animation: az-glitch-b 7s steps(1) infinite;
+}
+.az-login[data-phase="checking"] .az-wordmark::before {
+  animation-duration: 1.2s;
+}
+.az-login[data-phase="checking"] .az-wordmark::after {
+  animation-duration: 1.2s;
+}
+@keyframes az-glitch-a {
+  0%, 91%, 100% { opacity: 0; clip-path: inset(0 0 100% 0); transform: none; }
+  92% { opacity: 1; clip-path: inset(14% 0 56% 0); transform: translateX(-7px); }
+  94% { opacity: 1; clip-path: inset(62% 0 10% 0); transform: translateX(6px); }
+  96% { opacity: 1; clip-path: inset(34% 0 38% 0); transform: translateX(-3px); }
+  98% { opacity: 0; }
+}
+@keyframes az-glitch-b {
+  0%, 92%, 100% { opacity: 0; clip-path: inset(0 0 100% 0); transform: none; }
+  93% { opacity: 1; clip-path: inset(48% 0 24% 0); transform: translateX(8px); }
+  95% { opacity: 1; clip-path: inset(8% 0 70% 0); transform: translateX(-5px); }
+  97% { opacity: 0; }
+}
+/* One short flash per keystroke (event only; it never shows what was typed). */
+.az-pulse {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+.az-pulse[data-on="true"]::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: #fff;
+  animation: az-pulse 0.24s steps(2) both;
+}
+@keyframes az-pulse {
+  0% { opacity: 0.9; clip-path: inset(20% 0 55% 0); transform: translateX(-4px); }
+  50% { opacity: 0.7; clip-path: inset(58% 0 18% 0); transform: translateX(4px); }
+  100% { opacity: 0; clip-path: inset(0 0 100% 0); transform: none; }
+}
+/* Scan line: faint at rest, brisk while checking. */
+.az-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: rgb(255 255 255 / 0.7);
+  opacity: 0.12;
+  animation: az-scan 5s linear infinite;
+  pointer-events: none;
+}
+.az-login[data-phase="checking"] .az-scan {
+  opacity: 0.8;
+  animation-duration: 0.9s;
+}
+.az-login[data-phase="granted"] .az-scan {
+  opacity: 0;
+}
+@keyframes az-scan {
+  from { transform: translateY(0); }
+  to { transform: translateY(4.6rem); }
+}
+.az-status {
+  margin-top: 1.5rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.6);
+  min-height: 1.2rem;
+}
+.az-status[data-phase="idle"] {
+  font-size: 1.05rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: rgb(255 255 255 / 0.75);
+}
+.az-status[data-phase="granted"] {
+  color: #fff;
+  animation: az-granted 0.5s steps(3) both;
+}
+@keyframes az-granted {
+  0% { opacity: 0; transform: translateX(-6px); }
+  60% { opacity: 1; transform: translateX(3px); }
+  100% { opacity: 1; transform: none; }
+}
+.az-label {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.55);
+}
+.az-input {
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.8rem 0;
+  border: 0;
+  border-bottom: 1px solid rgb(255 255 255 / 0.3);
+  background: transparent;
+  color: #fff;
+  font-size: 1.1rem;
+  border-radius: 0;
+  outline: none;
+  transition: border-color 0.25s ease;
+}
+.az-input:hover {
+  border-bottom-color: rgb(255 255 255 / 0.6);
+}
+.az-input:focus-visible {
+  border-bottom-color: #fff;
+  box-shadow: 0 1px 0 0 #fff;
+}
+.az-input:-webkit-autofill {
+  -webkit-text-fill-color: #fff;
+  box-shadow: 0 0 0 100px #000 inset;
+}
+.az-tick {
+  display: block;
+  height: 1px;
+  width: 0;
+  background: #fff;
+}
+.az-tick[data-on="true"] {
+  animation: az-tick 0.35s ease-out both;
+}
+@keyframes az-tick {
+  0% { width: 0; opacity: 1; }
+  100% { width: 100%; opacity: 0; }
+}
+.az-button {
+  width: 100%;
+  min-height: 3.1rem;
+  padding: 0.8rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid #fff;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+.az-button:disabled {
+  opacity: 0.55;
+}
+.az-button-solid {
+  background: #fff;
+  color: #000;
+}
+.az-button-solid:hover:not(:disabled) {
+  background: #d4d4d4;
+}
+.az-button-ghost {
+  background: transparent;
+  color: #fff;
+}
+.az-button-ghost:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.1);
+}
+.az-button:focus-visible,
+.az-link:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+.az-link {
+  background: none;
+  border: 0;
+  color: rgb(255 255 255 / 0.75);
+  font-size: 0.9rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.az-link:hover {
+  color: #fff;
+}
+@media (prefers-reduced-motion: reduce) {
+  .az-wordmark::before,
+  .az-wordmark::after,
+  .az-scan,
+  .az-status[data-phase="granted"],
+  .az-pulse[data-on="true"]::before,
+  .az-tick[data-on="true"] {
+    animation: none !important;
+  }
+  .az-scan {
+    opacity: 0;
   }
 }

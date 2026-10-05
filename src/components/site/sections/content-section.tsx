@@ -51,8 +51,8 @@ export function ContentSection() {
           effect="mask"
               className="!grid-cols-1 !gap-6"
               eyebrow="04–06 — Ads, social & content"
-              title="Attention, produced properly."
-              lead="Paid and organic work best when they share one creative engine. I plan, shoot, edit, publish and measure it as a single pipeline — so every channel has something worth saying."
+              title="Content that looks like your brand, and actually gets made."
+              lead="Ads and organic posts work best when they come from the same creative plan. I plan, shoot, edit, publish and measure it as one process, so every channel has something worth saying."
             />
             <ul className="mt-12 divide-y divide-rule border-y border-rule">
               {channels.map(([label, href], i) => (
@@ -86,7 +86,7 @@ export function ContentSection() {
             <div className="lg:col-span-5">
               <Reveal>
                 <p className="t-label">Paid social</p>
-                <h3 className="t-title mt-6 max-w-[16ch]">Ads that look like they belong to your brand.</h3>
+                <h3 className="t-title mt-6 max-w-[16ch]">Ads that look like your brand.</h3>
                 <p className="t-body mt-6 max-w-md">
                   Static, carousel and short-form ads, designed for the feed, with the offer and the call to action planned first.
                   Each one asks people to do something: book a call, register, send a message.
@@ -97,7 +97,7 @@ export function ContentSection() {
                 </p>
               </Reveal>
               <ul className="mt-8 grid grid-cols-2 gap-px border border-rule bg-rule text-sm">
-                {["Ads that ask for the click", "Replies to DMs and comments", "Sign-up and enquiry tracking", "Weekly learning"].map((t, i) => (
+                {["Ads that ask for the click", "Replies to DMs and comments", "Sign-up and inquiry tracking", "Weekly learning"].map((t, i) => (
                   <Reveal key={t} as="li" delay={i * 60} className="bg-coal px-4 py-4">
                     <span className="t-label mr-3">0{i + 1}</span>
                     {t}

@@ -9,9 +9,9 @@ import { ServiceGlyph } from "@/components/site/service-glyph";
 import { services } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: "Web Design, Software & SEO Services, York PA",
+  title: "Services: Websites, Software, SEO, Ads & Content",
   description:
-    "Custom software and CRMs, website design, SEO, Meta ads, social media management and video for York, PA businesses: six services delivered as one system by one person.",
+    "Custom software and CRMs, websites, SEO and AI search, Meta ads, social media and video, delivered as one system by one person. Based in York, PA, working with businesses anywhere.",
   alternates: { canonical: "/services" },
 };
 
@@ -24,8 +24,8 @@ export default function ServicesPage() {
         <PageHero
           eyebrow="Services"
           effect="typing"
-          title="Six disciplines. One standard."
-          lead="Most businesses stitch these together from different vendors. I build and run them together, so your software, site, search presence and content all pull in the same direction."
+          title="Six services. One standard."
+          lead="Websites, software, search, ads, social and video usually come from different vendors that never talk to each other. Agency Zero handles them together, so they all point at the same goal."
         />
       </div>
 
@@ -59,16 +59,20 @@ export default function ServicesPage() {
           </Reveal>
           <Reveal delay={100} className="md:col-span-9">
             <p className="t-title max-w-[26ch]">
-              The software remembers the customer. The site wins them. Search finds them. Ads and content keep them coming.
+              The software remembers the customer. The website wins them. Search helps them find you. Ads and content keep them coming.
             </p>
             <p className="t-lead mt-8 max-w-xl">
-              You can start with one service. The work is designed so the others slot in later without rebuilding anything.
+              You can start with one service. The work is built so the others slot in later without rebuilding anything. Consulting and coaching are available
+              where they fit.
+            </p>
+            <p className="t-body mt-6 max-w-xl">
+              Based in York, PA, with in-person work around the region. Everything else is delivered remotely, so I work with businesses anywhere.
             </p>
           </Reveal>
         </div>
       </section>
 
-      <CtaBand note="Tell me what you're working on and I'll tell you honestly where I can help." />
+      <CtaBand title="Not sure what you need?" note="Tell me what you're working on and I'll tell you honestly where I can help." />
     </>
   );
 }

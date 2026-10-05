@@ -26,7 +26,7 @@ export function SeoSection() {
       <div className="site-wrap">
         <SectionHeading
           effect="words"
-          eyebrow="03 — SEO optimization"
+          eyebrow="03 — SEO & AI search"
           title="Get found on Google, maps and AI search."
           lead="Customers now look for a business in three places at once. I make sure yours is clear, credible and easy to find in all of them, and that what they find makes them get in touch."
         />
@@ -50,7 +50,7 @@ export function SeoSection() {
           {[
             ["Search results", "Clear titles, descriptions and pages that match what people type, so you appear for the right searches."],
             ["Maps and local", "A complete Google Business Profile with hours, photos and reviews, so you show up when people search “near me”."],
-            ["AI answers", "Pages that answer real questions plainly, so AI tools can quote your business as a source."],
+            ["AI answers (AEO)", "Pages that answer real questions plainly, with clear structure, so AI assistants and search features can understand and quote your business."],
           ].map(([title, body], i) => (
             <Reveal key={title} delay={i * 80} className="bg-ink p-7">
               <p className="t-label">0{i + 1}</p>
