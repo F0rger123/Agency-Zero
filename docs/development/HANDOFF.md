@@ -1,5 +1,9 @@
 # Handoff log (newest first)
 
+## 2026-10-05 (6b) — Claude — verification tag parsing
+
+- Live tag existed but the Cloudflare variable held the whole `<meta ...>` tag, so the rendered content was wrong. `layout.tsx` now extracts the code from a pasted tag (`verificationCode`). Owner should still set the variable to just the code.
+
 ## 2026-10-05 (6) — Claude — Search Console verification fix
 
 - Live site had no `google-site-verification` tag: the Cloudflare variable was not a **Build** variable (and a Secret is not exposed to `NEXT_PUBLIC_*`). The owner also chose Google's "HTML file" method, which fails ("file not found"). Added public fallbacks `site.googleVerification` / `site.bingVerification` in `site-config.ts`; checklist now recommends Domain property + Cloudflare DNS TXT record. No migrations.

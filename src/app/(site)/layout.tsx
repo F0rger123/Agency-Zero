@@ -10,7 +10,15 @@ const title = "Agency Zero — Web Design, Custom Software & SEO in York, PA";
 const description =
   "Agency Zero is a York, PA digital agency: custom software and CRMs, website design, SEO, Meta ads, social media management and video. One person, the whole job. Serving York County and Central Pennsylvania.";
 
-const bingCode = process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION || site.bingVerification;
+/** Accept either the bare code or the whole pasted <meta ... content="CODE" /> tag; return just the code. */
+function verificationCode(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const fromTag = value.match(/content\s*=\s*["']([^"']+)["']/i);
+  return (fromTag ? fromTag[1] : value).trim() || undefined;
+}
+
+const googleCode = verificationCode(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || site.googleVerification);
+const bingCode = verificationCode(process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION || site.bingVerification);
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -45,7 +53,7 @@ export const metadata: Metadata = {
   other: { "geo.region": "US-PA", "geo.placename": "York, Pennsylvania" },
   // Set these env vars after claiming the site in Search Console / Bing Webmaster Tools.
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || site.googleVerification || undefined,
+    google: googleCode,
     other: bingCode ? { "msvalidate.01": bingCode } : undefined,
   },
 };
