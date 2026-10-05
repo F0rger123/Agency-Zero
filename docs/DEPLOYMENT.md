@@ -216,5 +216,5 @@ agency-zero → Settings → Builds → *Branch control* (production branch = `m
       Reply-To so you can answer straight from Gmail.
    Email failure never loses a lead (it is saved first). Failures are logged as `[lead] email notification failed` in Worker logs.
 
-The **"Prefer email?"** link and footer use `site.email` in `src/lib/site-config.ts` (currently drummerforger@gmail.com) — change it there.
+The **"Prefer email?"** link and footer use `site.email` in `src/lib/site-config.ts` (currently agencyzeroteam@gmail.com) — change it there.
 

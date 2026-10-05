@@ -1,5 +1,12 @@
 # Handoff log (newest first)
 
+## 2026-10-05 (3) — Claude — theagencyzero.com, new site email, GBP walkthrough
+
+- Site URL defaults to `https://theagencyzero.com` (canonicals, sitemap, schema, robots). The noindex-until-configured gate was removed. Public email is now `agencyzeroteam@gmail.com` (`site.email`: footer, contact, schema, llms.txt).
+- Optional `NEXT_PUBLIC_GBP_URL` build variable adds the Google Business Profile link to structured data (`sameAs`, `hasMap`).
+- Docs: `docs/seo/GBP_WALKTHROUGH.md` (hide address, categories, services, description, reviews), `SETUP_CHECKLIST.md` updated.
+- **Owner/config**: attach `theagencyzero.com` as a Cloudflare custom domain (+ www redirect); Supabase Auth Site URL/redirects; change Cloudflare variable `LEAD_NOTIFY_EMAIL` to the new email (lead notifications still go to the old one until changed). No migrations.
+
 ## 2026-10-05 (2) — Claude — SEO visual: realistic Google Maps phone
 
 - `design/mockups/scenes/seo-search.html` -> `public/images/mockups/seo-search.jpg`: bottom-right phone is now a Google Maps place sheet (status bar, map with pin, bottom sheet with name, rating, Directions/Call/Save/Share, tabs, info rows). Smaller, clear of the bottom edge, rotated 6deg clockwise. Scene text changed from Leeds/UK to York, PA (fictional business). Re-render with `node design/mockups/render.mjs seo-search`. No code or migration changes.

@@ -7,7 +7,7 @@ import "server-only";
  * Uses Resend's HTTP API (no dependency). Configure in Cloudflare → Worker →
  * Settings → Variables and secrets:
  *   RESEND_API_KEY      (secret)   from resend.com → API Keys
- *   LEAD_NOTIFY_EMAIL   (variable) where notifications go, e.g. drummerforger@gmail.com
+ *   LEAD_NOTIFY_EMAIL   (variable) where notifications go, e.g. agencyzeroteam@gmail.com
  *   LEAD_FROM_EMAIL     (variable, optional) a verified sender, e.g. "Agency Zero <leads@yourdomain.com>".
  *                       Defaults to Resend's test sender (onboarding@resend.dev), which can only
  *                       deliver to the email address the Resend account was created with.

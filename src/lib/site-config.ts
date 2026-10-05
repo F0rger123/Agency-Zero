@@ -6,9 +6,11 @@ export const site = {
   name: "Agency Zero",
   wordmark: "AGENCY ZER0",
   // TODO(content): phone number (and other socials) if wanted.
-  email: "drummerforger@gmail.com",
+  email: "agencyzeroteam@gmail.com",
   owner: "Luke Knight",
   instagram: "https://www.instagram.com/agency.zer0/",
+  /** Google Business Profile public URL (the "Share" link). Set NEXT_PUBLIC_GBP_URL after the profile is verified. */
+  gbp: process.env.NEXT_PUBLIC_GBP_URL || "",
   socials: [{ label: "Instagram", href: "https://www.instagram.com/agency.zer0/" }],
 } as const;
 

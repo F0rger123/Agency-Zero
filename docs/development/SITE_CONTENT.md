@@ -4,7 +4,7 @@ Everything below is currently a clearly-labelled placeholder. Edit the file name
 
 | Need | Where | Notes |
 |---|---|---|
-| Phone, socials | `src/lib/site-config.ts` (`site`) | Email is set to drummerforger@gmail.com. Social URLs are placeholders. Set `NEXT_PUBLIC_SITE_URL` too (sitemap/OG). |
+| Phone, socials | `src/lib/site-config.ts` (`site`) | Email is set to agencyzeroteam@gmail.com. Social URLs are placeholders. Set `NEXT_PUBLIC_SITE_URL` too (sitemap/OG). |
 | Case studies | `src/content/work.ts` | **CrewBoss is real** (screenshots from its public landing page; no results claimed). The two "Example" entries need real projects. Never add invented metrics. |
 | Website screenshots for the gallery | `src/content/concepts.ts` | Five fictional concept designs (rendered from `design/mockups`). Swap in real client sites + set `concept: false`. |
 | CRM screenshots | `src/components/site/crm-mockup.tsx` | Software section still uses an HTML illustration; CrewBoss shots are used on /work. Consider real screenshots of Agency Zero's own CRM (client data removed). |

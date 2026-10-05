@@ -20,7 +20,7 @@ Scope: the **public marketing site only** (not the CRM, which is `noindex` and b
 - **No rankings promises.** No fake review/rating markup.
 
 ## Do next (owner)
-1. Buy a domain and set `NEXT_PUBLIC_SITE_URL` to it (build variable in Cloudflare). **Until it is set the site is `noindex` and `robots.txt` disallows everything**, on purpose. Follow `SETUP_CHECKLIST.md`.
+1. (Done) Domain `theagencyzero.com` bought and used as the default site URL. Connect it in Cloudflare, then follow `SETUP_CHECKLIST.md` and `GBP_WALKTHROUGH.md`.
 2. Search Console + Bing verification and sitemap submission (see `LOCAL_SEO.md`).
 3. Decide on a Google Business Profile (see `LOCAL_SEO.md`).
 4. (Done) Owner confirmed customers are met mostly in person, so the "in person around York" wording stands.

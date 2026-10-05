@@ -3,12 +3,10 @@ import seoData from "@/content/seo-data.json";
 import { services, site } from "@/lib/site-config";
 
 /**
- * Public origin, from NEXT_PUBLIC_SITE_URL (a BUILD-time variable: set it in Cloudflare Workers Builds, then rebuild).
- * Until it is set the site tells search engines NOT to index it, so a preview or workers.dev address never competes with
- * (or points canonicals at) the real domain.
+ * Public origin. Defaults to the production domain; NEXT_PUBLIC_SITE_URL (a BUILD-time variable) overrides it, e.g. for a
+ * local build. Because canonicals always point at the real domain, a workers.dev address never competes with it.
  */
-export const siteConfigured = Boolean(process.env.NEXT_PUBLIC_SITE_URL);
-export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://theagencyzero.com").replace(/\/$/, "");
 
 export const home = seoData.home;
 export const areas = seoData.areas;
@@ -97,7 +95,8 @@ export const siteGraph = {
         ...placeNodes,
       ],
       contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: site.email, availableLanguage: "English", areaServed: "US" },
-      sameAs: [site.instagram],
+      sameAs: [site.instagram, ...(site.gbp ? [site.gbp] : [])],
+      hasMap: site.gbp || undefined,
       knowsAbout: [
         "Custom software development", "CRM development", "Website design", "Search engine optimization", "Local SEO",
         "Answer engine optimization", "Meta advertising", "Social media management", "Video production",

@@ -3,26 +3,21 @@
 Menu names in Google/Cloudflare change; if a label differs, look for the closest one. Estimated total: 2-3 hours, spread over a week
 (verification steps have waiting periods).
 
-## 0. Domain
-- `agencyzero.com` is **already registered by someone else** (since 2010, registration expires 2026-12-08, currently a parked "lander"
-  page). It is not available to register. Options: wait for it to drop and backorder it (no guarantee), or contact the owner through
-  the registrar to ask for a price (premium aftermarket prices are often $1,000+), or pick another domain.
-- Cloudflare Registrar sells at wholesale cost, no markup (prices as published 2026-10, per year): .com $10.46, .net $11.86,
-  .dev $12.20, .agency $24.20, .pro $21.20, .us $6.50, .io $32 (renews $50), .tech $9.99 (renews $49.20).
-- Looked unregistered when checked on 2026-10-04 (confirm at checkout): `agencyzerohq.com`, `agencyzeropa.com`, `agencyzeroyork.com`,
-  `agencyzero.dev`, `agencyzero.app`, `agencyzero.pro`, `agencyzero.tech`. `agencyzero.net`, `agencyzer0.com` and `agencyzero.digital` are taken.
-- Recommendation: a **.com** (customers type .com). `agencyzerohq.com` or `agencyzeropa.com` at about $10.46/yr keeps the brand and adds a
-  local signal. Avoid hyphens, and avoid `agencyzer0.com` (zero-for-o gets mistyped).
-- Buy: Cloudflare dashboard > Domain Registration > Register Domains > search > purchase. Turn on auto-renew and WHOIS privacy (free).
+## 0. Domain (done): theagencyzero.com
+Bought by the owner. The site code now defaults to `https://theagencyzero.com` for canonical URLs, the sitemap and structured data.
+Turn on auto-renew and WHOIS privacy. Also consider registering the `.co`/`.net` later only if you need to block look-alikes.
 
 ## 1. Point the site at the domain (Cloudflare)
-1. Workers & Pages > `agency-zero` > Settings > **Domains & Routes** > Add > **Custom domain** > enter `yourdomain.com` (add `www.` too and redirect www to the root).
-   If the domain is registered at Cloudflare, DNS and the certificate are created automatically.
-2. Settings > **Build** > Variables and secrets > add **build** variable `NEXT_PUBLIC_SITE_URL` = `https://yourdomain.com` (no trailing slash).
-   It is a build-time variable, so trigger a new deploy afterwards. Until it is set, the site stays hidden from search engines.
-3. Supabase > Authentication > URL Configuration: set Site URL to the domain and add `https://yourdomain.com/**` to Redirect URLs (the CRM login needs it).
-4. Visit `https://yourdomain.com/robots.txt`, `/sitemap.xml`, `/llms.txt`: all three should load and show your domain.
-5. Optional but worth it: Cloudflare > SSL/TLS > Edge Certificates > turn on **Always Use HTTPS**.
+1. Workers & Pages > `agency-zero` > Settings > **Domains & Routes** > Add > **Custom domain** > `theagencyzero.com`, then again for `www.theagencyzero.com`.
+   (The domain is at Cloudflare, so DNS and the certificate are created for you.) Redirect `www` to the root: Cloudflare dashboard >
+   Rules > Redirect Rules > "www to root" (301, preserve path).
+2. (Optional) Build variable `NEXT_PUBLIC_SITE_URL` = `https://theagencyzero.com`. Not required any more (it is the default).
+3. Supabase > Authentication > URL Configuration: Site URL = `https://theagencyzero.com`; add `https://theagencyzero.com/**` to Redirect URLs.
+   Without this CRM login links can send you to the wrong address.
+4. Lead notification email (Resend): change the `LEAD_NOTIFY_EMAIL` Cloudflare variable to `agencyzeroteam@gmail.com`
+   (the website email shown to visitors is already changed in code).
+5. Check `https://theagencyzero.com/robots.txt`, `/sitemap.xml`, `/llms.txt` load and show your domain.
+6. Cloudflare > SSL/TLS > Edge Certificates > **Always Use HTTPS** on.
 
 ## 2. Google Search Console (free; this is how you see what you rank for)
 1. search.google.com/search-console > Add property > **URL prefix** > `https://yourdomain.com`.

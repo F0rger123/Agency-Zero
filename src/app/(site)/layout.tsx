@@ -3,7 +3,7 @@ import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
-import { siteConfigured, siteGraph, siteUrl } from "@/lib/seo";
+import { siteGraph, siteUrl } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 
 const title = "Agency Zero — Web Design, Custom Software & SEO in York, PA";
@@ -21,9 +21,9 @@ export const metadata: Metadata = {
   category: "Digital marketing and software development",
   alternates: { canonical: "/" },
   robots: {
-    index: siteConfigured,
-    follow: siteConfigured,
-    googleBot: { index: siteConfigured, follow: siteConfigured, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
   },
   openGraph: {
     type: "website",
