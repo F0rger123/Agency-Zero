@@ -1,5 +1,9 @@
 # Handoff log (newest first)
 
+## 2026-10-05 (2) — Claude — SEO visual: realistic Google Maps phone
+
+- `design/mockups/scenes/seo-search.html` -> `public/images/mockups/seo-search.jpg`: bottom-right phone is now a Google Maps place sheet (status bar, map with pin, bottom sheet with name, rating, Directions/Call/Save/Share, tabs, info rows). Smaller, clear of the bottom edge, rotated 6deg clockwise. Scene text changed from Leeds/UK to York, PA (fictional business). Re-render with `node design/mockups/render.mjs seo-search`. No code or migration changes.
+
 ## 2026-10-05 — Claude — total revenue incl. MRR, leads default tab, lead→client, Venmo (0022)
 
 - Dashboard Total revenue = all payments received + this month's MRR (note shows the split). Month card unchanged (received + MRR).
