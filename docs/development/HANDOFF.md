@@ -1,5 +1,9 @@
 # Handoff log (newest first)
 
+## 2026-10-05 (6) — Claude — Search Console verification fix
+
+- Live site had no `google-site-verification` tag: the Cloudflare variable was not a **Build** variable (and a Secret is not exposed to `NEXT_PUBLIC_*`). The owner also chose Google's "HTML file" method, which fails ("file not found"). Added public fallbacks `site.googleVerification` / `site.bingVerification` in `site-config.ts`; checklist now recommends Domain property + Cloudflare DNS TXT record. No migrations.
+
 ## 2026-10-05 (5) — Claude — brand-search SEO, CTA "Let's talk"
 
 - CTA is now "Let's talk" everywhere. Brand-search work: `alternateName`/`disambiguatingDescription`/PNG logo (`public/logo.png`) in the JSON-LD graph, PNG favicons (`src/app/icon.png`, `apple-icon.png`), brand-first home description, footer identity line, `llms.txt` identity, sitemap date. Owner actions: `docs/seo/BRAND_SEARCH.md`.

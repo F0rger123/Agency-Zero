@@ -9,6 +9,12 @@ export const site = {
   email: "agencyzeroteam@gmail.com",
   owner: "Luke Knight",
   instagram: "https://www.instagram.com/agency.zer0/",
+  /**
+   * Search Console / Bing HTML-tag verification codes (the content="..." value only). These are public, not secrets, so they
+   * can live here as a fallback if the NEXT_PUBLIC_* build variables are not available at build time.
+   */
+  googleVerification: "",
+  bingVerification: "",
   /** Google Business Profile public URL (the "Share" link). Set NEXT_PUBLIC_GBP_URL after the profile is verified. */
   gbp: process.env.NEXT_PUBLIC_GBP_URL || "",
   socials: [{ label: "Instagram", href: "https://www.instagram.com/agency.zer0/" }],

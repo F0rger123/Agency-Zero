@@ -19,13 +19,18 @@ Turn on auto-renew and WHOIS privacy. Also consider registering the `.co`/`.net`
 5. Check `https://theagencyzero.com/robots.txt`, `/sitemap.xml`, `/llms.txt` load and show your domain.
 6. Cloudflare > SSL/TLS > Edge Certificates > **Always Use HTTPS** on.
 
-## 2. Google Search Console (free; this is how you see what you rank for)
-1. search.google.com/search-console > Add property > **URL prefix** > `https://yourdomain.com`.
-2. Choose **HTML tag** verification, copy only the `content="..."` value.
-3. Cloudflare build variable `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` = that value, redeploy, click Verify.
-4. Sitemaps > add `sitemap.xml`.
-5. URL Inspection > paste each of: `/`, `/services`, each `/services/*`, `/areas`, `/faq`, `/work`, `/about`, `/contact` > **Request indexing**.
-6. Check back weekly: Pages (indexed or not and why), Performance (queries, clicks, positions).
+## 2. Google Search Console (verification)
+**Easiest, no deploy needed: Domain property + DNS (your domain is on Cloudflare)**
+1. search.google.com/search-console > Add property > choose **Domain** (left box) > `theagencyzero.com` > Continue.
+2. Google shows a TXT record starting `google-site-verification=...`. Copy it.
+3. Cloudflare dashboard > `theagencyzero.com` > DNS > Records > Add record: Type **TXT**, Name **@**, Content = the whole string Google gave you, TTL Auto > Save.
+4. Back in Search Console click **Verify** (DNS can take a few minutes; retry). Keep the TXT record forever.
+5. Sitemaps > submit `sitemap.xml`. URL Inspection > Request indexing for `/`, `/services`, each service page, `/areas`, `/faq`, `/work`, `/about`, `/contact`.
+
+**Alternative: HTML tag** (choose "URL prefix" > **HTML tag**, not "HTML file")
+- Copy only the code inside `content="..."`. Either set Cloudflare **Build** variable `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` (Settings > Build > Variables and secrets; NOT the runtime "Variables and secrets" and NOT a Secret), then redeploy; or paste the code into `site.googleVerification` in `src/lib/site-config.ts` (it is public, not secret) and deploy.
+- Check it worked: open the live site > view source > search for `google-site-verification`.
+- "Ownership verification failed: file not found" means the **HTML file** method was selected. That needs Google's `.html` file at the site root, which this site does not host. Use DNS or the HTML tag.
 
 ## 3. Bing Webmaster Tools (free; also feeds ChatGPT search, Copilot, DuckDuckGo)
 1. bing.com/webmasters > Import from Google Search Console (fastest), or add manually with an HTML meta tag in

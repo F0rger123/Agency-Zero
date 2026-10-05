@@ -10,6 +10,8 @@ const title = "Agency Zero — Web Design, Custom Software & SEO in York, PA";
 const description =
   "Agency Zero is a York, PA digital agency: custom software and CRMs, website design, SEO, Meta ads, social media management and video. One person, the whole job. Serving York County and Central Pennsylvania.";
 
+const bingCode = process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION || site.bingVerification;
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: { default: title, template: "%s | Agency Zero" },
@@ -43,8 +45,8 @@ export const metadata: Metadata = {
   other: { "geo.region": "US-PA", "geo.placename": "York, Pennsylvania" },
   // Set these env vars after claiming the site in Search Console / Bing Webmaster Tools.
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
-    other: process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION } : undefined,
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || site.googleVerification || undefined,
+    other: bingCode ? { "msvalidate.01": bingCode } : undefined,
   },
 };
 
