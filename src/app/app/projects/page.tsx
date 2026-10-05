@@ -57,8 +57,13 @@ export default async function ProjectsPage() {
     <>
       <PageHeader
         title="Projects"
-        description="Delivery work grouped by client, with milestones, deadlines, status, progress, value, and time."
+        description="Delivery work grouped by client, with phases, milestones, deadlines, status, progress, value, and time. Phases and starter tasks come from per-service templates (see Project templates)."
       />
+      <p className="-mt-2 mb-6 text-sm">
+        <Link href="/app/projects/templates" className="underline decoration-border underline-offset-4">
+          Project templates
+        </Link>
+      </p>
       <LimitNotice shown={projectsResponse.data?.length ?? 0} limit={LIST_LIMIT} hint="Completed or cancelled projects untouched for 180 days are hidden; open them from the client workspace." />
       <section aria-labelledby="projects-heading">
         <div className="flex items-baseline justify-between gap-4">

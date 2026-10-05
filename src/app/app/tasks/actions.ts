@@ -48,6 +48,8 @@ function taskFields(formData: FormData): ActionState | Record<string, string | n
     workItem.source = source;
     workItem.resolution = resolution;
   }
+  // Project phase (migration 0025): only written when the form submits it.
+  if (formData.has("phase_id")) workItem.phase_id = optionalField(formData, "phase_id");
   return {
     ...workItem,
     title,

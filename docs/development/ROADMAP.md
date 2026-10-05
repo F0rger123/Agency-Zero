@@ -22,7 +22,7 @@ handoff per AGENTS.md.
 6. ✅ (2026-10-05, 0023) **Unified work items**: `tasks.kind` (task | bug | feature_request) + severity/
    status fields, requester (contact), source (pasted message later). Migrate UI so
    project workspace has Tasks / Bugs / Feature requests tabs.
-7. **Project phases** (ordered, per project) above milestones; **project templates per
+7. ✅ (2026-10-05, 0025) **Project phases** (ordered, per project) above milestones; **project templates per
    service type** (default phases/tasks/checklists).
 8. **Create-in-context everywhere**: quotes, contracts, invoices, meetings, files from
    inside client/project workspaces with client/project prefilled.

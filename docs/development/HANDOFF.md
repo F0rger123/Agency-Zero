@@ -1,5 +1,14 @@
 # Handoff log (newest first)
 
+## 2026-10-05 (8) — Claude — project phases + templates per service
+
+**Migration to apply: `0025_project_phases_and_templates.sql`** (after 0023/0024). Additive; the app degrades with a "needs 0025" hint if it is missing, and `/app/system` has probes.
+- Project workspace has a new **Phases** tab: apply a template (Software build, Website build, SEO retainer, Meta ads campaign, Social media month, Video content package) to create phases + starter tasks with due dates from a start date; or add phases by hand. Per phase: status (start / complete → next phase starts), reorder up/down, rename, dates, delete (tasks kept), quick "add task", and a place to move loose tasks into a phase. The active phase shows as a chip in the project header.
+- `/app/projects/templates`: edit/create templates in a simple text format; linked from Projects and the Phases tab.
+- Verified: lint, tsc, vitest, build, `npm run test:db` (apply, due dates, reorder, phase delete keeps tasks, owner/stranger/anon), Playwright smoke against a mock.
+- Unverified: real production DB (apply 0025 then check `/app/system`).
+- Next ideas: meetings + checklists (ROADMAP 10), recurring invoices/expenses (P2), create-project-from-template at project creation.
+
 ## 2026-10-05 (7) — Claude — unified work items + recurring content shoots
 
 **Migrations to apply, in order: `0023_work_items.sql`, then `0024_content_shoots.sql`** (0022 first if not yet applied). Both are additive; the app tolerates a database that is behind (tabs/pages show a "needs 0023/0024" hint; `/app/system` has probes; the dashboard panel hides).

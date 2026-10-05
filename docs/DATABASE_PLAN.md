@@ -352,3 +352,4 @@ available for a scheduled/back-office sweep.
 | 0022 | Venmo payment method (enum value) + record_client_payment re-created (includes 0020) |
 | 0023 | Unified work items: `tasks.kind` (task/bug/feature_request), severity, requester contact, source, resolution; `get_project_work_items()` |
 | 0024 | Recurring content shoots: `shoot_schedules`, `shoots`, `generate_shoots()`, `save_shoot_schedule()`, `get_shoots_overview()` |
+| 0025 | Project phases (`project_phases`, `tasks.phase_id`) + `project_templates` (6 seeded), `apply_project_template()`, `move_project_phase()`, `get_project_phases()` |

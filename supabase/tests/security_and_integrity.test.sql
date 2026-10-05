@@ -342,6 +342,51 @@ select pg_temp.expect_error($q$select public.generate_shoots('50000000-0000-0000
 select pg_temp.expect_error($q$select public.get_shoots_overview()$q$, 'permission denied');
 reset role;
 
+-- ── project phases and templates (0025) ────────────────────────────────────
+reset role;
+reset request.jwt.claim.sub;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';   -- owner
+do $$ begin assert (select count(*) from public.project_templates) >= 6, 'six default templates seeded'; end $$;
+select id as tmpl_id from public.project_templates where name = 'Website build' \gset
+insert into public.projects (id, client_id, name) values ('60000000-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000001', 'Phase test');
+select public.apply_project_template('60000000-0000-0000-0000-000000000006', :'tmpl_id', '2026-11-02') as applied \gset
+do $$
+declare
+  pid constant uuid := '60000000-0000-0000-0000-000000000006';
+  g jsonb := public.get_project_phases('60000000-0000-0000-0000-000000000006');
+begin
+  assert jsonb_array_length(g -> 'phases') = 5, 'website template has five phases';
+  assert (g -> 'phases' -> 0 ->> 'status') = 'active' and (g -> 'phases' -> 1 ->> 'status') = 'upcoming', 'first phase active';
+  assert (select count(*) from public.tasks where project_id = pid and phase_id is not null) > 10, 'template tasks created in phases';
+  assert (select due_date from public.tasks where project_id = pid and title = 'Kickoff call and goals') = date '2026-11-02', 'day 0 task due on the start date';
+  assert (select due_date from public.tasks where project_id = pid and title = 'Homepage design') = date '2026-11-16', 'day 14 task due 14 days after start';
+  assert (select client_id from public.tasks where project_id = pid limit 1) = '10000000-0000-0000-0000-000000000001', 'tasks carry the client';
+  assert jsonb_array_length(g -> 'templates') >= 6, 'templates listed';
+end $$;
+select pg_temp.expect_error($q$select public.apply_project_template('60000000-0000-0000-0000-000000000006', (select id from public.project_templates limit 1))$q$, 'already has phases');
+select pg_temp.expect_error($q$select public.apply_project_template(gen_random_uuid(), (select id from public.project_templates limit 1))$q$, 'Project not found');
+-- reorder: move the second phase up, then back down
+select id as second_phase from public.project_phases where project_id = '60000000-0000-0000-0000-000000000006' and sort_order = 1 \gset
+select public.move_project_phase(:'second_phase', -1);
+do $$ begin assert (select sort_order from public.project_phases where name = 'Design' and project_id = '60000000-0000-0000-0000-000000000006') = 0, 'phase moved up'; end $$;
+select public.move_project_phase(:'second_phase', 1);
+do $$ begin assert (select sort_order from public.project_phases where name = 'Design' and project_id = '60000000-0000-0000-0000-000000000006') = 1, 'phase moved back down'; end $$;
+-- deleting a phase keeps its tasks
+delete from public.project_phases where id = :'second_phase';
+do $$ begin assert (select count(*) from public.tasks where title = 'Homepage design' and phase_id is null) = 1, 'task kept when its phase is deleted'; end $$;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';   -- stranger
+do $$ begin
+  assert (select count(*) from public.project_templates) = 0 and (select count(*) from public.project_phases) = 0, 'stranger sees no templates or phases';
+  assert jsonb_array_length(public.get_project_phases('60000000-0000-0000-0000-000000000006') -> 'phases') = 0, 'stranger phases empty';
+end $$;
+select pg_temp.expect_error($q$select public.apply_project_template('60000000-0000-0000-0000-000000000006', gen_random_uuid())$q$, 'Project not found');
+reset role;
+set role anon;
+select pg_temp.expect_error($q$select public.get_project_phases('60000000-0000-0000-0000-000000000006')$q$, 'permission denied');
+select pg_temp.expect_error($q$select public.move_project_phase(gen_random_uuid(), 1)$q$, 'permission denied');
+reset role;
+
 -- ── marketing campaigns + social posts (0021) ──────────────────────────────
 reset role;
 reset request.jwt.claim.sub;

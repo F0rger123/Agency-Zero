@@ -45,6 +45,8 @@ const probes: Probe[] = [
   },
   table("shoot_schedules", "0024"),
   table("shoots", "0024"),
+  table("project_phases", "0025"),
+  table("project_templates", "0025"),
 ];
 
 /**

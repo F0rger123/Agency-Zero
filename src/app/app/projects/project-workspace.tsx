@@ -7,6 +7,7 @@ import { dateLabel, hoursLabel, moneyLabel } from "@/lib/format";
 import { OverviewTab } from "./project-tabs/overview-tab";
 import { TasksTab } from "./project-tabs/tasks-tab";
 import { WorkItemsTab, type WorkItemsPayload } from "./project-tabs/work-items";
+import { PhasesTab, type ProjectPhasesPayload } from "./project-tabs/phases";
 import { MilestonesTab } from "./project-tabs/milestones-tab";
 import { TimelineTab } from "./project-tabs/timeline-tab";
 import { TimeTab } from "./project-tabs/time-tab";
@@ -31,6 +32,7 @@ export type { ProjectWorkspaceData } from "./project-workspace-types";
 const tabs = [
   "Overview",
   "Tasks",
+  "Phases",
   "Bugs",
   "Feature requests",
   "Goals & milestones",
@@ -45,7 +47,7 @@ const tabs = [
 
 type Tab = (typeof tabs)[number];
 
-export function ProjectWorkspace({ data }: { data: ProjectWorkspaceData & { work_items: WorkItemsPayload | null } }) {
+export function ProjectWorkspace({ data }: { data: ProjectWorkspaceData & { work_items: WorkItemsPayload | null; phases: ProjectPhasesPayload | null } }) {
   const [tab, setTab] = useState<Tab>("Overview");
   const { project, totals, client } = data;
   const currency = project.currency || "USD";
@@ -66,6 +68,11 @@ export function ProjectWorkspace({ data }: { data: ProjectWorkspaceData & { work
         ) : (
           <span className="text-sm text-muted-foreground">No client</span>
         )}
+        {data.phases?.phases.find((phase) => phase.status === "active") ? (
+          <span className="rounded-full border border-border px-2.5 py-1 text-[11px] font-medium uppercase tracking-widest">
+            Phase: {data.phases.phases.find((phase) => phase.status === "active")?.name}
+          </span>
+        ) : null}
         <span className="text-sm text-muted-foreground">Deadline {dateLabel(project.deadline)}</span>
         <span className="text-sm text-muted-foreground">
           Actual {hoursLabel(totals.actual_minutes)} / estimated {hoursLabel(estimate)}
@@ -130,6 +137,7 @@ export function ProjectWorkspace({ data }: { data: ProjectWorkspaceData & { work
       <div role="tabpanel" aria-label={tab} className="mt-8">
         {tab === "Overview" ? <OverviewTab data={data} currency={currency} /> : null}
         {tab === "Tasks" ? <TasksTab data={data} /> : null}
+        {tab === "Phases" ? <PhasesTab data={data} /> : null}
         {tab === "Bugs" ? <WorkItemsTab data={data} kind="bug" /> : null}
         {tab === "Feature requests" ? <WorkItemsTab data={data} kind="feature_request" /> : null}
         {tab === "Goals & milestones" ? <MilestonesTab data={data} /> : null}

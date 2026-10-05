@@ -13,6 +13,7 @@ Claim work here before starting; move to "Recently done" (with commit) when fini
 - P1 item 6: unified work items (task/bug/feature_request) — migration `0016`.
 
 ## Recently done
+- 2026-10-05: project phases + per-service templates (0025): Phases tab, template editor at /app/projects/templates.
 - 2026-10-05: unified work items (bugs, feature requests: 0023), recurring content shoot schedules (0024), dashboard delivery panel, calendar shoots, Shoots nav + client tab (branch claude/compassionate-faraday-kixpre → main).
 - 2026-10-03: public marketing site (home, services, 6 service pages, work, about, contact), CRM moved to /app, Total Revenue, leads → CRM (0018, 0019).
 - 2026-10-01: audit pass 2 — payment ledger + signature evidence (0016), invoice summary (0017), JWT/perf, bounded lists, workspace split, nav group.
