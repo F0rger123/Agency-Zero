@@ -8,7 +8,7 @@ import { site } from "@/lib/site-config";
 
 const title = "Agency Zero — Web Design, Custom Software & SEO in York, PA";
 const description =
-  "York, PA digital agency: custom software and CRMs, website design, SEO, Meta ads, social media management and video. One person, the whole job. Serving York County and Central Pennsylvania.";
+  "Agency Zero is a York, PA digital agency: custom software and CRMs, website design, SEO, Meta ads, social media management and video. One person, the whole job. Serving York County and Central Pennsylvania.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

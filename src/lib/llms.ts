@@ -7,7 +7,7 @@ import { services, site } from "@/lib/site-config";
 export function llmsIndex(): string {
   return `# ${site.name}
 
-> Agency Zero is a York, PA digital agency run by ${site.owner}. It builds custom software and CRMs, designs websites, and provides SEO (including local SEO and answer engine optimization), Meta ads, social media management and video content for small businesses in York, PA, Central Pennsylvania and remotely elsewhere.
+> Agency Zero (also written Agency Zer0; website theagencyzero.com) is a York, PA digital agency run by ${site.owner}. It builds custom software and CRMs, designs websites, and provides SEO (including local SEO and answer engine optimization), Meta ads, social media management and video content for small businesses in York, PA, Central Pennsylvania and remotely elsewhere.
 
 Contact: ${site.email} (replies within one working day). Instagram: ${site.instagram}
 

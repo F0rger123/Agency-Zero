@@ -79,7 +79,7 @@ export function SiteFooter() {
 
       <div className="border-t border-rule">
         <div className="site-wrap flex flex-wrap items-center justify-between gap-4 py-6">
-          <p className="t-label">© {new Date().getFullYear()} {site.name}</p>
+          <p className="t-label">© {new Date().getFullYear()} {site.name} · York, PA marketing &amp; web agency · theagencyzero.com</p>
           <div className="flex flex-wrap items-center gap-6">
             <Link href="/app" className="u-link t-label">
               Agency login

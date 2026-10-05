@@ -19,7 +19,7 @@ import { services } from "@/lib/site-config";
 export const metadata: Metadata = {
   title: { absolute: "Agency Zero | Web Design, Custom Software & SEO in York, PA" },
   description:
-    "York, PA digital agency run by Luke Knight: custom software and CRMs, website design, SEO, Meta ads, social media management and video for small businesses in York County and Central Pennsylvania.",
+    "Agency Zero is a York, PA marketing agency and web design company run by Luke Knight: custom software and CRMs, website design, SEO, Meta ads, social media and video for small businesses in York County and Central Pennsylvania.",
   alternates: { canonical: "/" },
   openGraph: { url: "/" },
 };
@@ -93,7 +93,7 @@ function Hero() {
           <Reveal delay={300} className="md:col-span-6 md:justify-self-end">
             <div className="flex flex-wrap gap-4">
               <Link href="/contact" className="btn btn-solid">
-                Let&apos;s talk growth <span className="arrow" aria-hidden>→</span>
+                Let&apos;s talk <span className="arrow" aria-hidden>→</span>
               </Link>
               <Link href="/work" className="btn">
                 See my work <span className="arrow" aria-hidden>→</span>

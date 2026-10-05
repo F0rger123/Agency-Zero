@@ -13,7 +13,7 @@ export function CtaBand({ title = "Ready to get more customers?", note }: { titl
         </Reveal>
         <Reveal delay={120} className="md:col-span-4 md:justify-self-end">
           <Link href="/contact" className="btn btn-solid">
-            Let&apos;s talk growth <span className="arrow" aria-hidden>→</span>
+            Let&apos;s talk <span className="arrow" aria-hidden>→</span>
           </Link>
         </Reveal>
       </div>

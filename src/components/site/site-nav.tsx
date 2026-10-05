@@ -115,7 +115,7 @@ export function SiteNav() {
           </ul>
           <div className="menu-item mt-auto flex items-center justify-between" style={{ "--i": nav.length } as React.CSSProperties}>
             <Link href="/contact" className="btn btn-solid">
-              Let&apos;s talk growth <span className="arrow">→</span>
+              Let&apos;s talk <span className="arrow">→</span>
             </Link>
           </div>
         </nav>

@@ -3,7 +3,7 @@ import { siteUrl } from "@/lib/seo";
 import { services } from "@/lib/site-config";
 
 // Update this date when page content meaningfully changes (a fresh date on every build tells crawlers nothing).
-const updated = new Date("2026-10-04");
+const updated = new Date("2026-10-05");
 
 const pages: { path: string; priority: number; changeFrequency: "weekly" | "monthly" }[] = [
   { path: "", priority: 1, changeFrequency: "weekly" },

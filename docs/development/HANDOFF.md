@@ -1,5 +1,10 @@
 # Handoff log (newest first)
 
+## 2026-10-05 (5) — Claude — brand-search SEO, CTA "Let's talk"
+
+- CTA is now "Let's talk" everywhere. Brand-search work: `alternateName`/`disambiguatingDescription`/PNG logo (`public/logo.png`) in the JSON-LD graph, PNG favicons (`src/app/icon.png`, `apple-icon.png`), brand-first home description, footer identity line, `llms.txt` identity, sitemap date. Owner actions: `docs/seo/BRAND_SEARCH.md`.
+- Owner still to do: Supabase Auth URLs, Search Console + Bing verification, redirects, listings (see SETUP_CHECKLIST.md). No migrations.
+
 ## 2026-10-05 (4) — Claude — CTA copy, login moved to footer, typing toggle removed
 
 - Primary CTA is now "Let's talk growth" (hero, nav menu, CTA band, home CTA). Other "project" wording on the public site reworded (band default "Ready to get more customers?", work/about headings, contact meta, email subject "Website inquiry"). Hero eyebrow lists Websites · SEO · Meta ads · Social · Software.
