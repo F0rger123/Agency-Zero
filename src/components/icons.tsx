@@ -40,6 +40,12 @@ const paths: Record<string, JSX.Element> = {
       <path d="M4 9.5h16M8 3v3.5M16 3v3.5" />
     </>
   ),
+  shoots: (
+    <>
+      <rect x="3.5" y="7.5" width="12" height="9" rx="2" />
+      <path d="M15.5 11l5-2.5v7l-5-2.5" />
+    </>
+  ),
   workload: (
     <>
       <path d="M4 19.5h16M6 17V9M10 17V5M14 17v-3M18 17V7" />

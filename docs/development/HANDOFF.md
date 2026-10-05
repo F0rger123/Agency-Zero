@@ -1,5 +1,15 @@
 # Handoff log (newest first)
 
+## 2026-10-05 (7) — Claude — unified work items + recurring content shoots
+
+**Migrations to apply, in order: `0023_work_items.sql`, then `0024_content_shoots.sql`** (0022 first if not yet applied). Both are additive; the app tolerates a database that is behind (tabs/pages show a "needs 0023/0024" hint; `/app/system` has probes; the dashboard panel hides).
+- **Work items (0023)**: `tasks.kind` task/bug/feature_request + severity, requester (contact), source, resolution. Project workspace has new **Bugs** and **Feature requests** tabs (open counts on the tab labels); Tasks page has All/Tasks/Bugs/Feature requests filters and badges. Read model `get_project_work_items()`.
+- **Shoots (0024)**: `/app/shoots` (all clients) and a **Shoots** tab in each client workspace. Recurring schedule = weekly / every other week / Nth weekday of the month (incl. "last"), start time, length, location, checklist template; saving plans the next 90 days (`save_shoot_schedule`, `generate_shoots`); per-shoot status, reschedule, notes, tick-able checklist; pause/resume; "Plan next 90 days". Shoots show on the Calendar and a new dashboard **Delivery** panel (next shoots + open bugs).
+- Nav: **Shoots** added. Docs: DATABASE_PLAN, DECISIONS D-049/D-050, ROADMAP (item 6 done, 10 partly), IDEAS.
+- **Verified**: lint, tsc, vitest (38), build, `npm run test:db` (owner/stranger/anon cases for both migrations incl. weekly/biweekly/monthly/last-weekday generation, idempotence, reset keeps confirmed), and a Playwright smoke of `/app/shoots` and the project Bugs tab against a mock.
+- **Unverified**: against the real production database (apply the SQL, then `/app/system`).
+- **Next**: project phases + templates per service (ROADMAP 7), create-in-context meetings, recurring invoices/expenses.
+
 ## 2026-10-05 (6b) — Claude — verification tag parsing
 
 - Live tag existed but the Cloudflare variable held the whole `<meta ...>` tag, so the rendered content was wrong. `layout.tsx` now extracts the code from a pasted tag (`verificationCode`). Owner should still set the variable to just the code.

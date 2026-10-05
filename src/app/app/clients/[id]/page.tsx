@@ -6,6 +6,8 @@ import { isMissingTable } from "@/lib/forms";
 import { PageHeader } from "@/components/page-header";
 import { DataFailure, MigrationsRequired, SetupRequired } from "@/components/states";
 import { ClientWorkspace, type ClientWorkspaceData } from "../client-workspace";
+import type { ShootsOverview } from "../../shoots/shoots-view";
+import { todayIso } from "@/lib/format";
 
 /**
  * Client detail = one tabbed workspace.
@@ -25,11 +27,14 @@ export default async function ClientDetailPage({
 
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data, error }, templatesResponse] = await Promise.all([
+  const [{ data, error }, templatesResponse, shootsResponse] = await Promise.all([
     supabase.rpc("get_client_workspace", { p_client_id: id }),
     // Contract templates for the "new contract" form inside the client workspace.
     supabase.from("contract_templates").select("id, name, active").order("name").limit(100),
+    // Recurring content shoots (0024); a database that has not applied it degrades to a hint inside the Shoots tab.
+    supabase.rpc("get_shoots_overview", { p_client_id: id, p_today: todayIso() }),
   ]);
+  const shoots = shootsResponse.error ? null : (shootsResponse.data as ShootsOverview | null);
   const templates = ((templatesResponse.data ?? []) as { id: string; name: string; active: boolean }[])
     .filter((template) => template.active)
     .map((template) => ({ id: template.id, label: template.name }));
@@ -80,7 +85,7 @@ export default async function ClientDetailPage({
           "Client record"
         }
       />
-      <ClientWorkspace data={workspace} templates={templates} />
+      <ClientWorkspace data={workspace} templates={templates} shoots={shoots} />
     </>
   );
 }

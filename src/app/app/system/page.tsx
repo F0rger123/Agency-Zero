@@ -38,6 +38,13 @@ const probes: Probe[] = [
   table("app_team", "0018"),
   rpc("get_revenue_summary", "0018"),
   table("leads", "0019"),
+  {
+    name: "work item columns on tasks (kind, severity)",
+    migration: "0023",
+    run: (s) => s.from("tasks").select("kind, severity, requester_contact_id", { count: "exact", head: true }),
+  },
+  table("shoot_schedules", "0024"),
+  table("shoots", "0024"),
 ];
 
 /**

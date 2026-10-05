@@ -350,3 +350,5 @@ available for a scheduled/back-office sweep.
 | 0020 | record_client_payment(): paid invoice + payment in one transaction (security invoker) |
 | 0021 | marketing_campaigns + social_posts (owner-only RLS) |
 | 0022 | Venmo payment method (enum value) + record_client_payment re-created (includes 0020) |
+| 0023 | Unified work items: `tasks.kind` (task/bug/feature_request), severity, requester contact, source, resolution; `get_project_work_items()` |
+| 0024 | Recurring content shoots: `shoot_schedules`, `shoots`, `generate_shoots()`, `save_shoot_schedule()`, `get_shoots_overview()` |

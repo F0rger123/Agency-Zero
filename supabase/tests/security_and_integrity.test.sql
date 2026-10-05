@@ -250,6 +250,98 @@ end $$;
 select pg_temp.expect_error($q$select public.record_client_payment('10000000-0000-0000-0000-000000000001', 'x', 100, null, 'bitcoin')$q$, 'Invalid payment method');
 reset role;
 
+-- ── unified work items (0023) ──────────────────────────────────────────────
+reset role;
+reset request.jwt.claim.sub;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';   -- owner
+insert into public.projects (id, client_id, name) values ('30000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000001', 'Site build');
+insert into public.contacts (id, client_id, name, is_primary) values ('40000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000001', 'Jo Client', true);
+insert into public.tasks (project_id, title) values ('30000000-0000-0000-0000-000000000003', 'Plain task');
+insert into public.tasks (project_id, title, kind, severity, requester_contact_id, source)
+  values ('30000000-0000-0000-0000-000000000003', 'Login fails on Safari', 'bug', 'critical', '40000000-0000-0000-0000-000000000004', 'client');
+insert into public.tasks (project_id, title, kind, source)
+  values ('30000000-0000-0000-0000-000000000003', 'Add dark mode', 'feature_request', 'client');
+select pg_temp.expect_error($q$insert into public.tasks (project_id, title, kind, severity) values ('30000000-0000-0000-0000-000000000003', 'x', 'task', 'high')$q$, 'tasks_severity_only_for_bugs');
+select pg_temp.expect_error($q$insert into public.tasks (project_id, title, source) values ('30000000-0000-0000-0000-000000000003', 'x', 'carrier-pigeon')$q$, 'tasks_source_check');
+do $$
+declare w jsonb := public.get_project_work_items('30000000-0000-0000-0000-000000000003');
+begin
+  assert jsonb_array_length(w -> 'items') = 2, 'plain tasks are not work items; bug + feature are';
+  assert (w ->> 'open_bugs')::int = 1 and (w ->> 'open_critical')::int = 1 and (w ->> 'open_feature_requests')::int = 1, 'counts';
+  assert (w -> 'items' -> 0 ->> 'title') = 'Login fails on Safari', 'critical bug sorts first';
+  assert (w -> 'items' -> 0 ->> 'requester_name') = 'Jo Client', 'requester name joined';
+  assert jsonb_array_length(w -> 'contacts') = 1, 'client contacts offered as requesters';
+end $$;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';   -- stranger
+do $$ begin assert jsonb_array_length(public.get_project_work_items('30000000-0000-0000-0000-000000000003') -> 'items') = 0, 'stranger sees no work items'; end $$;
+reset role;
+set role anon;
+select pg_temp.expect_error($q$select public.get_project_work_items('30000000-0000-0000-0000-000000000003')$q$, 'permission denied');
+reset role;
+
+-- ── recurring shoot schedules (0024) ───────────────────────────────────────
+reset role;
+reset request.jwt.claim.sub;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';   -- owner
+insert into public.shoot_schedules (id, client_id, title, frequency, weekday, starts_on, ends_on, checklist)
+  values ('50000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000001', 'Weekly Tuesday shoot', 'weekly', 2, '2026-10-06', '2026-11-30', '["Charge batteries","Shot list"]');
+insert into public.shoot_schedules (id, client_id, title, frequency, weekday, starts_on, ends_on)
+  values ('50000000-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000001', 'Every other Tuesday', 'biweekly', 2, '2026-10-06', '2026-11-30');
+insert into public.shoot_schedules (id, client_id, title, frequency, weekday, week_of_month, starts_on, ends_on)
+  values ('50000000-0000-0000-0000-000000000007', '10000000-0000-0000-0000-000000000001', 'First Tuesday', 'monthly', 2, 1, '2026-10-06', '2026-11-30');
+insert into public.shoot_schedules (id, client_id, title, frequency, weekday, week_of_month, starts_on, ends_on)
+  values ('50000000-0000-0000-0000-000000000008', '10000000-0000-0000-0000-000000000001', 'Last Friday', 'monthly', 5, 5, '2026-10-01', '2026-12-31');
+select pg_temp.expect_error($q$insert into public.shoot_schedules (client_id, title, frequency, weekday) values ('10000000-0000-0000-0000-000000000001', 'x', 'monthly', 2)$q$, 'shoot_schedules_check');
+do $$ begin
+  assert public.generate_shoots('50000000-0000-0000-0000-000000000005', '2026-11-03', false, '2026-10-05') = 5, 'weekly Tuesdays Oct 6,13,20,27 + Nov 3';
+  assert public.generate_shoots('50000000-0000-0000-0000-000000000005', '2026-11-03', false, '2026-10-05') = 0, 'generating twice creates no duplicates';
+  assert public.generate_shoots('50000000-0000-0000-0000-000000000006', '2026-11-30', false, '2026-10-05') = 4, 'every other Tuesday: Oct 6, Oct 20, Nov 3, Nov 17';
+  assert public.generate_shoots('50000000-0000-0000-0000-000000000007', '2026-11-30', false, '2026-10-05') = 2, 'first Tuesday: Oct 6, Nov 3';
+  assert public.generate_shoots('50000000-0000-0000-0000-000000000008', '2026-12-31', false, '2026-10-05') = 3, 'last Friday: Oct 30, Nov 27, Dec 25';
+  assert (select jsonb_array_length(checklist) from public.shoots where schedule_id = '50000000-0000-0000-0000-000000000005' limit 1) = 2, 'checklist template copied';
+  assert (select (checklist -> 0 ->> 'done')::boolean from public.shoots where schedule_id = '50000000-0000-0000-0000-000000000005' limit 1) = false, 'checklist starts unticked';
+end $$;
+-- confirmed shoots survive a reset; planned ones are regenerated
+update public.shoots set status = 'confirmed' where schedule_id = '50000000-0000-0000-0000-000000000005' and shoot_date = '2026-10-13';
+do $$ begin
+  assert public.generate_shoots('50000000-0000-0000-0000-000000000005', '2026-11-03', true, '2026-10-05') = 4, 'reset recreates only the planned ones';
+  assert (select status from public.shoots where schedule_id = '50000000-0000-0000-0000-000000000005' and shoot_date = '2026-10-13') = 'confirmed', 'confirmed shoot kept';
+end $$;
+update public.shoot_schedules set active = false where id = '50000000-0000-0000-0000-000000000006';
+do $$
+declare o jsonb := public.get_shoots_overview('10000000-0000-0000-0000-000000000001', '2026-10-05');
+begin
+  assert public.generate_shoots('50000000-0000-0000-0000-000000000006', '2026-12-31', false, '2026-10-05') = 0, 'paused schedule generates nothing';
+  assert jsonb_array_length(o -> 'schedules') = 4, 'overview lists schedules';
+  assert jsonb_array_length(o -> 'upcoming') > 0, 'overview lists upcoming shoots';
+  assert (o -> 'schedules' -> 0 ->> 'next_shoot') is not null, 'next shoot reported';
+end $$;
+-- atomic save: create, then edit (reset rebuilds planned shoots only)
+select (public.save_shoot_schedule(null, jsonb_build_object(
+  'client_id', '10000000-0000-0000-0000-000000000001', 'title', 'Reels day', 'frequency', 'weekly',
+  'weekday', extract(dow from current_date)::int, 'starts_on', current_date, 'ends_on', current_date + 28,
+  'checklist', jsonb_build_array('Charge batteries'))) ->> 'id')::uuid as saved_id \gset
+select set_config('t.saved_id', :'saved_id', false);
+do $$ begin
+  assert (select count(*) from public.shoots where schedule_id = current_setting('t.saved_id')::uuid) >= 1, 'save_shoot_schedule generated shoots';
+end $$;
+select pg_temp.expect_error(format('select public.save_shoot_schedule(null, %L::jsonb)', '{"client_id":"10000000-0000-0000-0000-000000000001","title":"Bad","frequency":"monthly","weekday":2}'), 'shoot_schedules_check');
+select pg_temp.expect_error(format('select public.save_shoot_schedule(%L, %L::jsonb)', gen_random_uuid(), '{"client_id":"10000000-0000-0000-0000-000000000001","title":"x","frequency":"weekly","weekday":1}'), 'Schedule not found');
+select pg_temp.expect_error($q$select public.generate_shoots(gen_random_uuid())$q$, 'Schedule not found');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';   -- stranger
+do $$ begin
+  assert (select count(*) from public.shoots) = 0 and (select count(*) from public.shoot_schedules) = 0, 'stranger sees no shoots';
+  assert jsonb_array_length(public.get_shoots_overview() -> 'upcoming') = 0, 'stranger overview empty';
+end $$;
+select pg_temp.expect_error($q$insert into public.shoots (client_id, title, shoot_date) values ('10000000-0000-0000-0000-000000000001', 'x', '2026-12-01')$q$, 'row-level security');
+reset role;
+set role anon;
+select pg_temp.expect_error($q$select public.generate_shoots('50000000-0000-0000-0000-000000000005')$q$, 'permission denied');
+select pg_temp.expect_error($q$select public.get_shoots_overview()$q$, 'permission denied');
+reset role;
+
 -- ── marketing campaigns + social posts (0021) ──────────────────────────────
 reset role;
 reset request.jwt.claim.sub;

@@ -14,6 +14,7 @@ export const navItems = [
   { label: "Projects", href: "/app/projects", icon: "projects" },
   { label: "Tasks", href: "/app/tasks", icon: "tasks" },
   { label: "Calendar", href: "/app/calendar", icon: "calendar" },
+  { label: "Shoots", href: "/app/shoots", icon: "shoots" },
   { label: "Workload", href: "/app/workload", icon: "workload" },
   { label: "Reminders", href: "/app/reminders", icon: "reminders" },
   { label: "Services", href: "/app/services", icon: "services" },

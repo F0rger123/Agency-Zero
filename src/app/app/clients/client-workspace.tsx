@@ -13,6 +13,7 @@ import { NotesTab } from "./client-tabs/notes-tab";
 import { ActivityTab } from "./client-tabs/activity-tab";
 import { FilesTab } from "./client-tabs/files-tab";
 import { SettingsTab } from "./client-tabs/settings-tab";
+import { ShootsView, type ShootsOverview } from "../shoots/shoots-view";
 import type { ClientWorkspaceData } from "./client-workspace-types";
 export type { ClientWorkspaceData } from "./client-workspace-types";
 
@@ -30,6 +31,7 @@ const tabs = [
   "Projects",
   "Tasks",
   "Services",
+  "Shoots",
   "Quotes",
   "Contracts",
   "Invoices & payments",
@@ -44,9 +46,12 @@ type Tab = (typeof tabs)[number];
 export function ClientWorkspace({
   data,
   templates = [],
+  shoots = null,
 }: {
   data: ClientWorkspaceData;
   templates?: { id: string; label: string }[];
+  /** Content shoots for this client (migration 0024); null when the database has not applied it yet. */
+  shoots?: ShootsOverview | null;
 }) {
   const [tab, setTab] = useState<Tab>("Overview");
   const { client, stats } = data;
@@ -133,6 +138,15 @@ export function ClientWorkspace({
         {tab === "Projects" ? <ProjectsTab data={data} currency={currency} /> : null}
         {tab === "Tasks" ? <TasksTab data={data} /> : null}
         {tab === "Services" ? <ServicesTab data={data} /> : null}
+        {tab === "Shoots" ? (
+          shoots ? (
+            <ShootsView data={shoots} lockedClientId={client.id} />
+          ) : (
+            <p className="border-y border-border py-6 text-sm text-muted-foreground">
+              Content shoots need database update <code className="font-mono text-foreground">0024</code>. Apply it in the Supabase SQL editor and reload.
+            </p>
+          )
+        ) : null}
         {tab === "Quotes" ? <QuotesTab data={data} /> : null}
         {tab === "Contracts" ? <ContractsTab data={data} templates={templates} /> : null}
         {tab === "Invoices & payments" ? <InvoicesTab data={data} currency={currency} /> : null}

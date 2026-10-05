@@ -87,7 +87,7 @@ export function TextInput({
   id: string;
   name: string;
   defaultValue?: string | number | null;
-  type?: "text" | "email" | "url" | "date" | "datetime-local" | "number";
+  type?: "text" | "email" | "url" | "date" | "datetime-local" | "time" | "number";
   placeholder?: string;
   required?: boolean;
   min?: number;

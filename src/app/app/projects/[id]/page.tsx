@@ -8,6 +8,7 @@ import { dateLabel } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { DataFailure, MigrationsRequired, SetupRequired } from "@/components/states";
 import { ProjectWorkspace, type ProjectWorkspaceData } from "../project-workspace";
+import type { WorkItemsPayload } from "../project-tabs/work-items";
 
 export const metadata: Metadata = { title: "Project" };
 
@@ -29,7 +30,12 @@ export default async function ProjectDetailPage({
 
   const { id } = await params;
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_project_workspace", { p_project_id: id });
+  const [{ data, error }, workItemsResponse] = await Promise.all([
+    supabase.rpc("get_project_workspace", { p_project_id: id }),
+    // Bugs and feature requests (0023). A database that has not applied it yet degrades to a hint inside those tabs.
+    supabase.rpc("get_project_work_items", { p_project_id: id }),
+  ]);
+  const workItems = workItemsResponse.error ? null : (workItemsResponse.data as WorkItemsPayload | null);
 
   const backLink = (
     <Link
@@ -65,7 +71,21 @@ export default async function ProjectDetailPage({
 
   if (!data) notFound();
 
-  const workspace = data as ProjectWorkspaceData;
+  const base = data as ProjectWorkspaceData;
+  // Bugs and feature requests live in their own tabs: keep them out of the plain task list and its open count.
+  const workItemIds = new Set((workItems?.items ?? []).map((item) => item.id));
+  const openWorkItems = (workItems?.items ?? []).filter((item) => item.status !== "done" && item.status !== "cancelled").length;
+  const doneWorkItems = (workItems?.items ?? []).filter((item) => item.status === "done").length;
+  const workspace = {
+    ...base,
+    tasks: base.tasks.filter((task) => !workItemIds.has(task.id)),
+    totals: {
+      ...base.totals,
+      open_tasks: Math.max(0, base.totals.open_tasks - openWorkItems),
+      done_tasks: Math.max(0, base.totals.done_tasks - doneWorkItems),
+    },
+    work_items: workItems,
+  };
   const { project, client, totals } = workspace;
 
   return (

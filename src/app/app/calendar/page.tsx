@@ -51,6 +51,7 @@ export default async function CalendarPage({
     clientsResponse,
     allProjectsResponse,
     allTasksResponse,
+    shootsResponse,
   ] = await Promise.all([
     supabase
       .from("calendar_events")
@@ -89,7 +90,25 @@ export default async function CalendarPage({
       .not("status", "in", "(done,cancelled)")
       .order("created_at", { ascending: false })
       .limit(PICKER_LIMIT),
+    // Content shoots (0024). Optional: a database that has not applied it simply shows none.
+    supabase
+      .from("shoots")
+      .select("id, title, shoot_date, start_time, location, status, clients(name)")
+      .gte("shoot_date", rangeStart)
+      .lt("shoot_date", rangeEnd)
+      .neq("status", "cancelled")
+      .order("shoot_date")
+      .limit(200),
   ]);
+  const shoots = (shootsResponse.error ? [] : (shootsResponse.data ?? [])) as unknown as {
+    id: string;
+    title: string;
+    shoot_date: string;
+    start_time: string | null;
+    location: string | null;
+    status: string;
+    clients: { name: string } | { name: string }[] | null;
+  }[];
   const responses = [
     eventsResponse,
     tasksResponse,
@@ -158,7 +177,7 @@ export default async function CalendarPage({
     <>
       <PageHeader
         title="Calendar"
-        description="Daily, weekly, and monthly views of tasks, milestones, project deadlines, meetings, and planned work blocks. Google Calendar sync remains deferred."
+        description="Daily, weekly, and monthly views of tasks, milestones, project deadlines, meetings, content shoots, and planned work blocks. Google Calendar sync remains deferred."
       />
       <div className="flex flex-wrap items-center justify-between gap-4 border-y border-border py-4">
         <div className="flex gap-4 text-sm">
@@ -219,6 +238,9 @@ export default async function CalendarPage({
               <p className="text-xs text-muted-foreground">
                 {events.filter((event) => dayOf(event.starts_at) === day).length} events
               </p>
+              {shoots.some((shoot) => shoot.shoot_date === day) ? (
+                <p className="text-xs font-medium">{shoots.filter((shoot) => shoot.shoot_date === day).length} shoot</p>
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 {milestones.filter((item) => item.due_date === day).length +
                   projects.filter((item) => item.deadline === day).length}{" "}
@@ -234,6 +256,7 @@ export default async function CalendarPage({
             const dayEvents = events.filter((event) => dayOf(event.starts_at) === day);
             const dayMilestones = milestones.filter((item) => item.due_date === day);
             const dayProjects = projects.filter((item) => item.deadline === day);
+            const dayShoots = shoots.filter((shoot) => shoot.shoot_date === day);
             return (
               <section key={day} className="min-h-64 bg-background p-4">
                 <div className="flex items-baseline justify-between gap-2">
@@ -243,7 +266,7 @@ export default async function CalendarPage({
                   >
                     {dateLabel(day)}
                   </Link>
-                  <span className="text-xs text-muted-foreground">{dayTasks.length + dayEvents.length} items</span>
+                  <span className="text-xs text-muted-foreground">{dayTasks.length + dayEvents.length + dayShoots.length} items</span>
                 </div>
                 <ul className="mt-4 space-y-3 text-xs">
                   {dayEvents.map((event) => (
@@ -255,6 +278,19 @@ export default async function CalendarPage({
                       </p>
                     </li>
                   ))}
+                  {dayShoots.map((shoot) => {
+                    const client = Array.isArray(shoot.clients) ? shoot.clients[0] : shoot.clients;
+                    return (
+                      <li key={shoot.id}>
+                        <Link href="/app/shoots" className="font-medium underline decoration-border underline-offset-4">
+                          Shoot: {shoot.title}
+                        </Link>
+                        <p className="text-muted-foreground">
+                          {[client?.name, shoot.start_time ? shoot.start_time.slice(0, 5) : null, shoot.location, shoot.status].filter(Boolean).join(" · ")}
+                        </p>
+                      </li>
+                    );
+                  })}
                   {dayTasks.map((task) => (
                     <li key={task.id}>
                       <Link

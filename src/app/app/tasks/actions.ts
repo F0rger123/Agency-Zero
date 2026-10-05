@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getUserClient, notFoundWhenNoRows, hoursToMinutesField as hoursField } from "@/lib/actions";
+import { SEVERITIES, WORK_ITEMS_MIGRATION_MESSAGE, WORK_SOURCES, isWorkKind, needsWorkItemsMigration } from "@/lib/work-items";
 import { field, optionalDate, optionalField, readableError, requiredText, type ActionState } from "@/lib/forms";
 
 function taskFields(formData: FormData): ActionState | Record<string, string | number | null | Record<string, string>> {
@@ -28,7 +29,27 @@ function taskFields(formData: FormData): ActionState | Record<string, string | n
       return { error: 'Recurring rule must be valid JSON, for example {"frequency":"weekly"}.' };
     }
   }
+  // Work-item fields (migration 0023) are only written when the form submits `kind`, so forms that predate them
+  // (and databases that have not applied 0023) keep working and never clear an existing bug's severity.
+  const workItem: Record<string, string | null> = {};
+  if (formData.has("kind")) {
+    const kind = field(formData, "kind") || "task";
+    if (!isWorkKind(kind)) return { error: "Choose a valid kind." };
+    const severity = optionalField(formData, "severity");
+    if (kind === "bug" && severity && !(SEVERITIES as readonly string[]).includes(severity))
+      return { error: "Choose a valid severity." };
+    const source = field(formData, "source") || "internal";
+    if (!(WORK_SOURCES as readonly string[]).includes(source)) return { error: "Choose a valid source." };
+    const resolution = optionalField(formData, "resolution");
+    if (resolution && resolution.length > 2000) return { error: "Resolution must be 2000 characters or fewer." };
+    workItem.kind = kind;
+    workItem.severity = kind === "bug" ? severity : null;
+    workItem.requester_contact_id = optionalField(formData, "requester_contact_id");
+    workItem.source = source;
+    workItem.resolution = resolution;
+  }
   return {
+    ...workItem,
     title,
     description: optionalField(formData, "description"),
     status,
@@ -46,6 +67,10 @@ function taskFields(formData: FormData): ActionState | Record<string, string | n
   };
 }
 
+function taskError(message: string, formData: FormData): string {
+  return formData.has("kind") && needsWorkItemsMigration(message) ? WORK_ITEMS_MIGRATION_MESSAGE : readableError(message);
+}
+
 function revalidateTaskPaths(id?: string, projectId?: string | null, clientId?: string | null) {
   revalidatePath("/app/tasks");
   revalidatePath("/app");
@@ -61,7 +86,7 @@ export async function createTaskAction(_previous: ActionState, formData: FormDat
   const auth = await getUserClient();
   if ("error" in auth) return auth;
   const { error } = await auth.supabase.from("tasks").insert(taskValues);
-  if (error) return { error: readableError(error.message) };
+  if (error) return { error: taskError(error.message, formData) };
   revalidateTaskPaths(
     undefined,
     String(taskValues.project_id ?? "") || null,
@@ -79,7 +104,7 @@ export async function updateTaskAction(_previous: ActionState, formData: FormDat
   const auth = await getUserClient();
   if ("error" in auth) return auth;
   const { error, count } = await auth.supabase.from("tasks").update(taskValues, { count: "exact" }).eq("id", id);
-  if (error) return { error: readableError(error.message) };
+  if (error) return { error: taskError(error.message, formData) };
   const missing = notFoundWhenNoRows(count, "Task");
   if (missing) return missing;
   revalidateTaskPaths(id, String(taskValues.project_id ?? "") || null, String(taskValues.client_id ?? "") || null);

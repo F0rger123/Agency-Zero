@@ -85,3 +85,6 @@ Statuses: `Idea` → `Exploring` → `Scheduled` (moved into spec/roadmap) → `
 | Date | Idea | Section |
 |---|---|---|
 | 2026-09-17 | Backlog created; deferred items from the founding requirements moved here (Stripe, Google Calendar, Meta Ads, Search Console, GA4, social analytics, marketing anomaly alerts, client portal details). | — |
+- Shoots: create the prep tasks / a "shoot day" reminder automatically from a schedule; link finished shoots to social_posts (content calendar); per-client shoot packages in the services catalogue.
+- Work items: paste-a-message extraction into bugs/feature requests (needs the AI proposal layer first); client-facing status page for their bugs and requests.
+

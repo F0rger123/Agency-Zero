@@ -6,6 +6,7 @@ import { useState } from "react";
 import { dateLabel, hoursLabel, moneyLabel } from "@/lib/format";
 import { OverviewTab } from "./project-tabs/overview-tab";
 import { TasksTab } from "./project-tabs/tasks-tab";
+import { WorkItemsTab, type WorkItemsPayload } from "./project-tabs/work-items";
 import { MilestonesTab } from "./project-tabs/milestones-tab";
 import { TimelineTab } from "./project-tabs/timeline-tab";
 import { TimeTab } from "./project-tabs/time-tab";
@@ -30,6 +31,8 @@ export type { ProjectWorkspaceData } from "./project-workspace-types";
 const tabs = [
   "Overview",
   "Tasks",
+  "Bugs",
+  "Feature requests",
   "Goals & milestones",
   "Timeline",
   "Time",
@@ -42,7 +45,7 @@ const tabs = [
 
 type Tab = (typeof tabs)[number];
 
-export function ProjectWorkspace({ data }: { data: ProjectWorkspaceData }) {
+export function ProjectWorkspace({ data }: { data: ProjectWorkspaceData & { work_items: WorkItemsPayload | null } }) {
   const [tab, setTab] = useState<Tab>("Overview");
   const { project, totals, client } = data;
   const currency = project.currency || "USD";
@@ -114,6 +117,12 @@ export function ProjectWorkspace({ data }: { data: ProjectWorkspaceData }) {
             }`}
           >
             {item}
+            {item === "Bugs" && data.work_items && data.work_items.open_bugs > 0 ? (
+              <span className="ml-1.5 rounded-full bg-foreground px-1.5 py-0.5 text-[10px] font-medium text-background">{data.work_items.open_bugs}</span>
+            ) : null}
+            {item === "Feature requests" && data.work_items && data.work_items.open_feature_requests > 0 ? (
+              <span className="ml-1.5 rounded-full border border-border px-1.5 py-0.5 text-[10px] font-medium">{data.work_items.open_feature_requests}</span>
+            ) : null}
           </button>
         ))}
       </div>
@@ -121,6 +130,8 @@ export function ProjectWorkspace({ data }: { data: ProjectWorkspaceData }) {
       <div role="tabpanel" aria-label={tab} className="mt-8">
         {tab === "Overview" ? <OverviewTab data={data} currency={currency} /> : null}
         {tab === "Tasks" ? <TasksTab data={data} /> : null}
+        {tab === "Bugs" ? <WorkItemsTab data={data} kind="bug" /> : null}
+        {tab === "Feature requests" ? <WorkItemsTab data={data} kind="feature_request" /> : null}
         {tab === "Goals & milestones" ? <MilestonesTab data={data} /> : null}
         {tab === "Timeline" ? <TimelineTab data={data} /> : null}
         {tab === "Time" ? <TimeTab data={data} /> : null}

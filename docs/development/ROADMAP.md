@@ -19,7 +19,7 @@ handoff per AGENTS.md.
    non-GET-side-effect (explicit client beacon or bot-tolerant).
 
 ## P1 — Customer-first core model
-6. **Unified work items**: `tasks.kind` (task | bug | feature_request) + severity/
+6. ✅ (2026-10-05, 0023) **Unified work items**: `tasks.kind` (task | bug | feature_request) + severity/
    status fields, requester (contact), source (pasted message later). Migrate UI so
    project workspace has Tasks / Bugs / Feature requests tabs.
 7. **Project phases** (ordered, per project) above milestones; **project templates per
@@ -27,7 +27,7 @@ handoff per AGENTS.md.
 8. **Create-in-context everywhere**: quotes, contracts, invoices, meetings, files from
    inside client/project workspaces with client/project prefilled.
 9. **Activity log** table (who/what/when, entity refs) feeding workspaces and, later, AI.
-10. Meetings + checklists; video shoots (calendar event subtypes with checklist template).
+10. Meetings + checklists; 🟡 video shoots done as recurring `shoot_schedules`/`shoots` with per-shoot checklists (2026-10-05, 0024); meetings + meeting checklists still to do.
 11. ✅ Performance (local JWT verification, bounded lists/pickers). Still later: searchable async pickers, pagination UI.
 
 ## P2 — Money

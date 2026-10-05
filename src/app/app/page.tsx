@@ -8,6 +8,8 @@ import { todayIso } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { DataFailure, MigrationsRequired, SetupRequired } from "@/components/states";
 import {
+  DeliveryPanel,
+  type UpcomingShoot,
   KpiGrid,
   RevenueCards,
   type RevenueSummary,
@@ -50,12 +52,24 @@ export default async function DashboardPage() {
   const today = todayIso();
   // Two cheap aggregates in parallel. Revenue is a separate read model so a
   // missing migration 0018 degrades only the revenue cards, never the dashboard.
-  const [{ data, error }, revenueResponse, leadsResponse] = await Promise.all([
+  const [{ data, error }, revenueResponse, leadsResponse, shootsResponse, bugsResponse] = await Promise.all([
     retryOnClockSkew(() => supabase.rpc("get_dashboard_summary", { p_today: today })),
     retryOnClockSkew(() => supabase.rpc("get_revenue_summary", { p_today: today })),
     // New website inquiries (migration 0019). Errors (e.g. not applied yet) just hide the strip.
     supabase.from("leads").select("id", { count: "exact", head: true }).eq("status", "new"),
+    // Next content shoots (0024) and open bugs (0023): optional panels that simply hide on a database that is behind.
+    supabase
+      .from("shoots")
+      .select("id, title, shoot_date, start_time, location, status, clients(name)")
+      .gte("shoot_date", today)
+      .in("status", ["planned", "confirmed"])
+      .order("shoot_date")
+      .order("start_time", { nullsFirst: false })
+      .limit(5),
+    supabase.from("tasks").select("severity").eq("kind", "bug").not("status", "in", "(done,cancelled)").limit(500),
   ]);
+  const upcomingShoots = (shootsResponse.error ? null : (shootsResponse.data ?? [])) as unknown as UpcomingShoot[] | null;
+  const openBugs = bugsResponse.error ? null : (bugsResponse.data ?? []) as { severity: string | null }[];
   const newLeads = leadsResponse.error ? 0 : (leadsResponse.count ?? 0);
   const revenue = revenueResponse.error ? null : (revenueResponse.data as RevenueSummary | null);
 
@@ -125,6 +139,12 @@ export default async function DashboardPage() {
       <div className="mt-14">
         <KpiGrid summary={summary} />
       </div>
+
+      <DeliveryPanel
+        shoots={upcomingShoots}
+        openBugs={openBugs ? openBugs.length : null}
+        criticalBugs={openBugs ? openBugs.filter((bug) => bug.severity === "critical").length : 0}
+      />
 
       <RecurringRevenue summary={summary} />
 

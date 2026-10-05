@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { crmHref } from "@/lib/routes";
-import { moneyLabel, billingIntervalLabel } from "@/lib/format";
+import { moneyLabel, billingIntervalLabel, dateLabel } from "@/lib/format";
 
 /**
  * Dashboard presentation pieces built from ONE payload
@@ -415,6 +415,85 @@ export function RecentActivity({ summary }: { summary: DashboardSummary }) {
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+export type UpcomingShoot = {
+  id: string;
+  title: string;
+  shoot_date: string;
+  start_time: string | null;
+  location: string | null;
+  status: string;
+  clients: { name: string } | { name: string }[] | null;
+};
+
+/**
+ * Delivery at a glance: the next content shoots and open bugs. Either side is hidden when its migration
+ * (0024 shoots, 0023 bugs) has not been applied (`null`), so a database that is behind never breaks the dashboard.
+ */
+export function DeliveryPanel({
+  shoots,
+  openBugs,
+  criticalBugs,
+}: {
+  shoots: UpcomingShoot[] | null;
+  openBugs: number | null;
+  criticalBugs: number;
+}) {
+  if (shoots === null && openBugs === null) return null;
+  return (
+    <section aria-labelledby="delivery-heading" className="mt-14">
+      <h2 id="delivery-heading" className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+        Delivery
+      </h2>
+      <div className="mt-4 grid gap-px border border-border bg-border md:grid-cols-3">
+        {shoots !== null ? (
+          <div className="bg-background p-6 md:col-span-2">
+            <div className="flex items-baseline justify-between gap-4">
+              <p className="text-sm font-medium">Upcoming content shoots</p>
+              <Link href="/app/shoots" className="text-xs underline decoration-border underline-offset-4">
+                All shoots
+              </Link>
+            </div>
+            {shoots.length === 0 ? (
+              <p className="mt-4 text-sm text-muted-foreground">
+                Nothing planned. <Link href="/app/shoots" className="underline decoration-border underline-offset-4">Set up a recurring shoot schedule</Link>.
+              </p>
+            ) : (
+              <ul className="mt-4 divide-y divide-border text-sm">
+                {shoots.map((shoot) => {
+                  const client = Array.isArray(shoot.clients) ? shoot.clients[0] : shoot.clients;
+                  return (
+                    <li key={shoot.id} className="flex flex-wrap items-baseline justify-between gap-2 py-2.5">
+                      <span>
+                        <span className="font-medium">{dateLabel(shoot.shoot_date)}</span>
+                        <span className="text-muted-foreground">
+                          {shoot.start_time ? ` · ${shoot.start_time.slice(0, 5)}` : ""} · {client?.name ?? "Client"} · {shoot.title}
+                        </span>
+                      </span>
+                      <span className="text-xs uppercase tracking-widest text-muted-foreground">{shoot.status}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        ) : null}
+        {openBugs !== null ? (
+          <div className="bg-background p-6">
+            <p className="text-3xl font-semibold tracking-tight">{openBugs}</p>
+            <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">Open bugs</p>
+            <p className="mt-1 text-xs text-faint-foreground">
+              {criticalBugs > 0 ? `${criticalBugs} critical · ` : ""}
+              <Link href="/app/tasks?kind=bug" className="underline decoration-border underline-offset-4">
+                View bugs
+              </Link>
+            </p>
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 }
