@@ -122,7 +122,7 @@ export default function AboutPage() {
       <section className="border-t border-rule py-24 md:py-32">
         <div className="site-wrap">
           <Reveal>
-            <p className="t-label">How a project runs</p>
+            <p className="t-label">How working together runs</p>
             <h2 className="t-display mt-6 max-w-[18ch]"><TextEffect text="Four steps, and you always know which one you are on." effect="words" className="block" /></h2>
           </Reveal>
           <ol className="mt-14 grid gap-px border border-rule bg-rule md:grid-cols-4">
@@ -155,7 +155,7 @@ export default function AboutPage() {
       </section>
 
       <CtaSection
-        line1="A good project starts with one conversation."
+        line1="Good marketing starts with one conversation."
         line2="Let's build it"
         word="together."
         secondary={{ href: "/work", label: "or see the work first" }}

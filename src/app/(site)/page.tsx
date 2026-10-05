@@ -69,7 +69,7 @@ function Hero() {
         <Reveal>
           <p className="t-label mb-6 flex items-center gap-4">
             <span className="inline-block size-1.5 rounded-full bg-bone" aria-hidden />
-            Software · Website design · SEO · Content
+            Websites · SEO · Meta ads · Social · Software
           </p>
         </Reveal>
 
@@ -93,7 +93,7 @@ function Hero() {
           <Reveal delay={300} className="md:col-span-6 md:justify-self-end">
             <div className="flex flex-wrap gap-4">
               <Link href="/contact" className="btn btn-solid">
-                Start a project <span className="arrow" aria-hidden>→</span>
+                Let&apos;s talk growth <span className="arrow" aria-hidden>→</span>
               </Link>
               <Link href="/work" className="btn">
                 See my work <span className="arrow" aria-hidden>→</span>

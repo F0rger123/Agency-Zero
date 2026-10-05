@@ -8,7 +8,7 @@ import { ContactForm } from "./contact-form";
 export const metadata: Metadata = {
   title: "Contact a York, PA Web Designer",
   description:
-    "Start a project with Agency Zero in York, PA. Tell me about your website, custom software, SEO or ads project and I'll reply within one working day.",
+    "Get in touch with Agency Zero in York, PA. Tell me about your business and goals, whether that is a website, custom software, SEO, social media or Meta ads, and I'll reply within one working day.",
   alternates: { canonical: "/contact" },
 };
 
@@ -36,7 +36,7 @@ export default function ContactPage() {
           <aside className="lg:col-span-4 lg:col-start-9">
             <Reveal delay={100}>
               <p className="t-label">Prefer email?</p>
-              <a href={`mailto:${site.email}?subject=${encodeURIComponent("Project inquiry")}`} className="u-link t-title mt-4 inline-block break-all !text-[clamp(1.2rem,2vw,1.7rem)]">
+              <a href={`mailto:${site.email}?subject=${encodeURIComponent("Website inquiry")}`} className="u-link t-title mt-4 inline-block break-all !text-[clamp(1.2rem,2vw,1.7rem)]">
                 {site.email}
               </a>
               <div className="mt-6">

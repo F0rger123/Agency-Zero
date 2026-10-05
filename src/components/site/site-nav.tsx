@@ -74,9 +74,6 @@ export function SiteNav() {
           </nav>
 
           <div className="flex items-center gap-6">
-            <Link href="/app" className="u-link t-label hidden sm:inline">
-              Agency login
-            </Link>
             <button
               type="button"
               className="t-label !text-bone md:hidden"
@@ -118,10 +115,7 @@ export function SiteNav() {
           </ul>
           <div className="menu-item mt-auto flex items-center justify-between" style={{ "--i": nav.length } as React.CSSProperties}>
             <Link href="/contact" className="btn btn-solid">
-              Start a project <span className="arrow">→</span>
-            </Link>
-            <Link href="/app" className="u-link t-label">
-              Agency login
+              Let&apos;s talk growth <span className="arrow">→</span>
             </Link>
           </div>
         </nav>

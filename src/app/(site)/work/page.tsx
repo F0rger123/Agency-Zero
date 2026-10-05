@@ -97,7 +97,7 @@ export default function WorkPage() {
       </section>
 
       <CtaSection
-        line1="Your project could be next."
+        line1="Your business could be next."
         line2="Let's make it"
         word="count."
         secondary={{ href: "/services", label: "or see what I offer" }}

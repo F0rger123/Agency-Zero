@@ -3,7 +3,7 @@ import { Reveal } from "./reveal";
 import { TextEffect } from "./text-effect";
 
 /** Closing call-to-action reused at the foot of inner pages. */
-export function CtaBand({ title = "Have a project in mind?", note }: { title?: string; note?: string }) {
+export function CtaBand({ title = "Ready to get more customers?", note }: { title?: string; note?: string }) {
   return (
     <section className="border-t border-rule py-24 md:py-32">
       <div className="site-wrap grid items-end gap-10 md:grid-cols-12">
@@ -13,7 +13,7 @@ export function CtaBand({ title = "Have a project in mind?", note }: { title?: s
         </Reveal>
         <Reveal delay={120} className="md:col-span-4 md:justify-self-end">
           <Link href="/contact" className="btn btn-solid">
-            Start a project <span className="arrow" aria-hidden>→</span>
+            Let&apos;s talk growth <span className="arrow" aria-hidden>→</span>
           </Link>
         </Reveal>
       </div>

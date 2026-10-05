@@ -1,5 +1,10 @@
 # Handoff log (newest first)
 
+## 2026-10-05 (4) — Claude — CTA copy, login moved to footer, typing toggle removed
+
+- Primary CTA is now "Let's talk growth" (hero, nav menu, CTA band, home CTA). Other "project" wording on the public site reworded (band default "Ready to get more customers?", work/about headings, contact meta, email subject "Website inquiry"). Hero eyebrow lists Websites · SEO · Meta ads · Social · Software.
+- "Agency login" removed from the top nav (desktop + mobile menu); it lives in the footer. `TypingToggle` removed; typing always plays unless the visitor prefers reduced motion. No migrations.
+
 ## 2026-10-05 (3) — Claude — theagencyzero.com, new site email, GBP walkthrough
 
 - Site URL defaults to `https://theagencyzero.com` (canonicals, sitemap, schema, robots). The noindex-until-configured gate was removed. Public email is now `agencyzeroteam@gmail.com` (`site.email`: footer, contact, schema, llms.txt).

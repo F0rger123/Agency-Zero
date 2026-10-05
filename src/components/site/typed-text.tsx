@@ -2,10 +2,9 @@
 
 import { useEffect, useRef, useState, type ElementType } from "react";
 
-/** True when the visitor has switched typing animations off (see TypingToggle) or prefers reduced motion. */
+/** True when the visitor prefers reduced motion (typing then shows the full text immediately). */
 function typingDisabled(): boolean {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return true;
-  return document.documentElement.dataset.typing === "off";
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 /**
@@ -149,40 +148,5 @@ export function TypeRotator({
       <span aria-hidden className="typed-live-inline" data-typed={animate ? shown : phrases[0]} />
       {animate ? <span aria-hidden className="typed-caret caret" /> : null}
     </span>
-  );
-}
-
-/** Footer switch: lets visitors turn the typing animations off (remembered on this device). */
-export function TypingToggle() {
-  const [on, setOn] = useState(true);
-
-  useEffect(() => {
-    let stored: string | null = null;
-    try {
-      stored = window.localStorage.getItem("az-typing");
-    } catch {
-      /* storage can be blocked; default to on */
-    }
-    const enabled = stored !== "off";
-    document.documentElement.dataset.typing = enabled ? "on" : "off";
-    const id = requestAnimationFrame(() => setOn(enabled));
-    return () => cancelAnimationFrame(id);
-  }, []);
-
-  const toggle = () => {
-    const next = !on;
-    setOn(next);
-    document.documentElement.dataset.typing = next ? "on" : "off";
-    try {
-      window.localStorage.setItem("az-typing", next ? "on" : "off");
-    } catch {
-      /* ignore */
-    }
-  };
-
-  return (
-    <button type="button" onClick={toggle} aria-pressed={on} className="u-link t-label">
-      Typing animation: {on ? "On" : "Off"}
-    </button>
   );
 }

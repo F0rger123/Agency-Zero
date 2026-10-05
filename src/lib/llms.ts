@@ -19,7 +19,7 @@ ${services.map((s) => `- [${s.title}](${siteUrl}/services/${s.slug}): ${s.summar
 - [FAQ](${siteUrl}/faq): common questions about services, pricing, local SEO and AEO
 - [Work](${siteUrl}/work): selected projects
 - [About ${site.owner}](${siteUrl}/about): the person behind Agency Zero
-- [Contact](${siteUrl}/contact): start a project
+- [Contact](${siteUrl}/contact): get in touch
 
 ## Full text
 - [Complete plain-text version](${siteUrl}/llms-full.txt)

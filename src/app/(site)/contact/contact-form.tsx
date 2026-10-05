@@ -34,7 +34,7 @@ function LongForm() {
         <p className="t-label">Message received</p>
         <p className="t-title mt-6">{state.success}</p>
         <p className="t-body mt-4 max-w-md">
-          I read every message personally. If it&apos;s urgent, email me directly and mention your project.
+          I read every message personally. If it&apos;s urgent, email me directly and mention what you need.
         </p>
       </div>
     );
@@ -165,7 +165,7 @@ function LongForm() {
       </Step>
 
       <Step number="04" title="Anything else?">
-        <label htmlFor="details" className="sr-only">Project details</label>
+        <label htmlFor="details" className="sr-only">Tell me about your business</label>
         <textarea
           id="details"
           name="details"

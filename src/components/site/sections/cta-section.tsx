@@ -31,7 +31,7 @@ export function CtaSection({
         </Reveal>
         <Reveal delay={320} className="mt-14 flex flex-wrap items-center gap-6">
           <Link href="/contact" className="btn btn-solid">
-            Start a project <span className="arrow" aria-hidden>→</span>
+            Let&apos;s talk growth <span className="arrow" aria-hidden>→</span>
           </Link>
           <Link href={secondary.href} className="u-link t-label">
             {secondary.label}

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { areas } from "@/lib/seo";
 import { nav, services, site } from "@/lib/site-config";
 import { InstagramButton } from "./instagram-button";
-import { TypingToggle } from "./typed-text";
 import { SiteWordmark } from "./wordmark";
 
 export function SiteFooter() {
@@ -82,9 +81,8 @@ export function SiteFooter() {
         <div className="site-wrap flex flex-wrap items-center justify-between gap-4 py-6">
           <p className="t-label">© {new Date().getFullYear()} {site.name}</p>
           <div className="flex flex-wrap items-center gap-6">
-            <TypingToggle />
             <Link href="/app" className="u-link t-label">
-              Client / team login
+              Agency login
             </Link>
           </div>
         </div>
