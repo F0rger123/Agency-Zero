@@ -1,5 +1,12 @@
 # Handoff log (newest first)
 
+## 2026-10-05 — Claude — total revenue incl. MRR, leads default tab, lead→client, Venmo (0022)
+
+- Dashboard Total revenue = all payments received + this month's MRR (note shows the split). Month card unchanged (received + MRR).
+- `/app/leads` now opens on **All** (was New). "Turn into client →" (existing `convert_lead_to_client`, 0019) now redirects to the new client.
+- **Migration 0022**: adds `venmo` to `payment_method` and re-creates `record_client_payment` (superset of 0020). Owner must run it (it also fixes "Recording payments needs 0020"). Venmo shows in both payment forms; friendly error if 0022 is missing. SQL test added; `npm run test:db` passes.
+- Unverified: dashboard/leads in a live browser against production.
+
 ## 2026-10-04 (6) — Claude — MRR in monthly revenue; noindex until domain set; setup checklist
 
 - Dashboard "Revenue this month" = payments received this month + MRR (note shows the split). Caveat: if a recurring client's monthly payment is also recorded as a payment it counts twice; record only one-off fees as payments. UI-only, no migration.

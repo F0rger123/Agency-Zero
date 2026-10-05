@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getUserClient, notFoundWhenNoRows } from "@/lib/actions";
 import { field, readableError, type ActionState } from "@/lib/forms";
 
@@ -32,10 +33,11 @@ export async function convertLeadAction(_previous: ActionState, formData: FormDa
   if (!id) return { error: "Lead ID is missing." };
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error } = await auth.supabase.rpc("convert_lead_to_client", { p_lead_id: id });
+  const { data, error } = await auth.supabase.rpc("convert_lead_to_client", { p_lead_id: id });
   if (error) return { error: readableError(error.message) };
   revalidatePath("/app/leads");
   revalidatePath("/app/clients");
   revalidatePath("/app");
+  if (typeof data === "string") redirect(`/app/clients/${data}`);
   return { success: "Converted to a client. Open it from Clients." };
 }

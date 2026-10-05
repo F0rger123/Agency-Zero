@@ -53,7 +53,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
 
   const leads = (data ?? []) as Lead[];
   const tabs = ["all", "new", "contacted", "converted", "dismissed"] as const;
-  const active = (tabs as readonly string[]).includes(filter ?? "") ? (filter as (typeof tabs)[number]) : "new";
+  const active = (tabs as readonly string[]).includes(filter ?? "") ? (filter as (typeof tabs)[number]) : "all";
   const shown = active === "all" ? leads : leads.filter((lead) => lead.status === active);
   const count = (s: string) => (s === "all" ? leads.length : leads.filter((lead) => lead.status === s).length);
 

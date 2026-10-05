@@ -160,6 +160,8 @@ export async function deleteInvoiceAction(_previous: ActionState, formData: Form
   revalidatePath("/app/invoices");
   return { success: "Draft invoice deleted." };
 }
+const VENMO_NEEDS_0022 = "Venmo needs database update 0022. Apply it in the Supabase SQL editor, then try again.";
+
 export async function recordPaymentAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const invoiceId = field(formData, "invoice_id");
   if (!invoiceId) return { error: "Invoice ID is missing." };
@@ -167,7 +169,7 @@ export async function recordPaymentAction(_previous: ActionState, formData: Form
   if (typeof amount !== "number" || amount <= 0) return { error: "Payment amount must be greater than zero." };
   const method = field(formData, "method") || "other";
   const kind = field(formData, "kind") || "partial";
-  if (!["bank_transfer", "cash", "card", "other"].includes(method))
+  if (!["bank_transfer", "cash", "card", "venmo", "other"].includes(method))
     return { error: "Choose a valid manual payment method." };
   if (!["deposit", "partial", "full"].includes(kind)) return { error: "Choose a valid payment kind." };
   const auth = await getUserClient();
@@ -192,7 +194,7 @@ export async function recordPaymentAction(_previous: ActionState, formData: Form
       reference: optionalField(formData, "reference"),
       note: optionalField(formData, "note"),
     });
-  if (error) return { error: readableError(error.message) };
+  if (error) return { error: /invalid input value for enum/i.test(error.message) ? VENMO_NEEDS_0022 : readableError(error.message) };
   revalidatePath("/app/invoices");
   revalidatePath(`/app/invoices/${invoiceId}`);
   revalidatePath("/app");
@@ -253,8 +255,9 @@ export async function recordClientPaymentAction(_previous: ActionState, formData
   });
   if (error) {
     if (/could not find the function|schema cache/i.test(error.message)) {
-      return { error: "Recording payments needs database update 0020. Apply it in the Supabase SQL editor, then try again." };
+      return { error: "Recording payments needs database update 0020 (or 0022, which includes it). Apply it in the Supabase SQL editor, then try again." };
     }
+    if (method === "venmo" && /invalid input value for enum|Invalid payment method/i.test(error.message)) return { error: VENMO_NEEDS_0022 };
     return { error: readableError(error.message) };
   }
   revalidatePath("/app");

@@ -236,6 +236,20 @@ set role anon;
 select pg_temp.expect_error($q$select public.record_client_payment('10000000-0000-0000-0000-000000000001', 'x', 100)$q$, 'permission denied');
 reset role;
 
+-- ── Venmo payment method (0022) ────────────────────────────────────────────
+reset role;
+reset request.jwt.claim.sub;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';   -- owner
+select public.record_client_payment('10000000-0000-0000-0000-000000000001', 'Logo refresh', 5000, '2026-10-05', 'venmo') as venmo_inv \gset
+select set_config('t.venmo_inv', :'venmo_inv', false);
+do $$
+begin
+  assert (select method::text from public.payments where invoice_id = current_setting('t.venmo_inv')::uuid) = 'venmo', 'venmo payment stored';
+end $$;
+select pg_temp.expect_error($q$select public.record_client_payment('10000000-0000-0000-0000-000000000001', 'x', 100, null, 'bitcoin')$q$, 'Invalid payment method');
+reset role;
+
 -- ── marketing campaigns + social posts (0021) ──────────────────────────────
 reset role;
 reset request.jwt.claim.sub;

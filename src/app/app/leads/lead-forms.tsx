@@ -27,7 +27,7 @@ export function ConvertLeadForm({ id }: { id: string }) {
   return (
     <form action={action} className="flex items-center gap-3">
       <input type="hidden" name="id" value={id} />
-      <SubmitButton pendingLabel="Converting…">Convert to client</SubmitButton>
+      <SubmitButton pendingLabel="Converting…">Turn into client →</SubmitButton>
       <FormMessage {...state} />
     </form>
   );

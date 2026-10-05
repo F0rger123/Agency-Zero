@@ -110,13 +110,13 @@ export function RevenueCards({ revenue, mrrCents, currency }: { revenue: Revenue
             <li className="col-span-2 lg:col-span-1">
               <div className="h-full min-w-0 bg-background p-5 sm:p-6">
                 <p className="break-words text-3xl sm:text-4xl font-semibold tracking-tight">
-                  {moneyLabel(revenue.total_revenue_cents, revenue.currency)}
+                  {moneyLabel(revenue.total_revenue_cents + mrrCents, revenue.currency)}
                 </p>
                 <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-foreground">Total revenue</p>
                 <p className="mt-1 text-xs text-faint-foreground">
-                  {revenue.total_revenue_cents === 0
+                  {revenue.total_revenue_cents === 0 && mrrCents === 0
                     ? "Nothing recorded yet. Open a client, then Invoices, then Record a payment."
-                    : "All payments received, one-time and recurring"}
+                    : `${moneyLabel(revenue.total_revenue_cents, revenue.currency)} received + ${moneyLabel(mrrCents, currency)} recurring this month`}
                 </p>
               </div>
             </li>

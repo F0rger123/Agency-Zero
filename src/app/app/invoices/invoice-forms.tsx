@@ -359,6 +359,7 @@ export function PaymentForm({ invoiceId }: { invoiceId: string }) {
             <option value="bank_transfer">Bank transfer</option>
             <option value="cash">Cash</option>
             <option value="card">Card</option>
+            <option value="venmo">Venmo</option>
             <option value="other">Other</option>
           </SelectInput>
         </div>
@@ -443,6 +444,7 @@ export function RecordClientPaymentForm({ clientId, projects }: { clientId: stri
               <option value="card">Card</option>
               <option value="cash">Cash</option>
               <option value="stripe">Stripe</option>
+              <option value="venmo">Venmo</option>
               <option value="other">Other</option>
             </SelectInput>
           </div>
