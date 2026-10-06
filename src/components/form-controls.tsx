@@ -1,7 +1,8 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import type { ChangeEventHandler, ReactNode } from "react";
+import { useEffect, type ChangeEventHandler, type ReactNode } from "react";
+import { useModal } from "@/components/modal";
 
 /**
  * Primary action button: black with white text, everywhere.
@@ -41,6 +42,13 @@ export function SubmitButton({
 }
 
 export function FormMessage({ error, success }: { error?: string; success?: string }) {
+  const modal = useModal();
+  // A form opened from an "Add" dialog closes it shortly after it saves.
+  useEffect(() => {
+    if (!success || !modal) return;
+    const timer = window.setTimeout(modal.close, 650);
+    return () => window.clearTimeout(timer);
+  }, [success, modal]);
   if (!error && !success) return null;
   return (
     <p
@@ -144,6 +152,7 @@ export function SelectInput({
   id,
   name,
   defaultValue,
+  value,
   children,
   required = false,
   onChange,
@@ -151,6 +160,8 @@ export function SelectInput({
   id: string;
   name: string;
   defaultValue?: string | null;
+  /** Controlled value; use with onChange. Leave out for an uncontrolled select. */
+  value?: string;
   children: ReactNode;
   required?: boolean;
   onChange?: ChangeEventHandler<HTMLSelectElement>;
@@ -159,7 +170,7 @@ export function SelectInput({
     <select
       id={id}
       name={name}
-      defaultValue={defaultValue ?? ""}
+      {...(value !== undefined ? { value } : { defaultValue: defaultValue ?? "" })}
       required={required}
       onChange={onChange}
       className="mt-2 block w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground"
@@ -172,16 +183,24 @@ export function SelectInput({
 export function FormSection({
   title,
   description,
+  action,
   children,
 }: {
   title: string;
   description?: string;
+  /** Primary button for the section, e.g. an "Add" dialog trigger. Shown top-right. */
+  action?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <section className="border-t border-border pt-8">
-      <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">{title}</h2>
-      {description ? <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p> : null}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">{title}</h2>
+          {description ? <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p> : null}
+        </div>
+        {action}
+      </div>
       <div className="mt-5">{children}</div>
     </section>
   );

@@ -210,3 +210,35 @@ export async function toggleShootChecklistAction(_previous: ActionState, formDat
   revalidateShoots(current.data.client_id);
   return {};
 }
+
+/** Delete one shoot. */
+export async function deleteShootAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const id = field(formData, "id");
+  if (!id) return { error: "Shoot ID is missing." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const found = await auth.supabase.from("shoots").select("client_id").eq("id", id).maybeSingle();
+  const { error, count } = await auth.supabase.from("shoots").delete({ count: "exact" }).eq("id", id);
+  if (error) return { error: shootError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Shoot");
+  if (missing) return missing;
+  revalidateShoots(found.data?.client_id);
+  return { success: "Shoot deleted." };
+}
+
+/** Delete a recurring schedule and the shoots it planned that have not happened yet. Past shoots stay as history. */
+export async function deleteShootScheduleAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const id = field(formData, "id");
+  if (!id) return { error: "Schedule ID is missing." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const found = await auth.supabase.from("shoot_schedules").select("client_id").eq("id", id).maybeSingle();
+  const planned = await auth.supabase.from("shoots").delete().eq("schedule_id", id).in("status", ["planned", "confirmed"]);
+  if (planned.error) return { error: shootError(planned.error.message) };
+  const { error, count } = await auth.supabase.from("shoot_schedules").delete({ count: "exact" }).eq("id", id);
+  if (error) return { error: shootError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Schedule");
+  if (missing) return missing;
+  revalidateShoots(found.data?.client_id);
+  return { success: "Schedule deleted." };
+}

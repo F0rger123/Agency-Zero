@@ -14,6 +14,8 @@
   --color-faint-foreground: #a3a3a3;
   --color-inverted: #0a0a0a;
   --color-inverted-foreground: #ffffff;
+  /* Money only: the one hue in the CRM, so currency reads at a glance. */
+  --color-money: #15803d;
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, "Noto Sans", sans-serif;
@@ -1345,4 +1347,33 @@ html:has(.site) {
   .az-scan {
     opacity: 0;
   }
+}
+
+
+/* CRM modal: blurred backdrop, card rises in. */
+@keyframes modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modal-card-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.modal-backdrop { animation: modal-backdrop-in 0.2s ease-out both; }
+.modal-card { animation: modal-card-in 0.28s var(--ease-out) both; }
+/* The existing add-forms carry their own heading and top rule; the modal supplies the title. */
+[data-modal-body] > div:first-child:not([data-wizard]) { border-top: 0; padding-top: 0; }
+[data-modal-body] > div:first-child:not([data-wizard]) > h2:first-child { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop, .modal-card { animation: none; }
+}
+
+/* Home widgets. */
+@keyframes widget-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.widget-in { animation: widget-in 0.45s var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 45ms); }
+@media (prefers-reduced-motion: reduce) {
+  .widget-in { animation: none; }
 }

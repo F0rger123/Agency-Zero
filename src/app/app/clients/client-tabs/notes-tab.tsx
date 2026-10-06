@@ -1,5 +1,6 @@
 "use client";
 
+import { AddDialog } from "@/components/modal";
 import { FormSection } from "@/components/form-controls";
 import { dateTimeLabel } from "@/lib/format";
 import { DeleteNoteForm, NoteForm } from "../client-forms";
@@ -8,7 +9,15 @@ import { Empty } from "../client-workspace-parts";
 
 export function NotesTab({ data }: { data: ClientWorkspaceData }) {
   return (
-    <FormSection title="Notes" description="Persistent client context. Pin the notes you need to keep visible.">
+    <FormSection
+      title="Notes"
+      description="Persistent client context. Pin the notes you need to keep visible."
+      action={
+        <AddDialog label="New note" title="New note" description={`About ${data.client.name}`}>
+          <NoteForm clientId={data.client.id} />
+        </AddDialog>
+      }
+    >
       {data.notes.length === 0 ? (
         <Empty>No notes yet.</Empty>
       ) : (
@@ -29,9 +38,6 @@ export function NotesTab({ data }: { data: ClientWorkspaceData }) {
           ))}
         </ul>
       )}
-      <div className="mt-6">
-        <NoteForm clientId={data.client.id} />
-      </div>
     </FormSection>
   );
 }

@@ -5,10 +5,16 @@ import type { ActionState } from "@/lib/forms";
 import { completeReminderAction, createReminderAction, deleteReminderAction } from "./actions";
 import { FieldLabel, FormMessage, SubmitButton, TextArea, TextInput } from "@/components/form-controls";
 const initialState: ActionState = {};
-export function ReminderForm() {
+export function ReminderForm({ subject }: { subject?: { type: "client"; id: string } }) {
   const [state, action] = useActionState(createReminderAction, initialState);
   return (
     <form action={action} className="space-y-4">
+      {subject ? (
+        <>
+          <input type="hidden" name="subject_type" value={subject.type} />
+          <input type="hidden" name="subject_id" value={subject.id} />
+        </>
+      ) : null}
       <div>
         <FieldLabel label="Reminder" htmlFor="reminder-message" required />
         <TextArea

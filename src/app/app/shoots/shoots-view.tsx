@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { FormSection } from "@/components/form-controls";
+import { AddDialog } from "@/components/modal";
+import { ConfirmDelete } from "@/components/confirm-delete";
 import { dateLabel } from "@/lib/format";
 import { crmHref } from "@/lib/routes";
 import { STATUS_LABEL, WEEKDAYS, checklistProgress, describeRule, durationLabel, timeLabel, type ChecklistItem, type ShootStatus } from "@/lib/shoots";
+import { deleteShootAction, deleteShootScheduleAction } from "./actions";
 import {
   ChecklistItemForm,
   EditShootForm,
@@ -53,6 +56,15 @@ export function ShootsView({ data, lockedClientId }: { data: ShootsOverview; loc
 
   return (
     <div className="space-y-14">
+      <div className="flex flex-wrap gap-3">
+        <AddDialog label="New recurring schedule" title="New recurring schedule" description="Weekly, every other week, or the Nth weekday of the month. Saving plans the next 90 days of shoots.">
+          <ScheduleForm clients={clients} projects={projects} lockedClientId={lockedClientId} />
+        </AddDialog>
+        <AddDialog label="New one-off shoot" title="New one-off shoot" description="For a launch, event or anything that is not part of a recurring schedule." variant="outline">
+          <NewShootForm clients={clients} projects={projects} lockedClientId={lockedClientId} />
+        </AddDialog>
+      </div>
+
       <section>
         <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
           {upcoming.length} upcoming {upcoming.length === 1 ? "shoot" : "shoots"}
@@ -62,7 +74,7 @@ export function ShootsView({ data, lockedClientId }: { data: ShootsOverview; loc
             <Empty>
               {schedules.some((schedule) => schedule.active)
                 ? "Nothing planned. Use “Plan next 90 days” on a schedule below."
-                : "No shoots planned. Create a recurring schedule below, or add a one-off shoot."}
+                : "No shoots planned."}
             </Empty>
           </div>
         ) : (
@@ -99,6 +111,12 @@ export function ShootsView({ data, lockedClientId }: { data: ShootsOverview; loc
                         </span>
                       ) : null}
                       <StatusBadge status={shoot.status} />
+                      <ConfirmDelete
+                        action={deleteShootAction}
+                        fields={{ id: shoot.id }}
+                        title="Delete this shoot?"
+                        message={`“${shoot.title}” on ${dateLabel(shoot.shoot_date)} will be removed. This cannot be undone.`}
+                      />
                     </div>
                   </div>
                   {items.length > 0 ? (
@@ -128,7 +146,7 @@ export function ShootsView({ data, lockedClientId }: { data: ShootsOverview; loc
         description="A schedule is the rule (for example “the first Tuesday of every month, 10:00, 2 hours”). Each one plans dated shoots for you."
       >
         {schedules.length === 0 ? (
-          <Empty>No recurring schedules yet. Create the first one below.</Empty>
+          <Empty>No recurring schedules yet.</Empty>
         ) : (
           <ul className="divide-y divide-border border-y border-border">
             {schedules.map((schedule) => (
@@ -150,6 +168,12 @@ export function ShootsView({ data, lockedClientId }: { data: ShootsOverview; loc
                   <div className="flex flex-wrap items-center gap-5">
                     {schedule.active ? <ExtendScheduleForm id={schedule.id} clientId={schedule.client_id} /> : null}
                     <ScheduleActiveForm id={schedule.id} active={schedule.active} />
+                    <ConfirmDelete
+                      action={deleteShootScheduleAction}
+                      fields={{ id: schedule.id }}
+                      title="Delete this schedule?"
+                      message={`“${schedule.title}” and its upcoming planned shoots will be removed. Shoots already shot or closed are kept as history.`}
+                    />
                   </div>
                 </div>
                 <details className="mt-4">
@@ -164,14 +188,6 @@ export function ShootsView({ data, lockedClientId }: { data: ShootsOverview; loc
         )}
       </FormSection>
 
-      <FormSection title="New recurring schedule" description="Weekly, every other week, or the Nth weekday of the month. Saving plans the next 90 days of shoots.">
-        <ScheduleForm clients={clients} projects={projects} lockedClientId={lockedClientId} />
-      </FormSection>
-
-      <FormSection title="Add a one-off shoot" description="For a launch, event or anything that is not part of a recurring schedule.">
-        <NewShootForm clients={clients} projects={projects} lockedClientId={lockedClientId} />
-      </FormSection>
-
       {recent.length > 0 ? (
         <section>
           <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Recent and closed shoots</h2>
@@ -182,7 +198,15 @@ export function ShootsView({ data, lockedClientId }: { data: ShootsOverview; loc
                   {dateLabel(shoot.shoot_date)} · {shoot.title}
                   {!scoped ? <span className="text-muted-foreground"> · {shoot.client_name}</span> : null}
                 </span>
-                <StatusBadge status={shoot.status} />
+                <span className="flex items-center gap-3">
+                  <StatusBadge status={shoot.status} />
+                  <ConfirmDelete
+                    action={deleteShootAction}
+                    fields={{ id: shoot.id }}
+                    title="Delete this shoot?"
+                    message={`“${shoot.title}” will be removed from the history. This cannot be undone.`}
+                  />
+                </span>
               </li>
             ))}
           </ul>

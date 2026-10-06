@@ -253,9 +253,11 @@ export async function assignServiceAction(
     return { error: "Amount must be a valid non-negative number." };
   }
 
-  const amountCents = billing === "recurring" && amount !== null ? Math.round(amount * 100) : null;
+  // One-time services keep their price too (it is the charge), but never feed MRR: every MRR
+  // query filters on billing = 'recurring'.
+  const amountCents = amount !== null ? Math.round(amount * 100) : null;
   const monthlyCents =
-    amountCents === null
+    billing !== "recurring" || amountCents === null
       ? null
       : interval === "quarterly"
         ? Math.round(amountCents / 3)
@@ -263,26 +265,88 @@ export async function assignServiceAction(
           ? Math.round(amountCents / 12)
           : amountCents;
 
+  const wantsCharge = billing === "one_off" && ["paid", "invoice"].includes(field(formData, "charge"));
+  if (wantsCharge && !(amountCents && amountCents > 0)) return { error: "Enter the price so the charge can be recorded." };
+
   const auth = await getUserClient();
   if ("error" in auth) return auth;
+  const startedOn = optionalDate(formData, "started_on");
   const { error } = await auth.supabase.from("client_services").upsert(
     {
       client_id: clientId,
       service_id: serviceId,
       billing,
-      billing_interval: interval,
+      billing_interval: billing === "recurring" ? interval : "monthly",
       amount_cents: amountCents,
       monthly_amount_cents: monthlyCents,
-      started_on: optionalDate(formData, "started_on"),
+      started_on: startedOn,
     },
     { onConflict: "client_id,service_id" }
   );
   if (error) return { error: readableError(error.message) };
+
+  // Optional one-time charge: record it as already paid, or bill it with a sent invoice.
+  const charge = billing === "one_off" ? field(formData, "charge") : "none";
+  let chargeNote = "";
+  if ((charge === "paid" || charge === "invoice") && amountCents && amountCents > 0) {
+    const named = await auth.supabase.from("services").select("name").eq("id", serviceId).maybeSingle();
+    const serviceName = named.data?.name ?? "Service";
+    const today = new Date().toISOString().slice(0, 10);
+    if (charge === "paid") {
+      const method = field(formData, "method") || "other";
+      const paid = await auth.supabase.rpc("record_client_payment", {
+        p_client_id: clientId,
+        p_description: serviceName,
+        p_amount_cents: amountCents,
+        p_paid_on: startedOn ?? today,
+        p_method: method,
+        p_project_id: null,
+        p_reference: null,
+      });
+      if (paid.error) {
+        return {
+          error: `The service was saved, but recording the payment failed: ${
+            /could not find the function|schema cache/i.test(paid.error.message)
+              ? "payments need database update 0020 (or 0022)."
+              : readableError(paid.error.message)
+          }`,
+        };
+      }
+      chargeNote = " Payment recorded.";
+    } else {
+      const number = `INV-${today.replaceAll("-", "")}-${String(Math.floor(Math.random() * 900) + 100)}`;
+      const saved = await auth.supabase.rpc("save_invoice", {
+        p_id: null,
+        p_header: {
+          client_id: clientId,
+          project_id: null,
+          quote_id: null,
+          contract_id: null,
+          number,
+          title: serviceName,
+          status: "sent",
+          issued_on: today,
+          due_on: today,
+          currency: "USD",
+          subtotal_cents: amountCents,
+          discount_cents: 0,
+          tax_cents: 0,
+          total_cents: amountCents,
+          deposit_cents: 0,
+        },
+        p_lines: [{ description: serviceName, qty: 1, unit_amount_cents: amountCents, amount_cents: amountCents, sort_order: 0 }],
+      });
+      if (saved.error) return { error: `The service was saved, but creating the invoice failed: ${readableError(saved.error.message)}` };
+      chargeNote = ` Invoice ${number} created.`;
+      revalidatePath("/app/invoices");
+    }
+    revalidatePath("/app/invoices");
+  }
   revalidatePath(`/app/clients/${clientId}`);
   revalidatePath("/app/clients");
   revalidatePath("/app/services");
   revalidatePath("/app");
-  return { success: "Service saved." };
+  return { success: `Service saved.${chargeNote}` };
 }
 
 export async function removeServiceAction(

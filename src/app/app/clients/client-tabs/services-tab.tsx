@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AddDialog } from "@/components/modal";
 import { FormSection } from "@/components/form-controls";
 import { billingIntervalLabel, dateLabel, moneyLabel } from "@/lib/format";
 import { RemoveServiceForm, ServiceForm } from "../client-forms";
@@ -12,9 +13,20 @@ export function ServicesTab({ data }: { data: ClientWorkspaceData }) {
     <FormSection
       title="Services"
       description="Catalogue services delivered to this client. Recurring amounts drive the dashboard MRR."
+      action={
+        data.service_catalog.length === 0 ? (
+          <Link href="/app/services" className="text-sm underline decoration-border underline-offset-4">
+            Add services to your catalogue first
+          </Link>
+        ) : (
+          <AddDialog label="Add service" title="Add a service" description={`For ${data.client.name}`}>
+            <ServiceForm clientId={data.client.id} services={data.service_catalog} compact />
+          </AddDialog>
+        )
+      }
     >
       {data.services.length === 0 ? (
-        <Empty>No services assigned yet.</Empty>
+        <Empty>No services yet.</Empty>
       ) : (
         <ul className="divide-y divide-border border-y border-border">
           {data.services.map((assignment) => (
@@ -26,7 +38,7 @@ export function ServicesTab({ data }: { data: ClientWorkspaceData }) {
                     ? `Recurring · ${moneyLabel(assignment.amount_cents)} ${billingIntervalLabel(
                         assignment.billing_interval,
                       )} · ${moneyLabel(assignment.monthly_amount_cents)}/month`
-                    : "One-off"}
+                    : `One-time${assignment.amount_cents ? ` · ${moneyLabel(assignment.amount_cents)}` : ""}`}
                   {assignment.started_on ? ` · since ${dateLabel(assignment.started_on)}` : ""}
                 </p>
               </div>
@@ -35,22 +47,6 @@ export function ServicesTab({ data }: { data: ClientWorkspaceData }) {
           ))}
         </ul>
       )}
-      <div className="mt-6">
-        <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Assign a service</h3>
-        {data.service_catalog.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">
-            The catalogue is empty. Add services in{" "}
-            <Link href="/app/services" className="underline decoration-border underline-offset-4">
-              Services
-            </Link>
-            .
-          </p>
-        ) : (
-          <div className="mt-4">
-            <ServiceForm clientId={data.client.id} services={data.service_catalog} compact />
-          </div>
-        )}
-      </div>
     </FormSection>
   );
 }

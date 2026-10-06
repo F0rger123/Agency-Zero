@@ -234,3 +234,12 @@ Passkeys (fingerprint, face unlock, Windows Hello, device PIN) are optional; pas
 How it is kept safe: the device does the biometric check; the app stores only a public key. Registration requires an existing authorized session; sign-in
 requires a valid signature over a single-use 5-minute challenge, an exact-origin match, and that the account is still in `app_owner`/`app_team`. The service-role
 key is only used after that verification (and for challenge bookkeeping), and only inside the `/api/passkey/*` route handlers.
+
+## Quick note with AI (optional)
+
+The CRM's **Quick note** (microphone button in the top bar and on Home) can organise what you say into notes, tasks, project progress and payments for you to confirm.
+
+1. Create an API key in the Anthropic Console (https://console.anthropic.com/settings/keys).
+2. Cloudflare dashboard → Workers & Pages → the Agency Zero Worker → Settings → Variables and Secrets → **Add** → type **Secret**, name `ANTHROPIC_API_KEY`, paste the key → Deploy.
+3. Without the key the feature still works with a simple organiser (keeps your words as a note on the client you name). Nothing is saved until you press Save in the review step.
+

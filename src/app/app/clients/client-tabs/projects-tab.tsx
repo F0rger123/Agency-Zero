@@ -2,8 +2,12 @@
 
 import { crmHref } from "@/lib/routes";
 import Link from "next/link";
+import { AddDialog } from "@/components/modal";
 import { FormSection } from "@/components/form-controls";
-import { dateLabel, moneyLabel } from "@/lib/format";
+import { dateLabel } from "@/lib/format";
+import { moneyNode } from "@/components/money-node";
+import { ConfirmDelete } from "@/components/confirm-delete";
+import { deleteProjectAction } from "../../projects/actions";
 import { NewProjectForm } from "../../projects/project-forms";
 import type { ClientWorkspaceData } from "../client-workspace-types";
 import { Empty } from "../client-workspace-parts";
@@ -13,9 +17,18 @@ export function ProjectsTab({ data, currency, projectTemplates = [] }: { data: C
     <FormSection
       title="Projects"
       description="Delivery work for this client. Open a project to run it from the workspace."
+      action={
+        <AddDialog label="New project" title="New project" description={`For ${data.client.name}`}>
+          <NewProjectForm
+            lockedClientId={data.client.id}
+            clients={[{ id: data.client.id, name: data.client.name, company: data.client.company }]}
+            templates={projectTemplates}
+          />
+        </AddDialog>
+      }
     >
       {data.projects.length === 0 ? (
-        <Empty>No projects yet. Create the first one below.</Empty>
+        <Empty>No projects yet.</Empty>
       ) : (
         <div className="overflow-x-auto border-y border-border">
           <table className="w-full min-w-[760px] text-left text-sm">
@@ -27,6 +40,7 @@ export function ProjectsTab({ data, currency, projectTemplates = [] }: { data: C
                 <th className="px-3 py-3 font-medium">Progress</th>
                 <th className="px-3 py-3 font-medium">Open tasks</th>
                 <th className="px-3 py-3 font-medium">Value</th>
+                <th className="px-3 py-3 font-medium"><span className="sr-only">Delete</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -42,7 +56,15 @@ export function ProjectsTab({ data, currency, projectTemplates = [] }: { data: C
                   <td className="px-3 py-4 text-muted-foreground">{project.progress}%</td>
                   <td className="px-3 py-4 text-muted-foreground">{project.open_tasks}</td>
                   <td className="px-3 py-4 text-muted-foreground">
-                    {moneyLabel(project.value_cents, project.currency || currency)}
+                    {moneyNode(project.value_cents, project.currency || currency)}
+                  </td>
+                  <td className="px-3 py-4 text-right">
+                    <ConfirmDelete
+                      action={deleteProjectAction}
+                      fields={{ id: project.id }}
+                      title="Delete this project?"
+                      message={`“${project.name}” and all of its tasks, phases and milestones will be removed. Invoices, quotes and payments are kept. This cannot be undone.`}
+                    />
                   </td>
                 </tr>
               ))}
@@ -50,13 +72,6 @@ export function ProjectsTab({ data, currency, projectTemplates = [] }: { data: C
           </table>
         </div>
       )}
-      <div className="mt-8">
-        <NewProjectForm
-          lockedClientId={data.client.id}
-          clients={[{ id: data.client.id, name: data.client.name, company: data.client.company }]}
-          templates={projectTemplates}
-        />
-      </div>
     </FormSection>
   );
 }

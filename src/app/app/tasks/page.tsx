@@ -1,3 +1,6 @@
+import { AddDialog } from "@/components/modal";
+import { ConfirmDelete } from "@/components/confirm-delete";
+import { deleteTaskAction } from "./actions";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -120,16 +123,13 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
           <h2 id="tasks-heading" className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
             {activeTasks.length} open · {tasks.length} total
           </h2>
-          <a
-            href="#add-task"
-            className="text-sm font-medium underline decoration-border underline-offset-4 hover:decoration-foreground"
-          >
-            Add task
-          </a>
+          <AddDialog label="New task" title="New task">
+            <NewTaskForm {...options} />
+          </AddDialog>
         </div>
         {tasks.length === 0 ? (
           <div className="mt-4 border-t border-border pt-8 text-sm text-muted-foreground">
-            No tasks yet. Add the first one below.
+            No tasks yet.
           </div>
         ) : (
           <div className="mt-4 overflow-x-auto border-y border-border">
@@ -142,6 +142,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
                   <th className="px-3 py-3 font-medium">Client / project</th>
                   <th className="px-3 py-3 font-medium">Due</th>
                   <th className="px-3 py-3 font-medium">Time</th>
+                  <th className="px-3 py-3 font-medium"><span className="sr-only">Delete</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -173,6 +174,14 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
                       <td className="px-3 py-4 text-muted-foreground">
                         {hoursLabel(task.actual_minutes)} / {hoursLabel(task.estimated_minutes)}
                       </td>
+                      <td className="px-3 py-4 text-right">
+                        <ConfirmDelete
+                          action={deleteTaskAction}
+                          fields={{ id: task.id }}
+                          title="Delete this task?"
+                          message={`“${task.title}” will be removed. This cannot be undone.`}
+                        />
+                      </td>
                     </tr>
                   );
                 })}
@@ -181,9 +190,6 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
           </div>
         )}
       </section>
-      <div id="add-task" className="mt-14 scroll-mt-8">
-        <NewTaskForm {...options} />
-      </div>
     </>
   );
 }

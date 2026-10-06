@@ -2,6 +2,7 @@
 
 import { FormSection } from "@/components/form-controls";
 import { billingIntervalLabel, dateLabel, dateTimeLabel, hoursLabel, moneyLabel } from "@/lib/format";
+import { moneyNode } from "@/components/money-node";
 import type { ProjectWorkspaceData } from "../project-workspace-types";
 import { Empty } from "../project-workspace-parts";
 
@@ -24,7 +25,7 @@ export function OverviewTab({ data, currency }: { data: ProjectWorkspaceData; cu
               ["Estimated", hoursLabel(estimate)],
               ["Actual (time entries)", hoursLabel(totals.actual_minutes)],
             ].map(([label, value]) => (
-              <div key={label} className="flex items-baseline justify-between gap-6 py-3">
+              <div key={String(label)} className="flex items-baseline justify-between gap-6 py-3">
                 <dt className="text-muted-foreground">{label}</dt>
                 <dd className="font-medium">{value}</dd>
               </div>
@@ -38,13 +39,13 @@ export function OverviewTab({ data, currency }: { data: ProjectWorkspaceData; cu
         <FormSection title="Money" description="Project value, collected revenue, and client MRR.">
           <dl className="divide-y divide-border border-y border-border text-sm">
             {[
-              ["Project value", moneyLabel(project.value_cents, currency)],
-              ["Invoiced", moneyLabel(totals.invoiced_cents, currency)],
-              ["Collected", moneyLabel(totals.paid_cents, currency)],
-              ["Outstanding", moneyLabel(totals.outstanding_cents, currency)],
-              ["Client MRR", moneyLabel(totals.client_mrr_cents, currency)],
+              ["Project value", moneyNode(project.value_cents, currency)],
+              ["Invoiced", moneyNode(totals.invoiced_cents, currency)],
+              ["Collected", moneyNode(totals.paid_cents, currency)],
+              ["Outstanding", moneyNode(totals.outstanding_cents, currency)],
+              ["Client MRR", moneyNode(totals.client_mrr_cents, currency)],
             ].map(([label, value]) => (
-              <div key={label} className="flex items-baseline justify-between gap-6 py-3">
+              <div key={String(label)} className="flex items-baseline justify-between gap-6 py-3">
                 <dt className="text-muted-foreground">{label}</dt>
                 <dd className="font-medium">{value}</dd>
               </div>

@@ -1,7 +1,8 @@
 "use client";
 
 import { FormSection } from "@/components/form-controls";
-import { dateTimeLabel, moneyLabel } from "@/lib/format";
+import { dateTimeLabel } from "@/lib/format";
+import { moneyNode } from "@/components/money-node";
 import type { ClientWorkspaceData } from "../client-workspace-types";
 import { Empty } from "../client-workspace-parts";
 
@@ -15,17 +16,17 @@ export function OverviewTab({ data }: { data: ClientWorkspaceData }) {
         <FormSection title="Position" description="What this client is worth and what is open right now.">
           <dl className="divide-y divide-border border-y border-border text-sm">
             {[
-              ["MRR", moneyLabel(stats.mrr_cents)],
-              ["Invoiced", moneyLabel(stats.invoiced_cents)],
-              ["Collected", moneyLabel(stats.paid_cents)],
-              ["Outstanding", moneyLabel(stats.outstanding_cents)],
+              ["MRR", moneyNode(stats.mrr_cents)],
+              ["Invoiced", moneyNode(stats.invoiced_cents)],
+              ["Collected", moneyNode(stats.paid_cents)],
+              ["Outstanding", moneyNode(stats.outstanding_cents)],
               ["Open tasks", String(stats.open_tasks)],
               ["Waiting on client", String(stats.waiting_tasks)],
               ["Quotes awaiting response", String(stats.quotes_awaiting)],
               ["Contracts unsigned", String(stats.contracts_unsigned)],
               ["Projects", `${stats.active_projects} active · ${stats.total_projects} total`],
             ].map(([label, value]) => (
-              <div key={label} className="flex items-baseline justify-between gap-6 py-3">
+              <div key={String(label)} className="flex items-baseline justify-between gap-6 py-3">
                 <dt className="text-muted-foreground">{label}</dt>
                 <dd className="font-medium">{value}</dd>
               </div>

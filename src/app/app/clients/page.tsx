@@ -1,3 +1,4 @@
+import { AddDialog } from "@/components/modal";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -59,6 +60,11 @@ export default async function ClientsPage({
   return (
     <>
       {header}
+      <div className="-mt-4 mb-8">
+        <AddDialog label="New client" title="New client">
+          <NewClientForm />
+        </AddDialog>
+      </div>
       <ClientDirectory
         rows={rows}
         initialQuery={params.q ?? ""}
@@ -67,9 +73,6 @@ export default async function ClientsPage({
         initialService={params.service ?? "all"}
         initialSort={params.sort ?? "name"}
       />
-      <div id="add-client" className="mt-14 scroll-mt-8">
-        <NewClientForm />
-      </div>
     </>
   );
 }

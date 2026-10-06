@@ -110,6 +110,12 @@ const paths: Record<string, JSX.Element> = {
     </>
   ),
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
+  mic: (
+    <>
+      <rect x="9" y="3.5" width="6" height="11" rx="3" />
+      <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5M9 20.5h6" />
+    </>
+  ),
   close: <path d="M6 6l12 12M18 6L6 18" />,
 };
 

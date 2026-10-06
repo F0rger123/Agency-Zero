@@ -1,3 +1,4 @@
+import { AddDialog } from "@/components/modal";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -5,6 +6,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isMissingTable } from "@/lib/forms";
 import { LIST_LIMIT, PICKER_LIMIT } from "@/lib/limits";
 import { dateLabel, moneyLabel } from "@/lib/format";
+import { moneyNode } from "@/components/money-node";
 import { PageHeader } from "@/components/page-header";
 import { FormSection } from "@/components/form-controls";
 import { DataFailure, MigrationsRequired, SetupRequired } from "@/components/states";
@@ -74,11 +76,11 @@ export default async function MarketingPage() {
       <ul className="grid grid-cols-2 gap-px border border-border bg-border lg:grid-cols-4">
         {[
           ["Active campaigns", String(active.length)],
-          ["Total spend", moneyLabel(spend)],
+          ["Total spend", moneyNode(spend)],
           ["Leads produced", String(leads)],
-          ["Cost per lead", costPerLead == null ? "—" : moneyLabel(costPerLead)],
+          ["Cost per lead", costPerLead == null ? "—" : moneyNode(costPerLead)],
         ].map(([label, value]) => (
-          <li key={label} className="bg-background p-6">
+          <li key={String(label)} className="bg-background p-6">
             <p className="text-2xl font-semibold tracking-tight">{value}</p>
             <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">{label}</p>
           </li>
@@ -86,7 +88,17 @@ export default async function MarketingPage() {
       </ul>
 
       <div className="mt-12 space-y-12">
-        <FormSection title="Campaigns" description="Open a campaign to update its status, spend and results.">
+        <FormSection
+          title="Campaigns"
+          description="Open a campaign to update its status, spend and results."
+          action={
+            <AddDialog label="New campaign" title="New campaign">
+              <NewCampaignForm
+                clients={clients.map((client) => ({ id: client.id, label: `${client.name}${client.company ? ` · ${client.company}` : ""}` }))}
+              />
+            </AddDialog>
+          }
+        >
           {campaigns.length === 0 ? (
             <p className="border-y border-border py-6 text-sm text-muted-foreground">No campaigns yet. Add the first one below.</p>
           ) : (
@@ -110,7 +122,7 @@ export default async function MarketingPage() {
                         </div>
                         <div className="flex items-center gap-6 text-sm text-muted-foreground">
                           <span>
-                            {moneyLabel(campaign.spend_cents)}
+                            {moneyNode(campaign.spend_cents)}
                             {campaign.budget_cents != null ? ` of ${moneyLabel(campaign.budget_cents)}` : ""}
                           </span>
                           <span>{campaign.leads_count} leads</span>
@@ -138,11 +150,6 @@ export default async function MarketingPage() {
           )}
         </FormSection>
 
-        <FormSection title="Add a campaign">
-          <NewCampaignForm
-            clients={clients.map((client) => ({ id: client.id, label: `${client.name}${client.company ? ` · ${client.company}` : ""}` }))}
-          />
-        </FormSection>
       </div>
     </>
   );

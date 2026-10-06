@@ -23,6 +23,8 @@ export async function createReminderAction(_previous: ActionState, formData: For
   if (error) return { error: readableError(error.message) };
   revalidatePath("/app/reminders");
   revalidatePath("/app");
+  const subjectId = optionalField(formData, "subject_id");
+  if (subjectId && optionalField(formData, "subject_type") === "client") revalidatePath(`/app/clients/${subjectId}`);
   return { success: "Reminder created." };
 }
 export async function completeReminderAction(_previous: ActionState, formData: FormData): Promise<ActionState> {

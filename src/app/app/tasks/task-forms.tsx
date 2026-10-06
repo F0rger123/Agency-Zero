@@ -11,6 +11,7 @@ import {
   deleteTimeEntryAction,
   updateTaskAction,
 } from "./actions";
+import { Wizard } from "@/components/wizard";
 import { FieldLabel, FormMessage, SelectInput, SubmitButton, TextArea, TextInput } from "@/components/form-controls";
 
 const initialState: ActionState = {};
@@ -207,26 +208,147 @@ export function NewTaskForm({
   clients,
   projects,
   milestones,
-  tasks,
   lockedClientId,
+  lockedProjectId,
 }: {
   lockedClientId?: string;
+  /** Hides the project picker when the form is opened from inside a project. */
+  lockedProjectId?: string;
   clients: Option[];
   projects: Option[];
   milestones: Option[];
-  tasks: Option[];
+  /** Kept for callers that still pass it; subtasks and dependencies are set from Edit. */
+  tasks?: Option[];
 }) {
   const [state, action] = useActionState(createTaskAction, initialState);
+  const lockedName = clients.find((client) => client.id === lockedClientId)?.label ?? "This client";
   return (
-    <FormShell title="Add task">
-      <form action={action} className="space-y-5">
-        <TaskFields clients={clients} projects={projects} milestones={milestones} tasks={tasks} lockedClientId={lockedClientId} />
-        <div className="flex flex-wrap items-center gap-4">
-          <SubmitButton>Create task</SubmitButton>
-          <FormMessage {...state} />
-        </div>
-      </form>
-    </FormShell>
+    <form action={action}>
+      <Wizard
+        finish={
+          <>
+            <SubmitButton>Create task</SubmitButton>
+            <FormMessage {...state} />
+          </>
+        }
+        steps={[
+          {
+            title: "What needs doing",
+            hint: "Name it and say how urgent it is.",
+            content: (
+              <div className="space-y-4">
+                <div>
+                  <FieldLabel label="Title" htmlFor="task-title" required />
+                  <TextInput id="task-title" name="title" required placeholder="Send homepage draft" />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <FieldLabel label="Priority" htmlFor="task-priority" required />
+                    <SelectInput id="task-priority" name="priority" defaultValue="medium" required>
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="urgent">Urgent</option>
+                    </SelectInput>
+                  </div>
+                  <div>
+                    <FieldLabel label="Status" htmlFor="task-status" required />
+                    <SelectInput id="task-status" name="status" defaultValue="todo" required>
+                      <option value="todo">To do</option>
+                      <option value="in_progress">In progress</option>
+                      <option value="blocked_waiting_client">Waiting on client</option>
+                      <option value="blocked_other">Blocked</option>
+                      <option value="done">Done</option>
+                    </SelectInput>
+                  </div>
+                </div>
+                <div>
+                  <FieldLabel label="Notes" htmlFor="task-description" hint="optional" />
+                  <TextArea id="task-description" name="description" rows={3} />
+                </div>
+              </div>
+            ),
+          },
+          {
+            title: "Where it belongs",
+            hint: "Attach it to a client and project. All optional.",
+            content: (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <FieldLabel label="Client" htmlFor="task-client" />
+                  {lockedClientId ? (
+                    <>
+                      <input type="hidden" name="client_id" value={lockedClientId} />
+                      <p className="flex h-10 items-center text-sm">{lockedName}</p>
+                    </>
+                  ) : (
+                    <SelectInput id="task-client" name="client_id">
+                      <option value="">No client</option>
+                      {clients.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  )}
+                </div>
+                <div>
+                  <FieldLabel label="Project" htmlFor="task-project" />
+                  {lockedProjectId ? (
+                    <>
+                      <input type="hidden" name="project_id" value={lockedProjectId} />
+                      <p className="flex h-10 items-center text-sm">{projects.find((p) => p.id === lockedProjectId)?.label ?? "This project"}</p>
+                    </>
+                  ) : (
+                    <SelectInput id="task-project" name="project_id">
+                      <option value="">No project</option>
+                      {projects.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  )}
+                </div>
+                {milestones.length > 0 ? (
+                  <div>
+                    <FieldLabel label="Milestone" htmlFor="task-milestone" />
+                    <SelectInput id="task-milestone" name="milestone_id">
+                      <option value="">No milestone</option>
+                      {milestones.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </div>
+                ) : null}
+              </div>
+            ),
+          },
+          {
+            title: "When",
+            hint: "Dates and time estimate.",
+            content: (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <FieldLabel label="Due date" htmlFor="task-due" />
+                  <TextInput id="task-due" name="due_date" type="date" />
+                </div>
+                <div>
+                  <FieldLabel label="Planned date" htmlFor="task-scheduled" hint="workload" />
+                  <TextInput id="task-scheduled" name="scheduled_date" type="date" />
+                </div>
+                <div>
+                  <FieldLabel label="Estimated time" htmlFor="task-estimated" hint="hours" />
+                  <TextInput id="task-estimated" name="estimated_hours" type="number" min={0} step={0.25} />
+                </div>
+              </div>
+            ),
+          },
+        ]}
+      />
+    </form>
   );
 }
 

@@ -1,8 +1,10 @@
+import { AddDialog } from "@/components/modal";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isMissingTable } from "@/lib/forms";
-import { billingIntervalLabel, hoursLabel, moneyLabel } from "@/lib/format";
+import { billingIntervalLabel, hoursLabel } from "@/lib/format";
+import { moneyNode } from "@/components/money-node";
 import { PICKER_LIMIT } from "@/lib/limits";
 import { PageHeader } from "@/components/page-header";
 import { DataFailure, MigrationsRequired, SetupRequired } from "@/components/states";
@@ -81,6 +83,15 @@ export default async function ServicesPage() {
     <>
       {header}
 
+      <div className="-mt-4 mb-8 flex flex-wrap gap-3">
+        <AddDialog label="New service" title="New catalogue service" description="Defines what you sell: default price, billing type and estimate.">
+          <NewServiceForm />
+        </AddDialog>
+        <AddDialog label="Assign to client" title="Assign a service to a client" variant="outline">
+          <AssignServiceForm clients={clients} services={activeServices} />
+        </AddDialog>
+      </div>
+
       <div className="grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4">
         <div className="bg-background p-5">
           <p className="text-2xl font-semibold tracking-tight">{services.length}</p>
@@ -97,7 +108,7 @@ export default async function ServicesPage() {
           <p className="mt-1 text-[11px] uppercase tracking-widest text-muted-foreground">Recurring assignments</p>
         </div>
         <div className="bg-background p-5">
-          <p className="text-2xl font-semibold tracking-tight">{moneyLabel(totalMrr)}</p>
+          <p className="text-2xl font-semibold tracking-tight">{moneyNode(totalMrr)}</p>
           <p className="mt-1 text-[11px] uppercase tracking-widest text-muted-foreground">Catalogue MRR</p>
         </div>
       </div>
@@ -142,7 +153,7 @@ export default async function ServicesPage() {
                   </div>
                   <div className="bg-background p-4">
                     <dt className="text-[11px] uppercase tracking-widest text-muted-foreground">Default price</dt>
-                    <dd className="mt-1 text-sm font-medium">{moneyLabel(service.default_price_cents)}</dd>
+                    <dd className="mt-1 text-sm font-medium">{moneyNode(service.default_price_cents)}</dd>
                   </div>
                   <div className="bg-background p-4">
                     <dt className="text-[11px] uppercase tracking-widest text-muted-foreground">Default estimate</dt>
@@ -152,7 +163,7 @@ export default async function ServicesPage() {
                     <dt className="text-[11px] uppercase tracking-widest text-muted-foreground">Clients / MRR</dt>
                     <dd className="mt-1 text-sm font-medium">
                       {service.assigned_clients} assigned
-                      <span className="ml-1 text-muted-foreground">· {moneyLabel(service.mrr_cents)}/mo</span>
+                      <span className="ml-1 text-muted-foreground">· {moneyNode(service.mrr_cents)}/mo</span>
                     </dd>
                   </div>
                 </dl>
@@ -166,10 +177,6 @@ export default async function ServicesPage() {
         )}
       </section>
 
-      <div className="mt-14 space-y-10">
-        <NewServiceForm />
-        <AssignServiceForm clients={clients} services={activeServices} />
-      </div>
 
       <p className="mt-10 border-t border-border pt-6 text-xs text-muted-foreground">
         Services assigned to a client appear on the client workspace Services tab; recurring assignments feed the

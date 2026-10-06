@@ -1,3 +1,4 @@
+import { AddDialog } from "@/components/modal";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -324,7 +325,8 @@ export default async function CalendarPage({
       <FormSection
         title="Manage meetings and work blocks"
         description="Calendar items are stored in UTC. Planned work blocks contribute to workload calculations."
-      >
+        action={
+          <AddDialog label="New event" title="New meeting or work block">
         <NewEventForm
           clients={clients.map((item) => ({
             id: item.id,
@@ -333,6 +335,9 @@ export default async function CalendarPage({
           projects={allProjects.map((item) => ({ id: item.id, label: item.name }))}
           tasks={allTasks.map((item) => ({ id: item.id, label: item.title }))}
         />
+          </AddDialog>
+        }
+      >
         {events.length ? (
           <div className="mt-10 space-y-8">
             {events.map((event) => (

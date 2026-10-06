@@ -2,8 +2,11 @@
 
 import { crmHref } from "@/lib/routes";
 import Link from "next/link";
+import { AddDialog } from "@/components/modal";
 import { FormSection } from "@/components/form-controls";
 import { dateLabel, hoursLabel } from "@/lib/format";
+import { ConfirmDelete } from "@/components/confirm-delete";
+import { deleteTaskAction } from "../../tasks/actions";
 import { NewTaskForm } from "../../tasks/task-forms";
 import { clientFormOptions } from "../client-workspace-options";
 import type { ClientWorkspaceData } from "../client-workspace-types";
@@ -12,9 +15,17 @@ import { Empty } from "../client-workspace-parts";
 export function TasksTab({ data }: { data: ClientWorkspaceData }) {
   const options = clientFormOptions(data);
   return (
-    <FormSection title="Tasks" description="Every task linked to this client, oldest due date first.">
+    <FormSection
+      title="Tasks"
+      description="Every task linked to this client, oldest due date first."
+      action={
+        <AddDialog label="New task" title="New task" description={`For ${data.client.name}`}>
+          <NewTaskForm lockedClientId={data.client.id} clients={options.clients} projects={options.projects} milestones={[]} />
+        </AddDialog>
+      }
+    >
       {data.tasks.length === 0 ? (
-        <Empty>No tasks for this client yet. Add the first one below.</Empty>
+        <Empty>No tasks yet.</Empty>
       ) : (
         <div className="overflow-x-auto border-y border-border">
           <table className="w-full min-w-[720px] text-left text-sm">
@@ -25,6 +36,7 @@ export function TasksTab({ data }: { data: ClientWorkspaceData }) {
                 <th className="px-3 py-3 font-medium">Priority</th>
                 <th className="px-3 py-3 font-medium">Due</th>
                 <th className="px-3 py-3 font-medium">Time</th>
+                <th className="px-3 py-3 font-medium"><span className="sr-only">Delete</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -46,21 +58,20 @@ export function TasksTab({ data }: { data: ClientWorkspaceData }) {
                   <td className="px-3 py-4 text-muted-foreground">
                     {hoursLabel(task.actual_minutes)} / {hoursLabel(task.estimated_minutes)}
                   </td>
+                  <td className="px-3 py-4 text-right">
+                    <ConfirmDelete
+                      action={deleteTaskAction}
+                      fields={{ id: task.id }}
+                      title="Delete this task?"
+                      message={`“${task.title}” will be removed. This cannot be undone.`}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
-      <div className="mt-8">
-        <NewTaskForm
-          lockedClientId={data.client.id}
-          clients={options.clients}
-          projects={options.projects}
-          milestones={[]}
-          tasks={[]}
-        />
-      </div>
     </FormSection>
   );
 }

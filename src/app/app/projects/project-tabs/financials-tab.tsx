@@ -4,7 +4,8 @@ import { crmHref } from "@/lib/routes";
 import Link from "next/link";
 import { invoiceStatusLabel } from "@/lib/invoice-status";
 import { FormSection } from "@/components/form-controls";
-import { dateLabel, moneyLabel } from "@/lib/format";
+import { dateLabel } from "@/lib/format";
+import { moneyNode } from "@/components/money-node";
 import type { ProjectWorkspaceData } from "../project-workspace-types";
 import { Empty } from "../project-workspace-parts";
 
@@ -14,20 +15,20 @@ export function FinancialsTab({ data, currency }: { data: ProjectWorkspaceData; 
       <FormSection title="Project financials" description="Value, billing, and collection for this project only.">
         <div className="grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4">
           <div className="bg-background p-5">
-            <p className="text-xl font-semibold tracking-tight">{moneyLabel(data.project.value_cents, currency)}</p>
+            <p className="text-xl font-semibold tracking-tight">{moneyNode(data.project.value_cents, currency)}</p>
             <p className="mt-1 text-[11px] uppercase tracking-widest text-muted-foreground">Value</p>
           </div>
           <div className="bg-background p-5">
-            <p className="text-xl font-semibold tracking-tight">{moneyLabel(data.totals.invoiced_cents, currency)}</p>
+            <p className="text-xl font-semibold tracking-tight">{moneyNode(data.totals.invoiced_cents, currency)}</p>
             <p className="mt-1 text-[11px] uppercase tracking-widest text-muted-foreground">Invoiced</p>
           </div>
           <div className="bg-background p-5">
-            <p className="text-xl font-semibold tracking-tight">{moneyLabel(data.totals.paid_cents, currency)}</p>
+            <p className="text-xl font-semibold tracking-tight">{moneyNode(data.totals.paid_cents, currency)}</p>
             <p className="mt-1 text-[11px] uppercase tracking-widest text-muted-foreground">Collected</p>
           </div>
           <div className="bg-background p-5">
             <p className="text-xl font-semibold tracking-tight">
-              {moneyLabel(data.totals.outstanding_cents, currency)}
+              {moneyNode(data.totals.outstanding_cents, currency)}
             </p>
             <p className="mt-1 text-[11px] uppercase tracking-widest text-muted-foreground">Outstanding</p>
           </div>
@@ -49,7 +50,7 @@ export function FinancialsTab({ data, currency }: { data: ProjectWorkspaceData; 
                 </Link>
                 <span className="text-sm text-muted-foreground">
                   {quote.linked ? "linked · " : ""}
-                  {quote.status} · {moneyLabel(quote.total_cents, quote.currency || currency)}
+                  {quote.status} · {moneyNode(quote.total_cents, quote.currency || currency)}
                 </span>
               </li>
             ))}
@@ -117,12 +118,12 @@ export function FinancialsTab({ data, currency }: { data: ProjectWorkspaceData; 
                     </td>
                     <td className="px-3 py-4 text-muted-foreground">{dateLabel(invoice.due_on)}</td>
                     <td className="px-3 py-4 text-muted-foreground">
-                      {moneyLabel(invoice.total_cents, invoice.currency || currency)}
+                      {moneyNode(invoice.total_cents, invoice.currency || currency)}
                     </td>
                     <td className="px-3 py-4 text-muted-foreground">
-                      {moneyLabel(invoice.paid_cents, invoice.currency || currency)}
+                      {moneyNode(invoice.paid_cents, invoice.currency || currency)}
                     </td>
-                    <td className="px-3 py-4">{moneyLabel(invoice.balance_cents, invoice.currency || currency)}</td>
+                    <td className="px-3 py-4">{moneyNode(invoice.balance_cents, invoice.currency || currency)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -138,7 +139,7 @@ export function FinancialsTab({ data, currency }: { data: ProjectWorkspaceData; 
                     payment.voided_at ? "text-sm font-medium line-through text-muted-foreground" : "text-sm font-medium"
                   }
                 >
-                  {moneyLabel(payment.amount_cents)} · {payment.method.replaceAll("_", " ")}
+                  {moneyNode(payment.amount_cents)} · {payment.method.replaceAll("_", " ")}
                 </span>
                 <span className="text-sm text-muted-foreground">
                   {payment.invoice_number} · {payment.kind} · {dateLabel(payment.paid_on)}

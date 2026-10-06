@@ -1,3 +1,4 @@
+import { AddDialog } from "@/components/modal";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -55,12 +56,25 @@ export default async function ContractsPage() {
       />
       <LimitNotice shown={contractsResponse.data?.length ?? 0} limit={LIST_LIMIT} hint="Older contracts are hidden; find them in the client workspace." />
       <section>
-        <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-          {contracts.length} contracts
-        </h2>
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+            {contracts.length} contracts
+          </h2>
+            <AddDialog label="New contract" title="New contract">
+          <NewContractForm
+            clients={clients.map((item) => ({
+              id: item.id,
+              label: `${item.name}${item.company ? ` · ${item.company}` : ""}`,
+            }))}
+            quotes={quotes.map((item) => ({ id: item.id, label: `${item.number} · ${item.title}` }))}
+            projects={projects.map((item) => ({ id: item.id, label: item.name }))}
+            templates={templates.filter((item) => item.active).map((item) => ({ id: item.id, label: item.name }))}
+          />
+            </AddDialog>
+        </div>
         {contracts.length === 0 ? (
           <p className="mt-4 border-t border-border py-8 text-sm text-muted-foreground">
-            No contracts yet. Create one below.
+            No contracts yet.
           </p>
         ) : (
           <div className="mt-4 overflow-x-auto border-y border-border">
@@ -97,19 +111,7 @@ export default async function ContractsPage() {
           </div>
         )}
       </section>
-      <div className="mt-14">
-        <FormSection title="New contract">
-          <NewContractForm
-            clients={clients.map((item) => ({
-              id: item.id,
-              label: `${item.name}${item.company ? ` · ${item.company}` : ""}`,
-            }))}
-            quotes={quotes.map((item) => ({ id: item.id, label: `${item.number} · ${item.title}` }))}
-            projects={projects.map((item) => ({ id: item.id, label: item.name }))}
-            templates={templates.filter((item) => item.active).map((item) => ({ id: item.id, label: item.name }))}
-          />
-        </FormSection>
-      </div>
+      <div className="mt-14" />
       <FormSection
         title="Contract templates"
         description="Reusable bodies for new agreements. Existing contracts preserve their own version history."

@@ -3,7 +3,8 @@
 import { crmHref } from "@/lib/routes";
 import Link from "next/link";
 import { useState } from "react";
-import { dateLabel, hoursLabel, moneyLabel } from "@/lib/format";
+import { dateLabel, hoursLabel } from "@/lib/format";
+import { moneyNode } from "@/components/money-node";
 import { OverviewTab } from "./project-tabs/overview-tab";
 import { TasksTab } from "./project-tabs/tasks-tab";
 import { WorkItemsTab, type WorkItemsPayload } from "./project-tabs/work-items";
@@ -92,7 +93,7 @@ export function ProjectWorkspace({ data }: { data: ProjectWorkspaceData & { work
           <p className="mt-2 text-[11px] uppercase tracking-widest text-muted-foreground">Progress</p>
         </div>
         <div className="bg-background p-5">
-          <p className="text-xl font-semibold tracking-tight">{moneyLabel(project.value_cents, currency)}</p>
+          <p className="text-xl font-semibold tracking-tight">{moneyNode(project.value_cents, currency)}</p>
           <p className="mt-1 text-[11px] uppercase tracking-widest text-muted-foreground">Value</p>
         </div>
         <div className="bg-background p-5">
@@ -106,7 +107,7 @@ export function ProjectWorkspace({ data }: { data: ProjectWorkspaceData & { work
           <p className="mt-1 text-[11px] uppercase tracking-widest text-muted-foreground">Milestones</p>
         </div>
         <div className="bg-background p-5">
-          <p className="text-xl font-semibold tracking-tight">{moneyLabel(totals.outstanding_cents, currency)}</p>
+          <p className="text-xl font-semibold tracking-tight">{moneyNode(totals.outstanding_cents, currency)}</p>
           <p className="mt-1 text-[11px] uppercase tracking-widest text-muted-foreground">Outstanding</p>
         </div>
       </div>

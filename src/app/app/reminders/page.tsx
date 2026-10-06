@@ -7,6 +7,7 @@ import { isMissingTable } from "@/lib/forms";
 import { PageHeader } from "@/components/page-header";
 import { FormSection } from "@/components/form-controls";
 import { MigrationsRequired, SetupRequired } from "@/components/states";
+import { AddDialog } from "@/components/modal";
 import { CompleteReminderForm, DeleteReminderForm, ReminderForm } from "./reminder-forms";
 
 export const metadata: Metadata = { title: "Reminders" };
@@ -319,10 +320,14 @@ export default async function RemindersPage() {
       <FormSection
         title="Custom reminders"
         description="Use these for follow-ups or any date-specific item outside the automatic triggers."
+        action={
+          <AddDialog label="New reminder" title="New reminder">
+            <ReminderForm />
+          </AddDialog>
+        }
       >
-        <ReminderForm />
         {custom.length ? (
-          <div className="mt-8 divide-y divide-border border-y border-border">
+          <div className="divide-y divide-border border-y border-border">
             {custom.map((item) => (
               <div key={item.id} className="flex flex-wrap items-start justify-between gap-4 py-4">
                 <div>

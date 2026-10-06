@@ -4,7 +4,10 @@ import { crmHref } from "@/lib/routes";
 import Link from "next/link";
 import { FormSection } from "@/components/form-controls";
 import { dateLabel } from "@/lib/format";
-import { CompleteTaskForm } from "../../tasks/task-forms";
+import { AddDialog } from "@/components/modal";
+import { ConfirmDelete } from "@/components/confirm-delete";
+import { CompleteTaskForm, NewTaskForm } from "../../tasks/task-forms";
+import { deleteTaskAction } from "../../tasks/actions";
 import { TaskQuickEdit } from "../../tasks/task-quick-edit";
 import { ProjectTaskForm } from "../project-workspace-forms";
 import type { ProjectWorkspaceData } from "../project-workspace-types";
@@ -21,9 +24,20 @@ export function TasksTab({ data }: { data: ProjectWorkspaceData }) {
       <FormSection
         title="Tasks and subtasks"
         description="Created here, tasks are attached to this project automatically. Subtasks use the parent task field."
+        action={
+          <AddDialog label="New task" title="New task" description={data.project.name}>
+            <NewTaskForm
+              lockedClientId={data.project.client_id}
+              lockedProjectId={data.project.id}
+              clients={[{ id: data.project.client_id, label: data.client?.name ?? "This client" }]}
+              projects={[{ id: data.project.id, label: data.project.name }]}
+              milestones={data.milestones.map((m) => ({ id: m.id, label: m.name }))}
+            />
+          </AddDialog>
+        }
       >
         {data.tasks.length === 0 ? (
-          <Empty>No tasks yet. Add the first one below.</Empty>
+          <Empty>No tasks yet.</Empty>
         ) : (
           <div className="space-y-10">
             {data.tasks.map((task) => (
@@ -45,7 +59,15 @@ export function TasksTab({ data }: { data: ProjectWorkspaceData }) {
                       {task.parent_title ? ` · subtask of ${task.parent_title}` : ""}
                     </p>
                   </div>
-                  <CompleteTaskForm taskId={task.id} />
+                  <div className="flex items-center gap-4">
+                    <CompleteTaskForm taskId={task.id} />
+                    <ConfirmDelete
+                      action={deleteTaskAction}
+                      fields={{ id: task.id }}
+                      title="Delete this task?"
+                      message={`“${task.title}” and its subtasks will be removed. This cannot be undone.`}
+                    />
+                  </div>
                 </div>
                 <div className="mt-3">
                   <TaskQuickEdit key={`${task.status}|${task.priority}|${task.due_date}`} id={task.id} status={task.status} priority={task.priority} dueDate={task.due_date} />
@@ -68,18 +90,6 @@ export function TasksTab({ data }: { data: ProjectWorkspaceData }) {
             ))}
           </div>
         )}
-      </FormSection>
-
-      <FormSection
-        title="Add a task"
-        description="Status, priority, due date, milestone, estimate, and subtask parent."
-      >
-        <ProjectTaskForm
-          projectId={data.project.id}
-          clientId={data.project.client_id}
-          milestones={data.milestones}
-          tasks={taskOptions}
-        />
       </FormSection>
     </div>
   );

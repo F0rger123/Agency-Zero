@@ -1,3 +1,4 @@
+import { AddDialog } from "@/components/modal";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -84,6 +85,14 @@ export default async function SocialPage() {
         ))}
       </ul>
 
+      <div className="mt-8">
+        <AddDialog label="New post" title="New post">
+          <NewPostForm
+            clients={clients.map((client) => ({ id: client.id, label: `${client.name}${client.company ? ` · ${client.company}` : ""}` }))}
+          />
+        </AddDialog>
+      </div>
+
       <div className="mt-12 space-y-12">
         {order.map((status) => {
           const group = posts.filter((post) => post.status === status);
@@ -132,14 +141,9 @@ export default async function SocialPage() {
           );
         })}
         {posts.length === 0 ? (
-          <p className="border-y border-border py-6 text-sm text-muted-foreground">Nothing planned yet. Add the first post below.</p>
+          <p className="border-y border-border py-6 text-sm text-muted-foreground">Nothing planned yet.</p>
         ) : null}
 
-        <FormSection title="Add a post">
-          <NewPostForm
-            clients={clients.map((client) => ({ id: client.id, label: `${client.name}${client.company ? ` · ${client.company}` : ""}` }))}
-          />
-        </FormSection>
       </div>
     </>
   );

@@ -2,6 +2,7 @@
 
 import { crmHref } from "@/lib/routes";
 import Link from "next/link";
+import { AddDialog } from "@/components/modal";
 import { FormSection } from "@/components/form-controls";
 import { dateLabel } from "@/lib/format";
 import { NewContractForm } from "../../contracts/contract-forms";
@@ -18,7 +19,21 @@ export function ContractsTab({
 }) {
   const options = clientFormOptions(data);
   return (
-    <FormSection title="Contracts" description="Agreements for this client and their signature status.">
+    <FormSection
+      title="Contracts"
+      description="Agreements for this client and their signature status."
+      action={
+        <AddDialog label="New contract" title="New contract" description={`For ${data.client.name}`}>
+          <NewContractForm
+            lockedClientId={data.client.id}
+            clients={options.clients}
+            quotes={options.quotes}
+            projects={options.projects}
+            templates={templates}
+          />
+        </AddDialog>
+      }
+    >
       {data.contracts.length === 0 ? (
         <Empty>No contracts yet.</Empty>
       ) : (
@@ -39,15 +54,6 @@ export function ContractsTab({
           ))}
         </ul>
       )}
-      <div className="mt-8">
-        <NewContractForm
-          lockedClientId={data.client.id}
-          clients={options.clients}
-          quotes={options.quotes}
-          projects={options.projects}
-          templates={templates}
-        />
-      </div>
     </FormSection>
   );
 }

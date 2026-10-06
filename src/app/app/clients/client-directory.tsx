@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { dateTimeLabel, moneyLabel } from "@/lib/format";
+import { dateTimeLabel } from "@/lib/format";
+import { moneyNode } from "@/components/money-node";
 
 /**
  * Client directory (server payload → instant client-side filtering).
@@ -147,14 +148,14 @@ export function ClientDirectory({
           </p>
         </div>
         <div className="bg-background p-5">
-          <p className="text-2xl font-semibold tracking-tight">{moneyLabel(summary.mrr)}</p>
+          <p className="text-2xl font-semibold tracking-tight">{moneyNode(summary.mrr)}</p>
           <p className="mt-1 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
             MRR
           </p>
         </div>
         <div className="bg-background p-5">
           <p className="text-2xl font-semibold tracking-tight">
-            {moneyLabel(summary.outstanding)}
+            {moneyNode(summary.outstanding)}
           </p>
           <p className="mt-1 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
             Outstanding
@@ -324,11 +325,11 @@ export function ClientDirectory({
                     )}
                   </td>
                   <td className="px-3 py-4">
-                    {row.mrr_cents > 0 ? moneyLabel(row.mrr_cents) : "—"}
+                    {row.mrr_cents > 0 ? moneyNode(row.mrr_cents) : "—"}
                   </td>
                   <td className="px-3 py-4">
                     {row.outstanding_cents > 0 ? (
-                      <span className="font-medium">{moneyLabel(row.outstanding_cents)}</span>
+                      <span className="font-medium">{moneyNode(row.outstanding_cents)}</span>
                     ) : (
                       "—"
                     )}

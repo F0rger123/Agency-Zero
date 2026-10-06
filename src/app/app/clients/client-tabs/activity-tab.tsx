@@ -1,5 +1,6 @@
 "use client";
 
+import { AddDialog } from "@/components/modal";
 import { FormSection } from "@/components/form-controls";
 import { dateTimeLabel } from "@/lib/format";
 import { CommunicationForm, DeleteCommunicationForm } from "../client-forms";
@@ -8,7 +9,15 @@ import { Empty } from "../client-workspace-parts";
 
 export function ActivityTab({ data }: { data: ClientWorkspaceData }) {
   return (
-    <FormSection title="Activity" description="Manual log of calls, emails, meetings, and messages.">
+    <FormSection
+      title="Activity"
+      description="Manual log of calls, emails, meetings, and messages."
+      action={
+        <AddDialog label="Log activity" title="Log activity" description={`With ${data.client.name}`}>
+          <CommunicationForm clientId={data.client.id} contacts={data.contacts.map(({ id, name }) => ({ id, name }))} />
+        </AddDialog>
+      }
+    >
       {data.communications.length === 0 ? (
         <Empty>No activity logged yet.</Empty>
       ) : (
@@ -30,9 +39,6 @@ export function ActivityTab({ data }: { data: ClientWorkspaceData }) {
           ))}
         </ul>
       )}
-      <div className="mt-6">
-        <CommunicationForm clientId={data.client.id} contacts={data.contacts.map(({ id, name }) => ({ id, name }))} />
-      </div>
     </FormSection>
   );
 }

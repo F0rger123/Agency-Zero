@@ -11,7 +11,7 @@ import {
   TextArea,
   TextInput,
 } from "@/components/form-controls";
-import { assignServiceAction } from "../clients/actions";
+import { ServiceForm } from "../clients/client-forms";
 import {
   createServiceAction,
   setServiceActiveAction,
@@ -43,6 +43,8 @@ function Shell({ title, children }: { title: string; children: ReactNode }) {
 }
 
 function ServiceFields({ service }: { service?: ServiceRow }) {
+  const [billing, setBilling] = useState(service?.default_billing ?? "one_off");
+  const oneTime = billing !== "recurring";
   return (
     <div className="space-y-4">
       <div>
@@ -76,12 +78,14 @@ function ServiceFields({ service }: { service?: ServiceRow }) {
             id={`service-billing-${service?.id ?? "new"}`}
             name="default_billing"
             required
-            defaultValue={service?.default_billing ?? "one_off"}
+            value={billing}
+            onChange={(event) => setBilling(event.target.value)}
           >
             <option value="one_off">One-time</option>
             <option value="recurring">Recurring</option>
           </SelectInput>
         </div>
+        {oneTime ? null : (
         <div>
           <FieldLabel
             label="Billing interval"
@@ -97,11 +101,12 @@ function ServiceFields({ service }: { service?: ServiceRow }) {
             <option value="yearly">Yearly</option>
           </SelectInput>
         </div>
+        )}
         <div>
           <FieldLabel
             label="Default price"
             htmlFor={`service-price-${service?.id ?? "new"}`}
-            hint="currency units, per interval"
+            hint={oneTime ? "dollars, charged once" : "dollars, per interval"}
           />
           <TextInput
             id={`service-price-${service?.id ?? "new"}`}
@@ -212,108 +217,32 @@ export function AssignServiceForm({
   clients: ClientOption[];
   services: ServiceRow[];
 }) {
-  const [state, action] = useActionState(assignServiceAction, initialState);
   const [clientId, setClientId] = useState("");
-  const [serviceId, setServiceId] = useState("");
-  const service = services.find((item) => item.id === serviceId);
-  const key = service?.id ?? "none";
-
+  if (clients.length === 0 || services.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {clients.length === 0 ? "Create a client first. Assignments are per client." : "No active services available."}
+      </p>
+    );
+  }
   return (
-    <Shell title="Assign a service to a client">
-      {clients.length === 0 || services.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          {clients.length === 0
-            ? "Create a client first — assignments are per client."
-            : "No active services available. Add one above."}
-        </p>
+    <div className="space-y-6">
+      <div>
+        <FieldLabel label="Client" htmlFor="assign-client" required />
+        <SelectInput id="assign-client" name="client_picker" onChange={(event) => setClientId(event.target.value)}>
+          <option value="">Choose a client</option>
+          {clients.map((client) => (
+            <option key={client.id} value={client.id}>
+              {client.name}
+            </option>
+          ))}
+        </SelectInput>
+      </div>
+      {clientId ? (
+        <ServiceForm key={clientId} clientId={clientId} services={services} />
       ) : (
-        <form action={action} className="space-y-5">
-          <input type="hidden" name="client_id" value={clientId} />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <FieldLabel label="Client" htmlFor="assign-client" required />
-              <SelectInput
-                id="assign-client"
-                name="client_picker"
-                required
-                onChange={(event) => setClientId(event.target.value)}
-              >
-                <option value="">Choose a client</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
-                  </option>
-                ))}
-              </SelectInput>
-            </div>
-            <div>
-              <FieldLabel label="Service" htmlFor="assign-service" required />
-              <SelectInput
-                id="assign-service"
-                name="service_id"
-                required
-                onChange={(event) => setServiceId(event.target.value)}
-              >
-                <option value="">Choose a service</option>
-                {services.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </SelectInput>
-            </div>
-            <div key={`assign-billing-${key}`}>
-              <FieldLabel label="Billing" htmlFor="assign-billing" required />
-              <SelectInput
-                id="assign-billing"
-                name="billing"
-                required
-                defaultValue={service?.default_billing ?? "one_off"}
-              >
-                <option value="one_off">One-off</option>
-                <option value="recurring">Recurring</option>
-              </SelectInput>
-            </div>
-            <div key={`assign-interval-${key}`}>
-              <FieldLabel label="Billing interval" htmlFor="assign-interval" />
-              <SelectInput
-                id="assign-interval"
-                name="billing_interval"
-                defaultValue={service?.billing_interval ?? "monthly"}
-              >
-                <option value="monthly">Monthly</option>
-                <option value="quarterly">Quarterly</option>
-                <option value="yearly">Yearly</option>
-              </SelectInput>
-            </div>
-            <div key={`assign-amount-${key}`}>
-              <FieldLabel
-                label="Amount per interval"
-                htmlFor="assign-amount"
-                hint="currency units; recurring only"
-              />
-              <TextInput
-                id="assign-amount"
-                name="amount"
-                type="number"
-                min={0}
-                step={0.01}
-                defaultValue={
-                  service?.default_price_cents != null ? service.default_price_cents / 100 : null
-                }
-              />
-            </div>
-            <div>
-              <FieldLabel label="Started on" htmlFor="assign-started" hint="optional" />
-              <TextInput id="assign-started" name="started_on" type="date" />
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-4">
-            <SubmitButton>Assign service</SubmitButton>
-            <FormMessage {...state} />
-          </div>
-        </form>
+        <p className="text-sm text-muted-foreground">Choose a client to continue.</p>
       )}
-    </Shell>
+    </div>
   );
 }

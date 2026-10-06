@@ -13,6 +13,7 @@ Claim work here before starting; move to "Recently done" (with commit) when fini
 - P1 item 6: unified work items (task/bug/feature_request) — migration `0016`.
 
 ## Recently done
+- 2026-10-06: CRM redesign (no sidebar, widget home, customer hub), dialogs/wizards for all creation, delete project/task/shoot/schedule, one-time charges, voice quick note, green animated money, project quick edit.
 - 2026-10-06: public copy/positioning/contact pass; CRM passkeys (0026) + login redesign.
 - 2026-10-05: project phases + per-service templates (0025): Phases tab, template editor at /app/projects/templates.
 - 2026-10-05: unified work items (bugs, feature requests: 0023), recurring content shoot schedules (0024), dashboard delivery panel, calendar shoots, Shoots nav + client tab (branch claude/compassionate-faraday-kixpre → main).

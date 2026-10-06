@@ -1,3 +1,7 @@
+import { AddDialog } from "@/components/modal";
+import { ConfirmDelete } from "@/components/confirm-delete";
+import { deleteProjectAction } from "./actions";
+import { moneyNode } from "@/components/money-node";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -65,8 +69,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
   const clients = (clientsResponse.data ?? []) as { id: string; name: string; company: string | null }[];
   const dateLabel = (date: string | null) =>
     date ? new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(`${date}T00:00:00Z`)) : "—";
-  const moneyLabel = (cents: number | null, currency: string) =>
-    cents == null ? "—" : new Intl.NumberFormat("en-US", { style: "currency", currency }).format(cents / 100);
+  const moneyLabel = (cents: number | null, currency: string) => (cents == null ? "—" : moneyNode(cents, currency));
   const hoursLabel = (minutes: number | null) => (minutes == null ? "—" : `${Math.round((minutes / 60) * 10) / 10} h`);
 
   return (
@@ -101,16 +104,13 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
           <h2 id="projects-heading" className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
             {projects.length} {projects.length === 1 ? "project" : "projects"}
           </h2>
-          <a
-            href="#add-project"
-            className="text-sm font-medium underline decoration-border underline-offset-4 hover:decoration-foreground"
-          >
-            Add project
-          </a>
+          <AddDialog label="New project" title="New project">
+            <NewProjectForm clients={clients} templates={templates} />
+          </AddDialog>
         </div>
         {projects.length === 0 ? (
           <div className="mt-4 border-t border-border pt-8 text-sm text-muted-foreground">
-            No active projects yet. Add one below, after creating a client.
+            No projects here yet.
           </div>
         ) : (
           <div className="mt-4 overflow-x-auto border-y border-border">
@@ -124,6 +124,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
                   <th className="px-3 py-3 font-medium">Progress</th>
                   <th className="px-3 py-3 font-medium">Time</th>
                   <th className="px-3 py-3 font-medium">Value</th>
+                  <th className="px-3 py-3 font-medium"><span className="sr-only">Delete</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -163,6 +164,14 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
                       <td className="px-3 py-4 text-muted-foreground">
                         {moneyLabel(project.value_cents, project.currency)}
                       </td>
+                      <td className="px-3 py-4 text-right">
+                        <ConfirmDelete
+                          action={deleteProjectAction}
+                          fields={{ id: project.id }}
+                          title="Delete this project?"
+                          message={`“${project.name}” and all of its tasks, phases and milestones will be removed. Invoices, quotes and payments are kept. This cannot be undone.`}
+                        />
+                      </td>
                     </tr>
                   );
                 })}
@@ -171,9 +180,6 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
           </div>
         )}
       </section>
-      <div id="add-project" className="mt-14 scroll-mt-8">
-        <NewProjectForm clients={clients} templates={templates} />
-      </div>
     </>
   );
 }

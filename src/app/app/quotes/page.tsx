@@ -1,3 +1,4 @@
+import { AddDialog } from "@/components/modal";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -72,13 +73,19 @@ export default async function QuotesPage() {
           <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
             {quotes.length} {quotes.length === 1 ? "quote" : "quotes"}
           </h2>
-          <a href="#new-quote" className="text-sm font-medium underline decoration-border underline-offset-4">
-            New quote
-          </a>
+          <AddDialog label="New quote" title="New quote">
+            <NewQuoteForm
+              clients={clients.map((client) => ({
+                id: client.id,
+                label: `${client.name}${client.company ? ` · ${client.company}` : ""}`,
+              }))}
+              services={services}
+            />
+          </AddDialog>
         </div>
         {quotes.length === 0 ? (
           <p className="mt-4 border-t border-border py-8 text-sm text-muted-foreground">
-            No quotes yet. Create your first proposal below.
+            No quotes yet.
           </p>
         ) : (
           <div className="mt-4 overflow-x-auto border-y border-border">
@@ -126,15 +133,6 @@ export default async function QuotesPage() {
           </div>
         )}
       </section>
-      <div id="new-quote" className="mt-14 scroll-mt-8">
-        <NewQuoteForm
-          clients={clients.map((client) => ({
-            id: client.id,
-            label: `${client.name}${client.company ? ` · ${client.company}` : ""}`,
-          }))}
-          services={services}
-        />
-      </div>
     </>
   );
 }

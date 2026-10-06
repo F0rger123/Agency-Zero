@@ -3,8 +3,10 @@
 import { crmHref } from "@/lib/routes";
 import Link from "next/link";
 import { invoiceStatusLabel } from "@/lib/invoice-status";
+import { AddDialog } from "@/components/modal";
 import { FormSection } from "@/components/form-controls";
-import { dateLabel, moneyLabel } from "@/lib/format";
+import { dateLabel } from "@/lib/format";
+import { moneyNode } from "@/components/money-node";
 import { NewInvoiceForm, RecordClientPaymentForm } from "../../invoices/invoice-forms";
 import { clientFormOptions } from "../client-workspace-options";
 import type { ClientWorkspaceData } from "../client-workspace-types";
@@ -15,15 +17,22 @@ export function InvoicesTab({ data, currency }: { data: ClientWorkspaceData; cur
   return (
     <div className="space-y-12">
       <FormSection
-        title="Record a payment"
-        description="Got paid? Record it here and it counts toward Total Revenue straight away."
+        title="Invoices"
+        description="Billing history with derived balances."
+        action={
+          <AddDialog label="New invoice" title="New invoice" description={`For ${data.client.name}`}>
+            <NewInvoiceForm
+              lockedClientId={data.client.id}
+              clients={options.clients}
+              projects={options.projects}
+              quotes={options.quotes}
+              contracts={options.contracts}
+            />
+          </AddDialog>
+        }
       >
-        <RecordClientPaymentForm clientId={data.client.id} projects={options.projects} />
-      </FormSection>
-
-      <FormSection title="Invoices" description="Billing history with derived balances.">
         {data.invoices.length === 0 ? (
-          <Empty>No invoices yet. Create the first one below.</Empty>
+          <Empty>No invoices yet.</Empty>
         ) : (
           <div className="overflow-x-auto border-y border-border">
             <table className="w-full min-w-[720px] text-left text-sm">
@@ -51,29 +60,28 @@ export function InvoicesTab({ data, currency }: { data: ClientWorkspaceData; cur
                     </td>
                     <td className="px-3 py-4 text-muted-foreground">{dateLabel(invoice.due_on)}</td>
                     <td className="px-3 py-4 text-muted-foreground">
-                      {moneyLabel(invoice.total_cents, invoice.currency || currency)}
+                      {moneyNode(invoice.total_cents, invoice.currency || currency)}
                     </td>
                     <td className="px-3 py-4 text-muted-foreground">
-                      {moneyLabel(invoice.paid_cents, invoice.currency || currency)}
+                      {moneyNode(invoice.paid_cents, invoice.currency || currency)}
                     </td>
-                    <td className="px-3 py-4">{moneyLabel(invoice.balance_cents, invoice.currency || currency)}</td>
+                    <td className="px-3 py-4">{moneyNode(invoice.balance_cents, invoice.currency || currency)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-        <div className="mt-8">
-          <NewInvoiceForm
-            lockedClientId={data.client.id}
-            clients={options.clients}
-            projects={options.projects}
-            quotes={options.quotes}
-            contracts={options.contracts}
-          />
-        </div>
       </FormSection>
-      <FormSection title="Payments" description="Manual payments recorded against this client's invoices.">
+      <FormSection
+        title="Payments"
+        description="Money received from this client. Recording a payment counts toward Total Revenue straight away."
+        action={
+          <AddDialog label="Record payment" title="Record a payment" description={`From ${data.client.name}`}>
+            <RecordClientPaymentForm clientId={data.client.id} projects={options.projects} />
+          </AddDialog>
+        }
+      >
         {data.payments.length === 0 ? (
           <Empty>No payments recorded yet.</Empty>
         ) : (
@@ -82,7 +90,7 @@ export function InvoicesTab({ data, currency }: { data: ClientWorkspaceData; cur
               <li key={payment.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
                 <div>
                   <p className={payment.voided_at ? "font-medium line-through text-muted-foreground" : "font-medium"}>
-                    {moneyLabel(payment.amount_cents)} · {payment.method.replaceAll("_", " ")}
+                    {moneyNode(payment.amount_cents)} · {payment.method.replaceAll("_", " ")}
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {payment.invoice_number} · {payment.kind}

@@ -1,6 +1,9 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { crmHref } from "@/lib/routes";
-import { moneyLabel, billingIntervalLabel, dateLabel } from "@/lib/format";
+import { billingIntervalLabel, dateLabel, moneyLabel } from "@/lib/format";
+import { CountUp } from "@/components/money";
+import { moneyNode } from "@/components/money-node";
 
 /**
  * Dashboard presentation pieces built from ONE payload
@@ -70,10 +73,10 @@ export type DashboardSummary = {
   };
 };
 
-function Stat({ label, value, note }: { label: string; value: string | number; note?: string }) {
+function Stat({ label, value, note }: { label: string; value: ReactNode; note?: string }) {
   return (
     <div className="h-full min-w-0 bg-background p-5 sm:p-6">
-      <p className="break-words text-2xl font-semibold tracking-tight sm:text-3xl">{value}</p>
+      <p className="break-words text-2xl font-semibold tracking-tight sm:text-3xl">{typeof value === "number" ? <CountUp value={value} /> : value}</p>
       <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
         {label}
       </p>
@@ -110,7 +113,7 @@ export function RevenueCards({ revenue, mrrCents, currency }: { revenue: Revenue
             <li className="col-span-2 lg:col-span-1">
               <div className="h-full min-w-0 bg-background p-5 sm:p-6">
                 <p className="break-words text-3xl sm:text-4xl font-semibold tracking-tight">
-                  {moneyLabel(revenue.total_revenue_cents + mrrCents, revenue.currency)}
+                  {moneyNode(revenue.total_revenue_cents + mrrCents, revenue.currency)}
                 </p>
                 <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-foreground">Total revenue</p>
                 <p className="mt-1 text-xs text-faint-foreground">
@@ -123,15 +126,15 @@ export function RevenueCards({ revenue, mrrCents, currency }: { revenue: Revenue
             <li>
               <Stat
                 label="Revenue this month"
-                value={moneyLabel(revenue.revenue_this_month_cents + mrrCents, revenue.currency)}
+                value={moneyNode(revenue.revenue_this_month_cents + mrrCents, revenue.currency)}
                 note={`${moneyLabel(revenue.revenue_this_month_cents, revenue.currency)} received + ${moneyLabel(mrrCents, currency)} recurring`}
               />
             </li>
             <li>
-              <Stat label="Monthly recurring" value={moneyLabel(mrrCents, currency)} />
+              <Stat label="Monthly recurring" value={moneyNode(mrrCents, currency)} />
             </li>
             <li className="col-span-2 lg:col-span-1">
-              <Stat label="Outstanding" value={moneyLabel(revenue.outstanding_cents, revenue.currency)} note="Issued, unpaid" />
+              <Stat label="Outstanding" value={moneyNode(revenue.outstanding_cents, revenue.currency)} note="Issued, unpaid" />
             </li>
           </ul>
           {revenue.mixed_currency ? (
@@ -185,7 +188,7 @@ export function KpiGrid({ summary }: { summary: DashboardSummary }) {
       <li>
         <Stat
           label="Monthly recurring"
-          value={moneyLabel(summary.recurring.mrr_cents, summary.currency)}
+          value={moneyNode(summary.recurring.mrr_cents, summary.currency)}
           note={`${moneyLabel(summary.recurring.arr_cents, summary.currency)} ARR`}
         />
       </li>
@@ -218,7 +221,7 @@ export function RecurringRevenue({ summary }: { summary: DashboardSummary }) {
       <div className="mt-4 grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4">
         <div className="bg-background p-6">
           <p className="text-3xl font-semibold tracking-tight">
-            {moneyLabel(recurring.mrr_cents, currency)}
+            {moneyNode(recurring.mrr_cents, currency)}
           </p>
           <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
             MRR
@@ -226,7 +229,7 @@ export function RecurringRevenue({ summary }: { summary: DashboardSummary }) {
         </div>
         <div className="bg-background p-6">
           <p className="text-3xl font-semibold tracking-tight">
-            {moneyLabel(recurring.arr_cents, currency)}
+            {moneyNode(recurring.arr_cents, currency)}
           </p>
           <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
             ARR
@@ -284,9 +287,9 @@ export function RecurringRevenue({ summary }: { summary: DashboardSummary }) {
                   <td className="px-3 py-4 text-muted-foreground">
                     {row.intervals.map((interval) => billingIntervalLabel(interval)).join(" · ")}
                   </td>
-                  <td className="px-3 py-4">{moneyLabel(row.mrr_cents, currency)}</td>
+                  <td className="px-3 py-4">{moneyNode(row.mrr_cents, currency)}</td>
                   <td className="px-3 py-4 text-muted-foreground">
-                    {moneyLabel(row.mrr_cents * 12, currency)}
+                    {moneyNode(row.mrr_cents * 12, currency)}
                   </td>
                 </tr>
               ))}

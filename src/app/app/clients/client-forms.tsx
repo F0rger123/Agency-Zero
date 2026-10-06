@@ -26,6 +26,8 @@ import {
   TextArea,
   TextInput,
 } from "@/components/form-controls";
+import { ConfirmDelete } from "@/components/confirm-delete";
+import { Wizard } from "@/components/wizard";
 
 const initialState: ActionState = {};
 
@@ -261,16 +263,15 @@ export type CatalogService = {
 };
 
 /**
- * Assign a catalogue service to a client. Choosing a service prefills the
- * billing type, interval, and amount from the catalogue defaults (migration
- * 0010), so the owner can accept the defaults or override them per client.
- * Re-assigning the same service edits the existing assignment (the action
- * upserts on `client_id, service_id`).
+ * Assign a catalogue service to a client, one step at a time. Choosing a service prefills the
+ * billing type, interval, and amount from the catalogue defaults (migration 0010).
+ * A one-time service has no interval: it asks for a price and, optionally, records the charge
+ * (already paid, or billed with an invoice). Re-assigning the same service edits the existing
+ * assignment (the action upserts on `client_id, service_id`).
  */
 export function ServiceForm({
   clientId,
   services,
-  compact = false,
 }: {
   clientId: string;
   services: CatalogService[];
@@ -279,91 +280,149 @@ export function ServiceForm({
   const [state, action] = useActionState(assignServiceAction, initialState);
   const [selected, setSelected] = useState("");
   const service = services.find((item) => item.id === selected);
-  const defaultBilling = service?.default_billing ?? "one_off";
+  const [billingOverride, setBillingOverride] = useState<{ serviceId: string; value: string } | null>(null);
+  const billing = billingOverride?.serviceId === selected ? billingOverride.value : (service?.default_billing ?? "one_off");
+  const [charge, setCharge] = useState("none");
+  const oneTime = billing !== "recurring";
   const defaultInterval = service?.billing_interval ?? "monthly";
-  const defaultAmount =
-    service?.default_price_cents != null ? service.default_price_cents / 100 : "";
+  const defaultAmount = service?.default_price_cents != null ? service.default_price_cents / 100 : null;
   const key = service?.id ?? "none";
 
   return (
-    <form action={action} className="space-y-4">
+    <form action={action}>
       <input type="hidden" name="client_id" value={clientId} />
-      <div className={compact ? "space-y-4" : undefined}>
-        <TwoColumns>
-          <div className={compact ? "sm:col-span-2" : undefined}>
-            <FieldLabel label="Service" htmlFor="client-service" required />
-            <SelectInput
-              id="client-service"
-              name="service_id"
-              required
-              onChange={(event) => setSelected(event.target.value)}
-            >
-              <option value="">Choose a service</option>
-              {services.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </SelectInput>
-          </div>
-          <div key={`billing-${key}`}>
-            <FieldLabel label="Billing" htmlFor="client-billing" required />
-            <SelectInput
-              id="client-billing"
-              name="billing"
-              defaultValue={defaultBilling}
-              required
-            >
-              <option value="one_off">One-off</option>
-              <option value="recurring">Recurring</option>
-            </SelectInput>
-          </div>
-          <div key={`interval-${key}`}>
-            <FieldLabel label="Billing interval" htmlFor="client-interval" />
-            <SelectInput
-              id="client-interval"
-              name="billing_interval"
-              defaultValue={defaultInterval}
-            >
-              <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="yearly">Yearly</option>
-            </SelectInput>
-          </div>
-          <div key={`amount-${key}`}>
-            <FieldLabel
-              label="Amount per interval"
-              htmlFor="client-amount"
-              hint="currency units, recurring only"
-            />
-            <TextInput
-              id="client-amount"
-              name="amount"
-              type="number"
-              min={0}
-              step={0.01}
-              defaultValue={defaultAmount === "" ? null : defaultAmount}
-            />
-          </div>
-          <div>
-            <FieldLabel label="Started on" htmlFor="client-started-on" hint="optional" />
-            <TextInput id="client-started-on" name="started_on" type="date" />
-          </div>
-        </TwoColumns>
-        {service ? (
-          <p className="text-xs text-muted-foreground">
-            Catalogue defaults: {service.default_billing === "recurring" ? "recurring" : "one-off"}
-            {service.default_estimated_minutes
-              ? ` · ${Math.round((service.default_estimated_minutes / 60) * 10) / 10} h estimated`
-              : ""}
-            . Re-assigning an existing service updates it.
-          </p>
-        ) : null}
-      </div>
-      <div className="flex flex-wrap items-center gap-4">
-        <SubmitButton>Assign service</SubmitButton>
-        <FormMessage {...state} />
-      </div>
+      <input type="hidden" name="billing" value={billing} />
+      <Wizard
+        finish={
+          <>
+            <SubmitButton>{oneTime ? "Add one-time service" : "Add recurring service"}</SubmitButton>
+            <FormMessage {...state} />
+          </>
+        }
+        steps={[
+          {
+            title: "Choose the service",
+            hint: "Pick from your service catalogue.",
+            content: (
+              <div>
+                <FieldLabel label="Service" htmlFor="client-service" required />
+                <SelectInput id="client-service" name="service_id" required onChange={(event) => setSelected(event.target.value)}>
+                  <option value="">Choose a service</option>
+                  {services.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </SelectInput>
+                {service?.default_estimated_minutes ? (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Usually about {Math.round((service.default_estimated_minutes / 60) * 10) / 10} h of work.
+                  </p>
+                ) : null}
+              </div>
+            ),
+          },
+          {
+            title: "How it is billed",
+            hint: "A one-time service is a single charge. A recurring one bills on a schedule and counts toward MRR.",
+            content: (
+              <div className="space-y-5">
+                <div role="radiogroup" aria-label="Billing type" className="grid grid-cols-2 gap-3">
+                  {[
+                    { value: "one_off", label: "One-time", note: "A single charge" },
+                    { value: "recurring", label: "Recurring", note: "Monthly, quarterly or yearly" },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={billing === option.value}
+                      onClick={() => setBillingOverride({ serviceId: selected, value: option.value })}
+                      className={`press rounded-lg border p-4 text-left transition-colors ${
+                        billing === option.value ? "border-foreground bg-muted" : "border-border hover:bg-muted/60"
+                      }`}
+                    >
+                      <span className="block text-sm font-medium">{option.label}</span>
+                      <span className="mt-1 block text-xs text-muted-foreground">{option.note}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {oneTime ? null : (
+                    <div key={`interval-${key}`}>
+                      <FieldLabel label="Billing interval" htmlFor="client-interval" />
+                      <SelectInput id="client-interval" name="billing_interval" defaultValue={defaultInterval}>
+                        <option value="monthly">Monthly</option>
+                        <option value="quarterly">Quarterly</option>
+                        <option value="yearly">Yearly</option>
+                      </SelectInput>
+                    </div>
+                  )}
+                  <div key={`amount-${key}-${billing}`}>
+                    <FieldLabel
+                      label={oneTime ? "Price" : "Amount per interval"}
+                      htmlFor="client-amount"
+                      hint={oneTime ? "dollars, charged once" : "dollars"}
+                      required={oneTime && charge !== "none"}
+                    />
+                    <TextInput id="client-amount" name="amount" type="number" min={0} step={0.01} defaultValue={defaultAmount} />
+                  </div>
+                  <div>
+                    <FieldLabel label={oneTime ? "Date" : "Started on"} htmlFor="client-started-on" hint="optional" />
+                    <TextInput id="client-started-on" name="started_on" type="date" />
+                  </div>
+                </div>
+              </div>
+            ),
+          },
+          {
+            title: oneTime ? "The charge" : "Review",
+            hint: oneTime
+              ? "Decide what happens to the money now. You can always do it later from Invoices & payments."
+              : "Recurring services add to this client's monthly recurring revenue as soon as you save.",
+            content: oneTime ? (
+              <div className="space-y-4">
+                <input type="hidden" name="charge" value={charge} />
+                {[
+                  { value: "none", label: "Just log the service", note: "No money recorded yet" },
+                  { value: "paid", label: "They already paid", note: "Records a payment toward revenue" },
+                  { value: "invoice", label: "Send them an invoice", note: "Creates an invoice for the price" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={charge === option.value}
+                    onClick={() => setCharge(option.value)}
+                    className={`press block w-full rounded-lg border p-4 text-left transition-colors ${
+                      charge === option.value ? "border-foreground bg-muted" : "border-border hover:bg-muted/60"
+                    }`}
+                  >
+                    <span className="block text-sm font-medium">{option.label}</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">{option.note}</span>
+                  </button>
+                ))}
+                {charge === "paid" ? (
+                  <div>
+                    <FieldLabel label="Payment method" htmlFor="client-service-method" />
+                    <SelectInput id="client-service-method" name="method" defaultValue="venmo">
+                      <option value="bank_transfer">Bank transfer</option>
+                      <option value="card">Card</option>
+                      <option value="cash">Cash</option>
+                      <option value="stripe">Stripe</option>
+                      <option value="venmo">Venmo</option>
+                      <option value="other">Other</option>
+                    </SelectInput>
+                  </div>
+                ) : null}
+                {charge !== "none" ? <p className="text-xs text-muted-foreground">Needs a price on the previous step.</p> : null}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Ready to add. Use Back to change anything.</p>
+            ),
+          },
+        ]}
+      />
     </form>
   );
 }
@@ -396,15 +455,15 @@ function DeleteActionForm({
   fields: Record<string, string>;
   label: string;
 }) {
-  const [state, formAction] = useActionState(action, initialState);
   return (
-    <form action={formAction} className="flex flex-wrap items-center gap-3">
-      {Object.entries(fields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
-      <SubmitButton pendingLabel="Removing…" className="bg-background px-0 py-0 text-xs font-normal text-muted-foreground ring-0 hover:text-foreground">
-        {label}
-      </SubmitButton>
-      <FormMessage {...state} />
-    </form>
+    <ConfirmDelete
+      action={action}
+      fields={fields}
+      label={label}
+      title="Remove this?"
+      message="It will be removed from this client. This cannot be undone."
+      confirmLabel="Remove"
+    />
   );
 }
 

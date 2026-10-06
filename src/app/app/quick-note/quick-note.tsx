@@ -1,0 +1,285 @@
+"use client";
+
+import { useActionState, useCallback, useEffect, useRef, useState } from "react";
+import { Icon } from "@/components/icons";
+import { Modal } from "@/components/modal";
+import type { NoteContext, ProposedAction } from "@/lib/quick-note";
+import { applyNoteActionsAction, organizeNoteAction, type ApplyState, type OrganizeState } from "./actions";
+
+type RecognitionResult = { isFinal: boolean; 0: { transcript: string } };
+type Recognition = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: { resultIndex: number; results: ArrayLike<RecognitionResult> }) => void) | null;
+  onerror: ((event: { error: string }) => void) | null;
+  onend: (() => void) | null;
+};
+type RecognitionCtor = new () => Recognition;
+
+function recognitionCtor(): RecognitionCtor | null {
+  if (typeof window === "undefined") return null;
+  const w = window as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
+}
+
+const field = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-foreground";
+
+function describe(action: ProposedAction): { label: string; detail: string } {
+  switch (action.type) {
+    case "note":
+      return { label: "Add note", detail: action.body };
+    case "task":
+      return {
+        label: `New task · ${action.status.replace("_", " ")}`,
+        detail: [action.title, action.description, action.due_date ? `due ${action.due_date}` : ""].filter(Boolean).join(" — "),
+      };
+    case "project_update":
+      return {
+        label: "Update project",
+        detail: [action.progress !== null ? `progress ${action.progress}%` : "", action.status ? `status ${action.status.replace("_", " ")}` : ""].filter(Boolean).join(", "),
+      };
+    case "payment":
+      return { label: "Record payment", detail: `$${action.amount.toFixed(2)} · ${action.description} · ${action.method.replace("_", " ")}` };
+  }
+}
+
+function Review({ initial, context, ai, onDone }: { initial: ProposedAction[]; context: NoteContext; ai: boolean; onDone: () => void }) {
+  const [items, setItems] = useState(() => initial.map((action) => ({ action, include: true })));
+  const [state, apply, pending] = useActionState<ApplyState, FormData>(applyNoteActionsAction, {});
+  const included = items.filter((item) => item.include).map((item) => item.action);
+  const needsClient = included.some((a) => (a.type === "note" || a.type === "payment") && !a.client_id);
+
+  const setClient = (index: number, clientId: string) =>
+    setItems((current) =>
+      current.map((item, position) => {
+        if (position !== index || item.action.type === "project_update") return item;
+        return { ...item, action: { ...item.action, client_id: clientId || null } as ProposedAction };
+      }),
+    );
+
+  if (state.success) {
+    return (
+      <div className="space-y-5">
+        <p role="status" className="text-sm font-medium">{state.success}</p>
+        <button type="button" onClick={onDone} className="press rounded-md bg-inverted px-4 py-2 text-sm font-medium text-inverted-foreground">
+          Done
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form action={apply} className="space-y-5">
+      <input type="hidden" name="actions" value={JSON.stringify(included)} />
+      <p className="text-sm text-muted-foreground">
+        {ai ? "Here is what I will do." : "AI is not set up yet, so this is a simple version."} Nothing is saved until you press Save.
+      </p>
+      {items.length === 0 ? <p className="text-sm">Nothing to do from that note.</p> : null}
+      <ul className="space-y-3">
+        {items.map(({ action, include }, index) => {
+          const { label, detail } = describe(action);
+          const clientId = action.type === "project_update" ? null : action.client_id;
+          return (
+            <li key={index} className={`rounded-lg border p-4 transition-colors ${include ? "border-foreground" : "border-border opacity-60"}`}>
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={include}
+                  onChange={(event) => setItems((current) => current.map((item, position) => (position === index ? { ...item, include: event.target.checked } : item)))}
+                  className="mt-1 size-4 accent-foreground"
+                />
+                <span className="min-w-0">
+                  <span className="block text-[11px] font-medium uppercase tracking-widest text-muted-foreground">{label}</span>
+                  <span className="mt-1 block whitespace-pre-wrap text-sm leading-6">{detail}</span>
+                </span>
+              </label>
+              {action.type !== "project_update" && include ? (
+                <div className="mt-3 pl-7">
+                  <label className="sr-only" htmlFor={`qn-client-${index}`}>Client</label>
+                  <select id={`qn-client-${index}`} value={clientId ?? ""} onChange={(event) => setClient(index, event.target.value)} className={field}>
+                    <option value="">{action.type === "task" ? "No client" : "Choose a client"}</option>
+                    {context.clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name}
+                        {client.company ? ` · ${client.company}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="submit"
+          disabled={pending || included.length === 0 || needsClient}
+          className="press rounded-md bg-inverted px-4 py-2 text-sm font-medium text-inverted-foreground transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {pending ? "Saving…" : `Save ${included.length || ""}`.trim()}
+        </button>
+        <button type="button" onClick={onDone} className="press rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted">
+          Back
+        </button>
+        {needsClient ? <span className="text-xs text-muted-foreground">Pick a client for each note or payment.</span> : null}
+        {state.error ? <span role="alert" className="text-sm font-medium">{state.error}</span> : null}
+      </div>
+    </form>
+  );
+}
+
+function NoteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [text, setText] = useState("");
+  const [listening, setListening] = useState(false);
+  const [voiceError, setVoiceError] = useState("");
+  const recognition = useRef<Recognition | null>(null);
+  const [state, organize, pending] = useActionState<OrganizeState, FormData>(organizeNoteAction, {});
+  const [reviewKey, setReviewKey] = useState(0);
+  const [reviewing, setReviewing] = useState(false);
+  const supported = typeof window !== "undefined" && recognitionCtor() !== null;
+
+  const stop = useCallback(() => {
+    recognition.current?.stop();
+    recognition.current = null;
+    setListening(false);
+  }, []);
+
+  // The dialog is only mounted while open, so unmounting is the moment to release the microphone.
+  useEffect(() => () => recognition.current?.stop(), []);
+
+  const toggle = () => {
+    if (listening) return stop();
+    const Ctor = recognitionCtor();
+    if (!Ctor) return;
+    setVoiceError("");
+    const instance = new Ctor();
+    instance.lang = "en-US";
+    instance.continuous = true;
+    instance.interimResults = false;
+    instance.onresult = (event) => {
+      let spoken = "";
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        if (event.results[i].isFinal) spoken += event.results[i][0].transcript;
+      }
+      if (spoken) setText((current) => `${current}${current && !current.endsWith(" ") ? " " : ""}${spoken.trim()}`);
+    };
+    instance.onerror = (event) => {
+      setVoiceError(event.error === "not-allowed" ? "Microphone access was blocked. Allow it in your browser, or just type." : "Voice typing stopped. Try again.");
+      setListening(false);
+    };
+    instance.onend = () => setListening(false);
+    recognition.current = instance;
+    instance.start();
+    setListening(true);
+  };
+
+  const showReview = reviewing && state.actions && state.context;
+
+  return (
+    <Modal open={open} onClose={onClose} title="Quick note" description="Say what happened. I will turn it into notes, tasks and updates for you to confirm.">
+      {showReview ? (
+        <Review
+          key={reviewKey}
+          initial={state.actions!}
+          context={state.context!}
+          ai={Boolean(state.ai)}
+          onDone={() => {
+            setReviewing(false);
+            if (state.actions) setText("");
+          }}
+        />
+      ) : (
+        <form
+          action={(formData) => {
+            stop();
+            setReviewKey((key) => key + 1);
+            setReviewing(true);
+            organize(formData);
+          }}
+          className="space-y-4"
+        >
+          <div className="relative">
+            <label htmlFor="quick-note-text" className="sr-only">Your note</label>
+            <textarea
+              id="quick-note-text"
+              name="text"
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              rows={7}
+              placeholder={`“Acme Bakery paid me $400 for the website. Started the logo task, I'm 50% done, they want a warmer red.”`}
+              className={`${field} resize-y pr-14 leading-6`}
+            />
+            {supported ? (
+              <button
+                type="button"
+                onClick={toggle}
+                aria-pressed={listening}
+                aria-label={listening ? "Stop voice typing" : "Start voice typing"}
+                className={`press absolute right-3 top-3 flex size-10 items-center justify-center rounded-full border transition-colors ${
+                  listening ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"
+                }`}
+              >
+                <Icon name="mic" className={`size-5 ${listening ? "animate-pulse" : ""}`} />
+              </button>
+            ) : null}
+          </div>
+          {listening ? <p role="status" className="text-xs text-muted-foreground">Listening… tap the mic again when you are done.</p> : null}
+          {!supported ? <p className="text-xs text-muted-foreground">Voice typing is not available in this browser. Use your keyboard&apos;s microphone key, or type.</p> : null}
+          {voiceError ? <p role="alert" className="text-xs font-medium">{voiceError}</p> : null}
+          {state.error && !pending ? <p role="alert" className="text-sm font-medium">{state.error}</p> : null}
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="submit"
+              disabled={pending || !text.trim()}
+              className="press rounded-md bg-inverted px-4 py-2 text-sm font-medium text-inverted-foreground transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {pending ? "Organising…" : "Organise"}
+            </button>
+            <button type="button" onClick={onClose} className="press rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted">
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+    </Modal>
+  );
+}
+
+/** Opens the quick-note dialog. `variant="widget"` is the big card on the home screen. */
+export function QuickNote({ variant = "button" }: { variant?: "button" | "widget" }) {
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  return (
+    <>
+      {variant === "widget" ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="press group flex h-full min-h-40 w-full flex-col justify-between rounded-2xl border border-border bg-inverted p-6 text-left text-inverted-foreground transition-transform duration-300 hover:-translate-y-0.5"
+        >
+          <span className="flex size-12 items-center justify-center rounded-full border border-inverted-foreground/30 transition-transform duration-300 group-hover:scale-110">
+            <Icon name="mic" className="size-6" />
+          </span>
+          <span>
+            <span className="block text-xl font-semibold tracking-tight">Quick note</span>
+            <span className="mt-1 block text-sm opacity-70">Say what happened. It files itself.</span>
+          </span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="press inline-flex items-center gap-2 rounded-full border border-border px-3.5 py-2 text-sm font-medium transition-colors hover:bg-muted"
+        >
+          <Icon name="mic" className="size-4" />
+          <span className="max-sm:sr-only">Quick note</span>
+        </button>
+      )}
+      {open ? <NoteDialog open={open} onClose={close} /> : null}
+    </>
+  );
+}

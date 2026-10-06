@@ -11,6 +11,7 @@ import {
   updateMilestoneAction,
   updateProjectAction,
 } from "./actions";
+import { Wizard } from "@/components/wizard";
 import { FieldLabel, FormMessage, SelectInput, SubmitButton, TextArea, TextInput } from "@/components/form-controls";
 
 const initialState: ActionState = {};
@@ -162,35 +163,120 @@ export function NewProjectForm({
   templates?: { id: string; label: string }[];
 }) {
   const [state, action] = useActionState(createProjectAction, initialState);
+  const lockedName = clients.find((client) => client.id === lockedClientId)?.name ?? "This client";
   return (
-    <FormShell title="Add project">
-      <form action={action} className="space-y-5">
-        <ProjectFields clients={clients} lockedClientId={lockedClientId} />
-        {templates.length > 0 ? (
-          <div className="grid gap-4 border-t border-border pt-5 sm:grid-cols-2">
-            <div>
-              <FieldLabel label="Start from a template" htmlFor="project-template" hint="optional: adds the usual phases and tasks" />
-              <SelectInput id="project-template" name="template_id" defaultValue="">
-                <option value="">No template, I&apos;ll add phases myself</option>
-                {templates.map((template) => (
-                  <option key={template.id} value={template.id}>
-                    {template.label}
-                  </option>
-                ))}
-              </SelectInput>
-            </div>
-            <div>
-              <FieldLabel label="Template start date" htmlFor="project-template-start" hint="task due dates count from here; defaults to Starts on" />
-              <TextInput id="project-template-start" name="template_start" type="date" />
-            </div>
-          </div>
-        ) : null}
-        <div className="flex flex-wrap items-center gap-4">
-          <SubmitButton>Create project</SubmitButton>
-          <FormMessage {...state} />
-        </div>
-      </form>
-    </FormShell>
+    <form action={action}>
+      <Wizard
+        finish={
+          <>
+            <SubmitButton>Create project</SubmitButton>
+            <FormMessage {...state} />
+          </>
+        }
+        steps={[
+          {
+            title: "The basics",
+            hint: "What is the project, and who is it for?",
+            content: (
+              <div className="space-y-4">
+                <div>
+                  <FieldLabel label="Name" htmlFor="project-name" required />
+                  <TextInput id="project-name" name="name" required placeholder="New website launch" />
+                </div>
+                <div>
+                  <FieldLabel label="Client" htmlFor="project-client" required />
+                  {lockedClientId ? (
+                    <>
+                      <input type="hidden" name="client_id" value={lockedClientId} />
+                      <p className="flex h-10 items-center text-sm">{lockedName}</p>
+                    </>
+                  ) : (
+                    <SelectInput id="project-client" name="client_id" required>
+                      <option value="">Choose a client</option>
+                      {clients.map((client) => (
+                        <option key={client.id} value={client.id}>
+                          {client.name}
+                          {client.company ? ` · ${client.company}` : ""}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  )}
+                </div>
+                <div>
+                  <FieldLabel label="Description" htmlFor="project-description" hint="optional" />
+                  <TextArea id="project-description" name="description" rows={3} />
+                </div>
+              </div>
+            ),
+          },
+          {
+            title: "Money and time",
+            hint: "All optional. You can change these any time.",
+            content: (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <FieldLabel label="Status" htmlFor="project-status" required />
+                  <SelectInput id="project-status" name="status" defaultValue="planning" required>
+                    <option value="planning">Planning</option>
+                    <option value="active">Active</option>
+                    <option value="on_hold">On hold</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </SelectInput>
+                </div>
+                <div>
+                  <FieldLabel label="Project value" htmlFor="project-value" hint="dollars" />
+                  <TextInput id="project-value" name="value_amount" type="number" min={0} step={0.01} />
+                </div>
+                <div>
+                  <FieldLabel label="Estimated time" htmlFor="project-estimated" hint="hours" />
+                  <TextInput id="project-estimated" name="estimated_hours" type="number" min={0} step={0.25} />
+                </div>
+                <div>
+                  <FieldLabel label="Starts on" htmlFor="project-starts" />
+                  <TextInput id="project-starts" name="starts_on" type="date" />
+                </div>
+                <div>
+                  <FieldLabel label="Deadline" htmlFor="project-deadline" />
+                  <TextInput id="project-deadline" name="deadline" type="date" />
+                </div>
+                <input type="hidden" name="currency" value="USD" />
+                <input type="hidden" name="progress" value="0" />
+              </div>
+            ),
+          },
+          {
+            title: "Phases and tasks",
+            hint:
+              templates.length > 0
+                ? "Start from a template to add the usual phases and tasks, or skip it and build your own."
+                : "No templates yet. You can add phases and tasks from the project once it exists.",
+            content:
+              templates.length > 0 ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <FieldLabel label="Template" htmlFor="project-template" hint="optional" />
+                    <SelectInput id="project-template" name="template_id" defaultValue="">
+                      <option value="">No template, I&apos;ll add phases myself</option>
+                      {templates.map((template) => (
+                        <option key={template.id} value={template.id}>
+                          {template.label}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </div>
+                  <div>
+                    <FieldLabel label="Template start date" htmlFor="project-template-start" hint="defaults to Starts on" />
+                    <TextInput id="project-template-start" name="template_start" type="date" />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Ready to create.</p>
+              ),
+          },
+        ]}
+      />
+    </form>
   );
 }
 

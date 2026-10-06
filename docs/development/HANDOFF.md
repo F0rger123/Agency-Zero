@@ -1,5 +1,35 @@
 # Handoff log (newest first)
 
+## 2026-10-06 (2) — Claude — CRM redesign: widget home, customer hub, dialogs/wizards, delete, one-time charges, quick note
+
+**No migrations in this round.** Nothing to apply. One optional env var: `ANTHROPIC_API_KEY` (Cloudflare Worker **Secret**, never `NEXT_PUBLIC_`). Without it, Quick note still works with a simple offline organiser.
+
+**Navigation / layout**
+- Sidebar removed. Slim top bar (wordmark, Home, Quick note, Menu dialog with every section + sign out). Home (`/app`) is now big widgets: Customers (hero), Calendar, Projects, Tasks, Invoices, Quotes, Contracts, Reminders, Leads, Shoots, Services, Workload, Social, Marketing, plus a Quick note card; revenue cards above, the old detail panels below. Widget list lives in `src/lib/nav.ts` (`homeWidgets`).
+- A customer opens as a **hub of big widgets** (Projects, Tasks, Services, Shoots, Quotes, Contracts, Invoices, **Reminders (new)**, Notes, Activity, Files, Profile) with live counts; picking one opens that section with a "← customer" back button. Reminders attach to the client via `reminders.subject_type='client'`.
+- Money: dollar sign is green (`--color-money`), amounts and counts animate up on load and when clicked (`src/components/money.tsx`; `moneyNode()` in `money-node.tsx` replaced most `moneyLabel` call sites; strings still use `moneyLabel`). Respects reduced motion. Stat tiles on home/client use `CountUp`.
+
+**Creating things**
+- Empty tabs stay empty. Every "add" is now a **button that opens a dialog** (blurred backdrop, X/Esc/click-out cancels, saving closes it): `AddDialog` + `Modal` (`src/components/modal.tsx`). New project, task and service are **step-by-step wizards** (`src/components/wizard.tsx`); quotes, contracts, invoices, payments, notes, uploads, activity, shoots, schedules, events, posts, campaigns, reminders, clients and services use the same dialog. `FormMessage` closes the surrounding dialog on success.
+- Wizards ask for essentials only. Task parent/dependency/recurrence/actual time and project currency/actual time are set from **Edit** afterwards.
+- Interpretation: "once you exit, it adds the project" = finishing the wizard adds it; X cancels without saving.
+
+**Delete**
+- `ConfirmDelete` (`src/components/confirm-delete.tsx`) asks first. New: delete project (cascades tasks/phases/milestones; invoices/quotes/contracts/payments kept, unlinked by existing FKs; redirects to the client), delete task from client/project/global lists, delete shoot, delete recurring schedule (also removes its not-yet-shot planned/confirmed shoots). Existing Remove buttons (notes, activity, files, services) now confirm. Invoices/payments are still never hard-deleted (void).
+
+**One-time charges**
+- Assigning a service is a wizard: one-time (no interval) vs recurring (interval + amount). One-time asks for a price and what to do with the money: just log, **already paid** (records a payment via `record_client_payment`, method incl. Venmo) or **send an invoice** (draft-free `sent` invoice via `save_invoice`, number `INV-YYYYMMDD-nnn`). One-time prices are stored in `client_services.amount_cents` but never count toward MRR (all MRR queries filter `billing='recurring'`). Catalogue form hides the interval for one-time. Re-assigning the same service replaces the assignment (existing upsert), so two one-time charges of the same service for one client need the invoice/payment route.
+
+**Quick note (voice)**
+- Mic button (browser Web Speech API; Chrome/Edge/Safari, not Firefox) + typing. "Organise" proposes actions (note, task, project progress/status, payment); the owner reviews, edits the client, unticks anything and presses Save. Nothing is written before that (AGENTS.md AI rule). With `ANTHROPIC_API_KEY` a Claude model proposes (`claude-sonnet-5-5`, tool call, ids validated against the clients/projects that were sent); without it a regex organiser keeps the text as a note on a named client and picks out "N%" on a named project and "paid $N". Pure logic + tests: `src/lib/quick-note.ts`. Actions: `src/app/app/quick-note/actions.ts`.
+- Unverified: real microphone/speech in a real browser, and the live AI call (no key in this environment).
+
+**Earlier this session (also shipped here)**: project header quick controls (status, progress slider, "set from tasks", dates, auto-save), projects list filters/progress, template at project creation, task quick edit.
+
+**Verified**: lint, tsc, vitest (+quick-note tests), build. Browser smoke against a mock Supabase for home, customer hub, dialogs/wizards, one-time service wizard.
+**Unverified**: production data paths for delete project/shoot/schedule and the one-time invoice/payment creation (they use existing tables/RPCs; try each once).
+**Next ideas**: same hub pattern inside a project; recurring invoices + expenses; meetings + checklists; per-section animation polish; Reminders delivery.
+
 ## 2026-10-06 — Claude — public site copy/positioning pass, contact flow, CRM passkeys
 
 **Database**: the owner's `/app/system` showed 0002–0025 all OK, so **no existing migration is re-run**. The only new SQL is **`0026_passkeys.sql`** (new feature; additive; reversible with `drop table public.passkey_challenges, public.passkeys;`). Passkeys also need the Cloudflare Secret `SUPABASE_SERVICE_ROLE_KEY` (see `docs/DEPLOYMENT.md`); without it the app just shows the password form.

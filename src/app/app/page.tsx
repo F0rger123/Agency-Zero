@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isClockSkewError, retryOnClockSkew } from "@/lib/supabase/retry";
@@ -7,6 +6,7 @@ import { isMissingTable } from "@/lib/forms";
 import { todayIso } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { DataFailure, MigrationsRequired, SetupRequired } from "@/components/states";
+import { HomeWidgets } from "./home-widgets";
 import {
   DeliveryPanel,
   type UpcomingShoot,
@@ -75,8 +75,8 @@ export default async function DashboardPage() {
 
   const header = (
     <PageHeader
-      title="Dashboard"
-      description="The day’s work, upcoming deadlines, active delivery, and recurring revenue — all live from your database in a single query."
+      title="Home"
+      description="Pick where to work. Everything for a client lives inside that client."
     />
   );
 
@@ -122,19 +122,18 @@ export default async function DashboardPage() {
   return (
     <>
       {header}
-      {newLeads > 0 ? (
-        <Link
-          href="/app/leads"
-          className="mb-10 flex items-center justify-between border border-border px-5 py-4 text-sm transition-colors hover:bg-muted"
-        >
-          <span>
-            <span className="font-medium">{newLeads} new website {newLeads === 1 ? "lead" : "leads"}</span>
-            <span className="text-muted-foreground"> waiting for a reply</span>
-          </span>
-          <span aria-hidden>→</span>
-        </Link>
-      ) : null}
       <RevenueCards revenue={revenue} mrrCents={summary.recurring.mrr_cents} currency={summary.currency} />
+
+      <div className="mt-10">
+        <HomeWidgets
+          counts={{
+            "/app/clients": { value: summary.clients, label: summary.clients === 1 ? "customer" : "customers" },
+            "/app/projects": { value: summary.active_projects, label: "active" },
+            "/app/tasks": { value: summary.tasks_open, label: summary.tasks_overdue > 0 ? `open · ${summary.tasks_overdue} overdue` : "open" },
+            ...(newLeads > 0 ? { "/app/leads": { value: newLeads, label: "new" } } : {}),
+          }}
+        />
+      </div>
 
       <div className="mt-14">
         <KpiGrid summary={summary} />

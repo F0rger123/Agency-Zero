@@ -1,3 +1,4 @@
+import { AddDialog } from "@/components/modal";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -89,13 +90,21 @@ export default async function InvoicesPage() {
       <section className="mt-12">
         <div className="flex items-baseline justify-between gap-4">
           <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Invoice register</h2>
-          <a href="#new-invoice" className="text-sm font-medium underline decoration-border underline-offset-4">
-            New invoice
-          </a>
+          <AddDialog label="New invoice" title="New invoice">
+            <NewInvoiceForm
+              clients={clients.map((item) => ({
+                id: item.id,
+                label: `${item.name}${item.company ? ` · ${item.company}` : ""}`,
+              }))}
+              projects={projects.map((item) => ({ id: item.id, label: item.name }))}
+              quotes={quotes.map((item) => ({ id: item.id, label: `${item.number} · ${item.title}` }))}
+              contracts={contracts.map((item) => ({ id: item.id, label: item.title }))}
+            />
+          </AddDialog>
         </div>
         {invoices.length === 0 ? (
           <p className="mt-4 border-t border-border py-8 text-sm text-muted-foreground">
-            No invoices yet. Create one below.
+            No invoices yet.
           </p>
         ) : (
           <div className="mt-4 overflow-x-auto border-y border-border">
@@ -145,17 +154,6 @@ export default async function InvoicesPage() {
           </div>
         )}
       </section>
-      <div id="new-invoice" className="mt-14 scroll-mt-8">
-        <NewInvoiceForm
-          clients={clients.map((item) => ({
-            id: item.id,
-            label: `${item.name}${item.company ? ` · ${item.company}` : ""}`,
-          }))}
-          projects={projects.map((item) => ({ id: item.id, label: item.name }))}
-          quotes={quotes.map((item) => ({ id: item.id, label: `${item.number} · ${item.title}` }))}
-          contracts={contracts.map((item) => ({ id: item.id, label: item.title }))}
-        />
-      </div>
     </>
   );
 }

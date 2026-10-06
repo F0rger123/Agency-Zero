@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import {
   getUserClient,
   notFoundWhenNoRows,
@@ -143,6 +144,29 @@ export async function archiveProjectAction(_previous: ActionState, formData: For
   revalidatePath(`/app/projects/${id}`);
   revalidatePath("/app");
   return { success: "Project archived." };
+}
+
+/**
+ * Permanently delete a project. Its tasks, milestones and phases go with it; invoices, quotes,
+ * contracts and payments are financial records and are kept (the database unlinks them).
+ */
+export async function deleteProjectAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const id = field(formData, "id");
+  if (!id) return { error: "Project ID is missing." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const found = await auth.supabase.from("projects").select("client_id").eq("id", id).maybeSingle();
+  const { error, count } = await auth.supabase.from("projects").delete({ count: "exact" }).eq("id", id);
+  if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Project");
+  if (missing) return missing;
+  revalidatePath("/app/projects");
+  revalidatePath("/app/tasks");
+  revalidatePath("/app");
+  if (found.data?.client_id) revalidatePath(`/app/clients/${found.data.client_id}`);
+  const to = field(formData, "redirect_to");
+  if (to.startsWith("/app")) redirect(to);
+  return { success: "Project deleted." };
 }
 
 export async function createMilestoneAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
