@@ -8,7 +8,7 @@ import { NewProjectForm } from "../../projects/project-forms";
 import type { ClientWorkspaceData } from "../client-workspace-types";
 import { Empty } from "../client-workspace-parts";
 
-export function ProjectsTab({ data, currency }: { data: ClientWorkspaceData; currency: string }) {
+export function ProjectsTab({ data, currency, projectTemplates = [] }: { data: ClientWorkspaceData; currency: string; projectTemplates?: { id: string; label: string }[] }) {
   return (
     <FormSection
       title="Projects"
@@ -54,6 +54,7 @@ export function ProjectsTab({ data, currency }: { data: ClientWorkspaceData; cur
         <NewProjectForm
           lockedClientId={data.client.id}
           clients={[{ id: data.client.id, name: data.client.name, company: data.client.company }]}
+          templates={projectTemplates}
         />
       </div>
     </FormSection>

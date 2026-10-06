@@ -47,11 +47,14 @@ export function ClientWorkspace({
   data,
   templates = [],
   shoots = null,
+  projectTemplates = [],
 }: {
   data: ClientWorkspaceData;
   templates?: { id: string; label: string }[];
   /** Content shoots for this client (migration 0024); null when the database has not applied it yet. */
   shoots?: ShootsOverview | null;
+  /** Active project templates (0025) offered when adding a project. */
+  projectTemplates?: { id: string; label: string }[];
 }) {
   const [tab, setTab] = useState<Tab>("Overview");
   const { client, stats } = data;
@@ -135,7 +138,7 @@ export function ClientWorkspace({
 
       <div role="tabpanel" aria-label={tab} className="mt-8">
         {tab === "Overview" ? <OverviewTab data={data} /> : null}
-        {tab === "Projects" ? <ProjectsTab data={data} currency={currency} /> : null}
+        {tab === "Projects" ? <ProjectsTab data={data} currency={currency} projectTemplates={projectTemplates} /> : null}
         {tab === "Tasks" ? <TasksTab data={data} /> : null}
         {tab === "Services" ? <ServicesTab data={data} /> : null}
         {tab === "Shoots" ? (

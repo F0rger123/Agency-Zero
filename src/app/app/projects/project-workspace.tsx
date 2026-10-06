@@ -8,6 +8,7 @@ import { OverviewTab } from "./project-tabs/overview-tab";
 import { TasksTab } from "./project-tabs/tasks-tab";
 import { WorkItemsTab, type WorkItemsPayload } from "./project-tabs/work-items";
 import { PhasesTab, type ProjectPhasesPayload } from "./project-tabs/phases";
+import { ProjectQuickControls } from "./project-quick-controls";
 import { MilestonesTab } from "./project-tabs/milestones-tab";
 import { TimelineTab } from "./project-tabs/timeline-tab";
 import { TimeTab } from "./project-tabs/time-tab";
@@ -42,7 +43,7 @@ const tabs = [
   "Notes",
   "Client",
   "Financials",
-  "Settings",
+  "Edit project",
 ] as const;
 
 type Tab = (typeof tabs)[number];
@@ -80,10 +81,15 @@ export function ProjectWorkspace({ data }: { data: ProjectWorkspaceData & { work
         </span>
       </div>
 
+      <ProjectQuickControls key={`${project.status}|${project.progress}|${project.starts_on}|${project.deadline}`} data={data} onEditAll={() => setTab("Edit project")} />
+
       <div className="grid grid-cols-2 gap-px border-b border-border bg-border sm:grid-cols-5">
         <div className="bg-background p-5">
           <p className="text-xl font-semibold tracking-tight">{project.progress}%</p>
-          <p className="mt-1 text-[11px] uppercase tracking-widest text-muted-foreground">Progress</p>
+          <div className="mt-2 h-1.5 w-full bg-muted" aria-hidden>
+            <div className="h-full bg-foreground" style={{ width: `${project.progress}%` }} />
+          </div>
+          <p className="mt-2 text-[11px] uppercase tracking-widest text-muted-foreground">Progress</p>
         </div>
         <div className="bg-background p-5">
           <p className="text-xl font-semibold tracking-tight">{moneyLabel(project.value_cents, currency)}</p>
@@ -147,7 +153,7 @@ export function ProjectWorkspace({ data }: { data: ProjectWorkspaceData & { work
         {tab === "Notes" ? <NotesTab data={data} /> : null}
         {tab === "Client" ? <ClientTab data={data} /> : null}
         {tab === "Financials" ? <FinancialsTab data={data} currency={currency} /> : null}
-        {tab === "Settings" ? <SettingsTab data={data} /> : null}
+        {tab === "Edit project" ? <SettingsTab data={data} /> : null}
       </div>
     </div>
   );

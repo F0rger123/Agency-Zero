@@ -27,13 +27,17 @@ export default async function ClientDetailPage({
 
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data, error }, templatesResponse, shootsResponse] = await Promise.all([
+  const [{ data, error }, templatesResponse, shootsResponse, projectTemplatesResponse] = await Promise.all([
     supabase.rpc("get_client_workspace", { p_client_id: id }),
     // Contract templates for the "new contract" form inside the client workspace.
     supabase.from("contract_templates").select("id, name, active").order("name").limit(100),
     // Recurring content shoots (0024); a database that has not applied it degrades to a hint inside the Shoots tab.
     supabase.rpc("get_shoots_overview", { p_client_id: id, p_today: todayIso() }),
+    supabase.from("project_templates").select("id, name").eq("active", true).order("name").limit(100),
   ]);
+  const projectTemplates = projectTemplatesResponse.error
+    ? []
+    : ((projectTemplatesResponse.data ?? []) as { id: string; name: string }[]).map((t) => ({ id: t.id, label: t.name }));
   const shoots = shootsResponse.error ? null : (shootsResponse.data as ShootsOverview | null);
   const templates = ((templatesResponse.data ?? []) as { id: string; name: string; active: boolean }[])
     .filter((template) => template.active)
@@ -85,7 +89,7 @@ export default async function ClientDetailPage({
           "Client record"
         }
       />
-      <ClientWorkspace data={workspace} templates={templates} shoots={shoots} />
+      <ClientWorkspace data={workspace} templates={templates} shoots={shoots} projectTemplates={projectTemplates} />
     </>
   );
 }

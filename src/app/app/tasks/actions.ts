@@ -113,6 +113,33 @@ export async function updateTaskAction(_previous: ActionState, formData: FormDat
   return { success: "Task saved." };
 }
 
+/** Quick edit of a task's status, priority or due date from a list row. Only the fields sent are written. */
+export async function quickUpdateTaskAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const id = field(formData, "id");
+  if (!id) return { error: "Task ID is missing." };
+  const patch: Record<string, string | null> = {};
+  if (formData.has("status")) {
+    const status = field(formData, "status");
+    if (!["todo", "in_progress", "blocked_waiting_client", "blocked_other", "done", "cancelled"].includes(status))
+      return { error: "Choose a valid task status." };
+    patch.status = status;
+  }
+  if (formData.has("priority")) {
+    const priority = field(formData, "priority");
+    if (!["low", "medium", "high", "urgent"].includes(priority)) return { error: "Choose a valid task priority." };
+    patch.priority = priority;
+  }
+  if (formData.has("due_date")) patch.due_date = optionalDate(formData, "due_date");
+  if (Object.keys(patch).length === 0) return { error: "Nothing to save." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { data, error } = await auth.supabase.from("tasks").update(patch).eq("id", id).select("project_id, client_id").maybeSingle();
+  if (error) return { error: readableError(error.message) };
+  if (!data) return { error: "Task not found, or it was already removed." };
+  revalidateTaskPaths(id, data.project_id, data.client_id);
+  return { success: "Saved" };
+}
+
 export async function completeTaskAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const id = field(formData, "id");
   if (!id) return { error: "Task ID is missing." };

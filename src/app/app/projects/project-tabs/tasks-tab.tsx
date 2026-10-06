@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FormSection } from "@/components/form-controls";
 import { dateLabel } from "@/lib/format";
 import { CompleteTaskForm } from "../../tasks/task-forms";
+import { TaskQuickEdit } from "../../tasks/task-quick-edit";
 import { ProjectTaskForm } from "../project-workspace-forms";
 import type { ProjectWorkspaceData } from "../project-workspace-types";
 import { Empty } from "../project-workspace-parts";
@@ -45,6 +46,9 @@ export function TasksTab({ data }: { data: ProjectWorkspaceData }) {
                     </p>
                   </div>
                   <CompleteTaskForm taskId={task.id} />
+                </div>
+                <div className="mt-3">
+                  <TaskQuickEdit key={`${task.status}|${task.priority}|${task.due_date}`} id={task.id} status={task.status} priority={task.priority} dueDate={task.due_date} />
                 </div>
                 <details className="mt-4">
                   <summary className="cursor-pointer text-xs font-medium text-muted-foreground underline decoration-border underline-offset-4">

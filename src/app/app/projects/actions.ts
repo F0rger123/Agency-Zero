@@ -48,12 +48,65 @@ export async function createProjectAction(_previous: ActionState, formData: Form
   if ("error" in values) return values;
   const auth = await getUserClient();
   if ("error" in auth) return auth;
-  const { error } = await auth.supabase.from("projects").insert(values);
+  const { data, error } = await auth.supabase.from("projects").insert(values).select("id").single();
   if (error) return { error: readableError(error.message) };
   revalidatePath("/app/projects");
   revalidatePath("/app/clients");
   revalidatePath("/app");
+
+  // Optional: start from a service template (phases + starter tasks), in the same click.
+  const templateId = optionalField(formData, "template_id");
+  if (templateId && data) {
+    const applied = await auth.supabase.rpc("apply_project_template", {
+      p_project_id: data.id,
+      p_template_id: templateId,
+      p_start: optionalDate(formData, "template_start") ?? ((values as Record<string, string | number | null>).starts_on as string | null),
+    });
+    if (applied.error) {
+      return { success: `Project created, but the template could not be applied (${readableError(applied.error.message)}). Add it from the project's Phases tab.` };
+    }
+    const result = applied.data as { phases?: number; tasks?: number } | null;
+    return { success: `Project created with ${result?.phases ?? 0} phases and ${result?.tasks ?? 0} starter tasks.` };
+  }
   return { success: "Project created." };
+}
+
+/**
+ * Quick edit from the project header: status, progress and dates, saved as you change them.
+ * Only the fields present in the form are written, so it can never clear anything else. Marking a project
+ * completed sets progress to 100% unless a progress value is sent with it.
+ */
+export async function quickUpdateProjectAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const id = field(formData, "id");
+  if (!id) return { error: "Project ID is missing." };
+  const patch: Record<string, string | number | null> = {};
+  if (formData.has("status")) {
+    const status = field(formData, "status");
+    if (!["planning", "active", "on_hold", "completed", "cancelled"].includes(status)) return { error: "Choose a valid project status." };
+    patch.status = status;
+    if (status === "completed" && !formData.has("progress")) patch.progress = 100;
+  }
+  if (formData.has("progress")) {
+    const progress = numberField(formData, "progress", "Progress", 100);
+    if (progress !== null && typeof progress === "object") return progress;
+    patch.progress = progress ?? 0;
+  }
+  if (formData.has("starts_on")) patch.starts_on = optionalDate(formData, "starts_on");
+  if (formData.has("deadline")) patch.deadline = optionalDate(formData, "deadline");
+  if (typeof patch.starts_on === "string" && typeof patch.deadline === "string" && patch.deadline < patch.starts_on)
+    return { error: "The deadline can't be before the start date." };
+  if (Object.keys(patch).length === 0) return { error: "Nothing to save." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error, count } = await auth.supabase.from("projects").update(patch, { count: "exact" }).eq("id", id);
+  if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Project");
+  if (missing) return missing;
+  revalidatePath("/app/projects");
+  revalidatePath(`/app/projects/${id}`);
+  revalidatePath("/app/clients");
+  revalidatePath("/app");
+  return { success: "Saved" };
 }
 
 export async function updateProjectAction(_previous: ActionState, formData: FormData): Promise<ActionState> {

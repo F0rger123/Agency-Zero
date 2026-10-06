@@ -151,12 +151,40 @@ function ProjectFields({ clients, project, lockedClientId }: { clients: ClientOp
   );
 }
 
-export function NewProjectForm({ clients, lockedClientId }: { clients: ClientOption[]; lockedClientId?: string }) {
+export function NewProjectForm({
+  clients,
+  lockedClientId,
+  templates = [],
+}: {
+  clients: ClientOption[];
+  lockedClientId?: string;
+  /** Active project templates (migration 0025); empty hides the "start from a template" fields. */
+  templates?: { id: string; label: string }[];
+}) {
   const [state, action] = useActionState(createProjectAction, initialState);
   return (
     <FormShell title="Add project">
       <form action={action} className="space-y-5">
         <ProjectFields clients={clients} lockedClientId={lockedClientId} />
+        {templates.length > 0 ? (
+          <div className="grid gap-4 border-t border-border pt-5 sm:grid-cols-2">
+            <div>
+              <FieldLabel label="Start from a template" htmlFor="project-template" hint="optional: adds the usual phases and tasks" />
+              <SelectInput id="project-template" name="template_id" defaultValue="">
+                <option value="">No template, I&apos;ll add phases myself</option>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.label}
+                  </option>
+                ))}
+              </SelectInput>
+            </div>
+            <div>
+              <FieldLabel label="Template start date" htmlFor="project-template-start" hint="task due dates count from here; defaults to Starts on" />
+              <TextInput id="project-template-start" name="template_start" type="date" />
+            </div>
+          </div>
+        ) : null}
         <div className="flex flex-wrap items-center gap-4">
           <SubmitButton>Create project</SubmitButton>
           <FormMessage {...state} />

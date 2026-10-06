@@ -10,10 +10,11 @@ import { NewProjectForm } from "./project-forms";
 
 export const metadata: Metadata = { title: "Projects" };
 
-export default async function ProjectsPage() {
+export default async function ProjectsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   if (!isSupabaseConfigured()) return <SetupRequired />;
+  const { status: statusParam } = await searchParams;
   const supabase = await createClient();
-  const [projectsResponse, clientsResponse] = await Promise.all([
+  const [projectsResponse, clientsResponse, templatesResponse] = await Promise.all([
     supabase
       .from("projects")
       .select(
@@ -25,7 +26,10 @@ export default async function ProjectsPage() {
       .or(`status.in.(planning,active,on_hold),updated_at.gte.${daysAgoIso(180)}T00:00:00Z`)
       .limit(LIST_LIMIT),
     supabase.from("clients").select("id, name, company").is("deleted_at", null).order("name").limit(PICKER_LIMIT),
+    // Templates (0025) are optional: a database without them just hides the "start from a template" fields.
+    supabase.from("project_templates").select("id, name").eq("active", true).order("name").limit(100),
   ]);
+  const templates = templatesResponse.error ? [] : ((templatesResponse.data ?? []) as { id: string; name: string }[]).map((t) => ({ id: t.id, label: t.name }));
   const missing = [projectsResponse, clientsResponse].find(
     (response) => response.error && isMissingTable(response.error.message),
   );
@@ -33,7 +37,7 @@ export default async function ProjectsPage() {
   const failed = [projectsResponse, clientsResponse].find((response) => response.error);
   if (failed?.error) throw new Error(failed.error.message);
 
-  const projects = (projectsResponse.data ?? []) as {
+  const allProjects = (projectsResponse.data ?? []) as {
     id: string;
     name: string;
     client_id: string;
@@ -46,6 +50,18 @@ export default async function ProjectsPage() {
     actual_minutes: number | null;
     clients: { name: string; company: string | null } | { name: string; company: string | null }[] | null;
   }[];
+  const tabs = [
+    ["", "Open"],
+    ["all", "All"],
+    ["completed", "Completed"],
+    ["on_hold", "On hold"],
+  ] as const;
+  const filter = ["all", "completed", "on_hold"].includes(statusParam ?? "") ? (statusParam as string) : "";
+  const isOpen = (status: string) => ["planning", "active"].includes(status);
+  const projects = allProjects.filter((project) =>
+    filter === "all" ? true : filter === "" ? isOpen(project.status) : project.status === filter,
+  );
+  const today = new Date().toISOString().slice(0, 10);
   const clients = (clientsResponse.data ?? []) as { id: string; name: string; company: string | null }[];
   const dateLabel = (date: string | null) =>
     date ? new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(`${date}T00:00:00Z`)) : "—";
@@ -65,6 +81,21 @@ export default async function ProjectsPage() {
         </Link>
       </p>
       <LimitNotice shown={projectsResponse.data?.length ?? 0} limit={LIST_LIMIT} hint="Completed or cancelled projects untouched for 180 days are hidden; open them from the client workspace." />
+      <nav aria-label="Project status" className="mb-6 flex flex-wrap gap-x-6 gap-y-2 border-b border-border pb-3 text-sm">
+        {tabs.map(([value, text]) => (
+          <Link
+            key={value || "open"}
+            href={value ? `/app/projects?status=${value}` : "/app/projects"}
+            aria-current={filter === value ? "page" : undefined}
+            className={`underline-offset-4 ${filter === value ? "font-medium underline decoration-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {text}{" "}
+            <span className="text-faint-foreground">
+              {value === "all" ? allProjects.length : value === "" ? allProjects.filter((p) => isOpen(p.status)).length : allProjects.filter((p) => p.status === value).length}
+            </span>
+          </Link>
+        ))}
+      </nav>
       <section aria-labelledby="projects-heading">
         <div className="flex items-baseline justify-between gap-4">
           <h2 id="projects-heading" className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
@@ -109,9 +140,23 @@ export default async function ProjectsPage() {
                         </Link>
                       </td>
                       <td className="px-3 py-4 text-muted-foreground">{client?.name ?? "—"}</td>
-                      <td className="px-3 py-4 text-muted-foreground">{project.status}</td>
-                      <td className="px-3 py-4 text-muted-foreground">{dateLabel(project.deadline)}</td>
-                      <td className="px-3 py-4 text-muted-foreground">{project.progress}%</td>
+                      <td className="px-3 py-4">
+                        <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+                          {project.status.replaceAll("_", " ")}
+                        </span>
+                      </td>
+                      <td className={`px-3 py-4 ${project.deadline && project.deadline < today && isOpen(project.status) ? "font-medium text-foreground" : "text-muted-foreground"}`}>
+                        {dateLabel(project.deadline)}
+                        {project.deadline && project.deadline < today && isOpen(project.status) ? " · overdue" : ""}
+                      </td>
+                      <td className="px-3 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-1.5 w-24 bg-muted" aria-hidden>
+                            <div className="h-full bg-foreground" style={{ width: `${project.progress}%` }} />
+                          </div>
+                          <span className="text-muted-foreground tabular-nums">{project.progress}%</span>
+                        </div>
+                      </td>
                       <td className="px-3 py-4 text-muted-foreground">
                         {hoursLabel(project.actual_minutes)} / {hoursLabel(project.estimated_minutes)}
                       </td>
@@ -127,7 +172,7 @@ export default async function ProjectsPage() {
         )}
       </section>
       <div id="add-project" className="mt-14 scroll-mt-8">
-        <NewProjectForm clients={clients} />
+        <NewProjectForm clients={clients} templates={templates} />
       </div>
     </>
   );
