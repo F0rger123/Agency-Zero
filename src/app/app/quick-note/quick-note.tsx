@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useRef, useState } from "react";
+import { Component, useActionState, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon } from "@/components/icons";
 import { Modal } from "@/components/modal";
 import type { NoteContext, ProposedAction } from "@/lib/quick-note";
@@ -27,35 +27,60 @@ function recognitionCtor(): RecognitionCtor | null {
 
 const field = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-foreground";
 
+const dollars = (n: number) => `$${n.toFixed(2)}`;
+
 function describe(action: ProposedAction): { label: string; detail: string } {
   switch (action.type) {
-    case "note":
-      return { label: "Add note", detail: action.body };
-    case "task":
+    case "create_client":
+      return { label: "New customer", detail: [action.name, action.company, action.email, action.phone].filter(Boolean).join(" · ") };
+    case "create_project":
       return {
-        label: `New task · ${action.status.replace("_", " ")}`,
+        label: "New project",
+        detail: [action.name, action.status.replace("_", " "), action.deadline ? `due ${action.deadline}` : "", action.value !== null ? dollars(action.value) : "", action.description].filter(Boolean).join(" · "),
+      };
+    case "create_task":
+      return {
+        label: `New task · ${action.status.replaceAll("_", " ")}`,
         detail: [action.title, action.description, action.due_date ? `due ${action.due_date}` : ""].filter(Boolean).join(" — "),
       };
-    case "project_update":
+    case "update_task":
+      return {
+        label: "Update task",
+        detail: [action.status ? `status ${action.status.replaceAll("_", " ")}` : "", action.priority ? `priority ${action.priority}` : "", action.due_date ? `due ${action.due_date}` : "", action.note].filter(Boolean).join(" · "),
+      };
+    case "update_project":
       return {
         label: "Update project",
         detail: [action.progress !== null ? `progress ${action.progress}%` : "", action.status ? `status ${action.status.replace("_", " ")}` : ""].filter(Boolean).join(", "),
       };
+    case "note":
+      return { label: "Add note", detail: action.body };
     case "payment":
-      return { label: "Record payment", detail: `$${action.amount.toFixed(2)} · ${action.description} · ${action.method.replace("_", " ")}` };
+      return { label: "Record payment", detail: `${dollars(action.amount)} · ${action.description} · ${action.method.replace("_", " ")}` };
+    case "invoice":
+      return { label: action.status === "draft" ? "Draft invoice" : "New invoice", detail: `${action.title} · ${dollars(action.amount)}${action.due_on ? ` · due ${action.due_on}` : ""}` };
+    case "service":
+      return { label: action.billing === "recurring" ? "Recurring service" : "One-time service", detail: action.amount !== null ? `${dollars(action.amount)}${action.billing === "recurring" ? ` ${action.interval}` : ""}` : "No price set" };
+    case "reminder":
+      return { label: "Reminder", detail: `${action.message} · ${action.due_at.replace("T", " ")}` };
   }
+}
+
+/** Which proposals are about a client the owner can still pick (not a brand-new one from the same note). */
+function pickableClient(action: ProposedAction): action is ProposedAction & { client_id: string | null; client_ref: string | null } {
+  return "client_ref" in action && !action.client_ref;
 }
 
 function Review({ initial, context, ai, onDone }: { initial: ProposedAction[]; context: NoteContext; ai: boolean; onDone: () => void }) {
   const [items, setItems] = useState(() => initial.map((action) => ({ action, include: true })));
   const [state, apply, pending] = useActionState<ApplyState, FormData>(applyNoteActionsAction, {});
   const included = items.filter((item) => item.include).map((item) => item.action);
-  const needsClient = included.some((a) => (a.type === "note" || a.type === "payment") && !a.client_id);
+  const needsClient = included.some((a) => ["note", "payment", "invoice", "service", "create_project"].includes(a.type) && pickableClient(a) && !a.client_id);
 
   const setClient = (index: number, clientId: string) =>
     setItems((current) =>
       current.map((item, position) => {
-        if (position !== index || item.action.type === "project_update") return item;
+        if (position !== index || !pickableClient(item.action)) return item;
         return { ...item, action: { ...item.action, client_id: clientId || null } as ProposedAction };
       }),
     );
@@ -75,13 +100,14 @@ function Review({ initial, context, ai, onDone }: { initial: ProposedAction[]; c
     <form action={apply} className="space-y-5">
       <input type="hidden" name="actions" value={JSON.stringify(included)} />
       <p className="text-sm text-muted-foreground">
-        {ai ? "Here is what I will do." : "AI is not set up yet, so this is a simple version."} Nothing is saved until you press Save.
+        {ai ? "Here is what I will do." : "AI is not set up yet, so this is the simple version: it keeps your words as a note and spots payments and percentages. To create customers, projects and tasks from a sentence, add the ANTHROPIC_API_KEY secret."} Nothing is saved until you press Save.
       </p>
       {items.length === 0 ? <p className="text-sm">Nothing to do from that note.</p> : null}
       <ul className="space-y-3">
         {items.map(({ action, include }, index) => {
           const { label, detail } = describe(action);
-          const clientId = action.type === "project_update" ? null : action.client_id;
+          const clientId = pickableClient(action) ? action.client_id : null;
+          const forNew = "client_ref" in action && Boolean(action.client_ref);
           return (
             <li key={index} className={`rounded-lg border p-4 transition-colors ${include ? "border-foreground" : "border-border opacity-60"}`}>
               <label className="flex cursor-pointer items-start gap-3">
@@ -96,11 +122,12 @@ function Review({ initial, context, ai, onDone }: { initial: ProposedAction[]; c
                   <span className="mt-1 block whitespace-pre-wrap text-sm leading-6">{detail}</span>
                 </span>
               </label>
-              {action.type !== "project_update" && include ? (
+              {forNew && include ? <p className="mt-2 pl-7 text-xs text-muted-foreground">For the new customer above.</p> : null}
+              {pickableClient(action) && include ? (
                 <div className="mt-3 pl-7">
                   <label className="sr-only" htmlFor={`qn-client-${index}`}>Client</label>
                   <select id={`qn-client-${index}`} value={clientId ?? ""} onChange={(event) => setClient(index, event.target.value)} className={field}>
-                    <option value="">{action.type === "task" ? "No client" : "Choose a client"}</option>
+                    <option value="">{action.type === "create_task" || action.type === "reminder" ? "No client" : "Choose a client"}</option>
                     {context.clients.map((client) => (
                       <option key={client.id} value={client.id}>
                         {client.name}
@@ -125,7 +152,7 @@ function Review({ initial, context, ai, onDone }: { initial: ProposedAction[]; c
         <button type="button" onClick={onDone} className="press rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted">
           Back
         </button>
-        {needsClient ? <span className="text-xs text-muted-foreground">Pick a client for each note or payment.</span> : null}
+        {needsClient ? <span className="text-xs text-muted-foreground">Pick a client for each item that needs one.</span> : null}
         {state.error ? <span role="alert" className="text-sm font-medium">{state.error}</span> : null}
       </div>
     </form>
@@ -180,7 +207,7 @@ function NoteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const showReview = reviewing && state.actions && state.context;
 
   return (
-    <Modal open={open} onClose={onClose} title="Quick note" description="Say what happened. I will turn it into notes, tasks and updates for you to confirm.">
+    <Modal open={open} onClose={onClose} title="Quick note" description="Say what happened or what you want done. I will turn it into customers, projects, tasks, notes, payments, invoices and reminders for you to confirm.">
       {showReview ? (
         <Review
           key={reviewKey}
@@ -249,6 +276,25 @@ function NoteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   );
 }
 
+/** A failure inside the dialog must never take the whole CRM down with it. */
+class NoteBoundary extends Component<{ children: ReactNode; onClose: () => void }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <Modal open onClose={this.props.onClose} title="Quick note">
+        <p className="text-sm leading-6">Quick note ran into a problem on this device. Nothing was saved. Close this and try again.</p>
+        <button type="button" onClick={this.props.onClose} className="press mt-5 rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted">
+          Close
+        </button>
+      </Modal>
+    );
+  }
+}
+
 /** Opens the quick-note dialog. `variant="widget"` is the big card on the home screen. */
 export function QuickNote({ variant = "button" }: { variant?: "button" | "widget" }) {
   const [open, setOpen] = useState(false);
@@ -279,7 +325,11 @@ export function QuickNote({ variant = "button" }: { variant?: "button" | "widget
           <span className="max-sm:sr-only">Quick note</span>
         </button>
       )}
-      {open ? <NoteDialog open={open} onClose={close} /> : null}
+      {open ? (
+        <NoteBoundary onClose={close}>
+          <NoteDialog open={open} onClose={close} />
+        </NoteBoundary>
+      ) : null}
     </>
   );
 }
