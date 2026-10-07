@@ -1377,3 +1377,15 @@ html:has(.site) {
 @media (prefers-reduced-motion: reduce) {
   .widget-in { animation: none; }
 }
+
+/* Lock In hourglass: a thin stream of sand between the bulbs. */
+@keyframes lock-in-stream {
+  to { stroke-dashoffset: -12; }
+}
+.lock-in-stream {
+  stroke-dasharray: 3 3;
+  animation: lock-in-stream 0.5s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lock-in-stream { animation: none; stroke-dasharray: none; }
+}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CountUp } from "@/components/money";
 import { Icon } from "@/components/icons";
 import { homeWidgets, type IconName } from "@/lib/nav";
+import { LockInWidget } from "./lock-in/lock-in";
 import { QuickNote } from "./quick-note/quick-note";
 
 type Counts = Partial<Record<string, { value: number; label: string }>>;
@@ -13,6 +14,12 @@ type Counts = Partial<Record<string, { value: number; label: string }>>;
 export function HomeWidgets({ counts }: { counts: Counts }) {
   return (
     <section aria-label="Sections" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <div className="widget-in col-span-2" style={{ "--i": 0 } as React.CSSProperties}>
+        <LockInWidget />
+      </div>
+      <div className="widget-in col-span-2" style={{ "--i": 1 } as React.CSSProperties}>
+        <QuickNote variant="widget" />
+      </div>
       {homeWidgets.map((widget, index) => {
         const count = counts[widget.href];
         const hero = widget.href === "/app/clients";
@@ -20,8 +27,9 @@ export function HomeWidgets({ counts }: { counts: Counts }) {
           <Link
             key={widget.href}
             href={widget.href}
-            style={{ "--i": index } as React.CSSProperties}
-            className={`widget-in press group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border bg-background p-5 transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-foreground hover:shadow-lg sm:p-6 ${
+            prefetch
+            style={{ "--i": index + 2 } as React.CSSProperties}
+            className={`widget-in press group relative flex flex-col justify-between overflow-hidden rounded-2xl border-[1.5px] border-foreground/30 bg-background p-5 transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-foreground hover:shadow-lg sm:p-6 ${
               hero ? "col-span-2 row-span-2 min-h-56 bg-muted/50" : "min-h-36"
             }`}
           >
@@ -48,9 +56,6 @@ export function HomeWidgets({ counts }: { counts: Counts }) {
           </Link>
         );
       })}
-      <div className="widget-in col-span-2" style={{ "--i": homeWidgets.length } as React.CSSProperties}>
-        <QuickNote variant="widget" />
-      </div>
     </section>
   );
 }

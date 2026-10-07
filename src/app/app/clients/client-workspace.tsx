@@ -142,7 +142,7 @@ export function ClientWorkspace({
                 type="button"
                 onClick={() => setTab(section.tab)}
                 style={{ "--i": index } as React.CSSProperties}
-                className="widget-in press group flex min-h-36 flex-col justify-between rounded-2xl border border-border bg-background p-5 text-left transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-foreground hover:shadow-lg"
+                className="widget-in press group flex min-h-36 flex-col justify-between rounded-2xl border-[1.5px] border-foreground/30 bg-background p-5 text-left transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-foreground hover:shadow-lg"
               >
                 <span className="flex items-start justify-between">
                   <span className="flex size-10 items-center justify-center rounded-full border border-border transition-transform duration-300 group-hover:scale-110">

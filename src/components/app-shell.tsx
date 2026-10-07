@@ -1,23 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState, type ReactNode } from "react";
+import { CrmLogo } from "@/components/crm-logo";
 import { Icon } from "@/components/icons";
 import { Modal } from "@/components/modal";
 import { homeWidgets, navItems, type IconName } from "@/lib/nav";
 import { signOut } from "@/app/actions/auth";
 import { QuickNote } from "@/app/app/quick-note/quick-note";
+import { LockInProvider } from "@/app/app/lock-in/lock-in";
 
 function Wordmark() {
   return (
-    <Link href="/app" className="flex items-center gap-3">
-      <span aria-hidden className="block size-3 rounded-[3px] bg-foreground" />
-      <span className="wordmark text-xl font-bold tracking-tight" data-text="Agency Zero">
-        Agency Zero
-      </span>
+    <Link href="/app" aria-label="Agency Zero home" className="press">
+      <CrmLogo />
     </Link>
   );
+}
+
+/** Warm every section once the browser is idle so the first tap on any widget is instant. */
+function usePrefetchSections() {
+  const router = useRouter();
+  useEffect(() => {
+    const hrefs = [...homeWidgets.map((item) => item.href), "/app/settings"];
+    const warm = () => hrefs.forEach((href) => router.prefetch(href));
+    const idle = window as Window & { requestIdleCallback?: (cb: () => void) => number; cancelIdleCallback?: (id: number) => void };
+    if (typeof idle.requestIdleCallback === "function") {
+      const id = idle.requestIdleCallback(warm);
+      return () => idle.cancelIdleCallback?.(id);
+    }
+    const timer = window.setTimeout(warm, 400);
+    return () => window.clearTimeout(timer);
+  }, [router]);
 }
 
 /**
@@ -29,6 +44,7 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
   const pathname = usePathname();
   const isHome = pathname === "/app";
   const [menuOpen, setMenuOpen] = useState(false);
+  usePrefetchSections();
 
   return (
     <div className="min-h-screen">
@@ -66,6 +82,7 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  prefetch
                   onClick={() => setMenuOpen(false)}
                   className="press flex items-center gap-3 rounded-lg border border-border px-4 py-3 text-sm transition-colors hover:bg-muted"
                 >
@@ -83,9 +100,11 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
         </nav>
       </Modal>
 
-      <main>
-        <div className="mx-auto w-full max-w-6xl px-5 py-8 lg:px-8 lg:py-10">{children}</div>
-      </main>
+      <LockInProvider>
+        <main>
+          <div className="mx-auto w-full max-w-6xl px-5 py-8 lg:px-8 lg:py-10">{children}</div>
+        </main>
+      </LockInProvider>
     </div>
   );
 }

@@ -200,7 +200,7 @@ export function RecurringRevenue({ summary }: { summary: DashboardSummary }) {
   const { recurring, currency } = summary;
 
   return (
-    <section aria-labelledby="recurring-heading" className="mt-14">
+    <section aria-labelledby="recurring-heading">
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <h2
           id="recurring-heading"
@@ -389,7 +389,7 @@ export function WaitingOnClient({ summary }: { summary: DashboardSummary }) {
 
 export function RecentActivity({ summary }: { summary: DashboardSummary }) {
   return (
-    <section className="mt-14">
+    <section>
       <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
         Recent activity
       </h2>
@@ -447,7 +447,7 @@ export function DeliveryPanel({
 }) {
   if (shoots === null && openBugs === null) return null;
   return (
-    <section aria-labelledby="delivery-heading" className="mt-14">
+    <section aria-labelledby="delivery-heading">
       <h2 id="delivery-heading" className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
         Delivery
       </h2>

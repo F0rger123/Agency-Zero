@@ -7,6 +7,7 @@ import { todayIso } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { DataFailure, MigrationsRequired, SetupRequired } from "@/components/states";
 import { HomeWidgets } from "./home-widgets";
+import { AgendaPanel, InvoicesPanel, Panel, RemindersPanel, type AgendaEvent, type InvoiceRow, type ReminderRow } from "./home-panels";
 import {
   DeliveryPanel,
   type UpcomingShoot,
@@ -52,7 +53,8 @@ export default async function DashboardPage() {
   const today = todayIso();
   // Two cheap aggregates in parallel. Revenue is a separate read model so a
   // missing migration 0018 degrades only the revenue cards, never the dashboard.
-  const [{ data, error }, revenueResponse, leadsResponse, shootsResponse, bugsResponse] = await Promise.all([
+  const nowIso = new Date().toISOString();
+  const [{ data, error }, revenueResponse, leadsResponse, shootsResponse, eventsResponse, remindersResponse, unpaidResponse, bugsResponse] = await Promise.all([
     retryOnClockSkew(() => supabase.rpc("get_dashboard_summary", { p_today: today })),
     retryOnClockSkew(() => supabase.rpc("get_revenue_summary", { p_today: today })),
     // New website inquiries (migration 0019). Errors (e.g. not applied yet) just hide the strip.
@@ -66,10 +68,21 @@ export default async function DashboardPage() {
       .order("shoot_date")
       .order("start_time", { nullsFirst: false })
       .limit(5),
+    supabase.from("calendar_events").select("id, title, type, starts_at").gte("starts_at", nowIso).order("starts_at").limit(5),
+    supabase.from("reminders").select("id, message, due_at").eq("done", false).order("due_at").limit(5),
+    supabase
+      .from("invoices")
+      .select("id, number, title, due_on, balance_cents, currency, clients(name)")
+      .in("status", ["sent", "partially_paid", "overdue"])
+      .order("due_on")
+      .limit(5),
     supabase.from("tasks").select("severity").eq("kind", "bug").not("status", "in", "(done,cancelled)").limit(500),
   ]);
   const upcomingShoots = (shootsResponse.error ? null : (shootsResponse.data ?? [])) as unknown as UpcomingShoot[] | null;
   const openBugs = bugsResponse.error ? null : (bugsResponse.data ?? []) as { severity: string | null }[];
+  const events = (eventsResponse.error ? null : (eventsResponse.data ?? [])) as AgendaEvent[] | null;
+  const reminders = (remindersResponse.error ? null : (remindersResponse.data ?? [])) as ReminderRow[] | null;
+  const unpaid = (unpaidResponse.error ? null : (unpaidResponse.data ?? [])) as unknown as InvoiceRow[] | null;
   const newLeads = leadsResponse.error ? 0 : (leadsResponse.count ?? 0);
   const revenue = revenueResponse.error ? null : (revenueResponse.data as RevenueSummary | null);
 
@@ -135,24 +148,35 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="mt-14">
-        <KpiGrid summary={summary} />
+      <div className="mt-12 grid gap-4 lg:grid-cols-2">
+        <Panel className="lg:col-span-2">
+          <KpiGrid summary={summary} />
+        </Panel>
+        <AgendaPanel events={events} />
+        <RemindersPanel reminders={reminders} now={nowIso} />
+        <Panel>
+          <UpcomingDeadlines summary={summary} />
+        </Panel>
+        <Panel>
+          <WaitingOnClient summary={summary} />
+        </Panel>
+        <InvoicesPanel invoices={unpaid} today={today} />
+        {upcomingShoots !== null || openBugs !== null ? (
+          <Panel>
+            <DeliveryPanel
+              shoots={upcomingShoots}
+              openBugs={openBugs ? openBugs.length : null}
+              criticalBugs={openBugs ? openBugs.filter((bug) => bug.severity === "critical").length : 0}
+            />
+          </Panel>
+        ) : null}
+        <Panel className="lg:col-span-2">
+          <RecentActivity summary={summary} />
+        </Panel>
+        <Panel className="lg:col-span-2">
+          <RecurringRevenue summary={summary} />
+        </Panel>
       </div>
-
-      <DeliveryPanel
-        shoots={upcomingShoots}
-        openBugs={openBugs ? openBugs.length : null}
-        criticalBugs={openBugs ? openBugs.filter((bug) => bug.severity === "critical").length : 0}
-      />
-
-      <RecurringRevenue summary={summary} />
-
-      <div className="mt-14 grid gap-12 lg:grid-cols-2">
-        <UpcomingDeadlines summary={summary} />
-        <WaitingOnClient summary={summary} />
-      </div>
-
-      <RecentActivity summary={summary} />
     </>
   );
 }
