@@ -9,7 +9,7 @@ import { Modal } from "@/components/modal";
 import { homeWidgets, navItems, type IconName } from "@/lib/nav";
 import { signOut } from "@/app/actions/auth";
 import { QuickNote } from "@/app/app/quick-note/quick-note";
-import { LockInProvider } from "@/app/app/lock-in/lock-in";
+import { LockInButton, LockInProvider } from "@/app/app/lock-in/lock-in";
 
 function Wordmark() {
   return (
@@ -61,14 +61,19 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
             </Link>
           )}
           <div className="ml-auto flex items-center gap-2">
+            <LockInButton />
             <QuickNote />
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
               aria-label="All sections"
-              className="press inline-flex items-center gap-2 rounded-full border border-border px-3.5 py-2 text-sm font-medium transition-colors hover:bg-muted"
+              className="press group inline-flex items-center gap-2 rounded-full border border-border px-3.5 py-2 text-sm font-medium transition-[background-color,border-color] hover:border-foreground hover:bg-muted"
             >
-              <Icon name="menu" className="size-4" />
+              <span aria-hidden className="menu-bars relative block h-3 w-4">
+                <span className="menu-bar menu-bar-1" />
+                <span className="menu-bar menu-bar-2" />
+                <span className="menu-bar menu-bar-3" />
+              </span>
               <span className="max-sm:sr-only">Menu</span>
             </button>
           </div>

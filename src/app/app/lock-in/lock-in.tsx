@@ -162,6 +162,24 @@ export function LockInProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/** Top-bar button, left of Quick note. The hourglass flips on hover. */
+export function LockInButton() {
+  const ctx = useLockIn();
+  const session = useStoredSession();
+  const live = session && session.status !== "done";
+  return (
+    <button
+      type="button"
+      onClick={ctx?.open}
+      className="press group relative inline-flex items-center gap-2 rounded-full border border-border px-3.5 py-2 text-sm font-medium transition-[background-color,border-color] hover:border-foreground hover:bg-muted"
+    >
+      <Hourglass progress={0.5} running={false} className="size-4 transition-transform duration-500 ease-[var(--ease-out)] group-hover:rotate-180" />
+      <span className="max-sm:sr-only">Lock In</span>
+      {live ? <span aria-label={session.status === "running" ? "Session running" : "Session paused"} className="size-2 rounded-full bg-foreground" /> : null}
+    </button>
+  );
+}
+
 /** The home-screen card. */
 export function LockInWidget() {
   const ctx = useLockIn();

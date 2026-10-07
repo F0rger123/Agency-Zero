@@ -3,7 +3,6 @@ import { CountUp } from "@/components/money";
 import { Icon } from "@/components/icons";
 import { homeWidgets, type IconName } from "@/lib/nav";
 import { LockInWidget } from "./lock-in/lock-in";
-import { QuickNote } from "./quick-note/quick-note";
 
 type Counts = Partial<Record<string, { value: number; label: string }>>;
 
@@ -14,11 +13,8 @@ type Counts = Partial<Record<string, { value: number; label: string }>>;
 export function HomeWidgets({ counts }: { counts: Counts }) {
   return (
     <section aria-label="Sections" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-      <div className="widget-in col-span-2" style={{ "--i": 0 } as React.CSSProperties}>
+      <div className="widget-in col-span-2 lg:col-span-4" style={{ "--i": 0 } as React.CSSProperties}>
         <LockInWidget />
-      </div>
-      <div className="widget-in col-span-2" style={{ "--i": 1 } as React.CSSProperties}>
-        <QuickNote variant="widget" />
       </div>
       {homeWidgets.map((widget, index) => {
         const count = counts[widget.href];

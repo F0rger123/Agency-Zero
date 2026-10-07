@@ -1389,3 +1389,31 @@ html:has(.site) {
 @media (prefers-reduced-motion: reduce) {
   .lock-in-stream { animation: none; stroke-dasharray: none; }
 }
+
+/* Top-bar hover motion. */
+@keyframes mic-ring {
+  0% { opacity: 0.7; transform: scale(0.7); }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+.group:hover .mic-ring { animation: mic-ring 0.9s ease-out infinite; }
+.mic-icon { transition: transform 0.3s var(--ease-out); }
+.group:hover .mic-icon { transform: scale(1.18) rotate(-8deg); }
+
+.menu-bar {
+  position: absolute;
+  left: 0;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+  transition: transform 0.35s var(--ease-out), width 0.35s var(--ease-out);
+}
+.menu-bar-1 { top: 0; width: 100%; }
+.menu-bar-2 { top: 50%; margin-top: -0.75px; width: 70%; }
+.menu-bar-3 { bottom: 0; width: 100%; }
+.group:hover .menu-bar-1 { transform: translateX(3px); width: 70%; }
+.group:hover .menu-bar-2 { width: 100%; }
+.group:hover .menu-bar-3 { transform: translateX(3px); width: 70%; }
+@media (prefers-reduced-motion: reduce) {
+  .group:hover .mic-ring { animation: none; }
+  .group:hover .mic-icon, .group:hover .menu-bar { transform: none; }
+}

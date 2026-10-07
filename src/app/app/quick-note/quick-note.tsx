@@ -295,36 +295,23 @@ class NoteBoundary extends Component<{ children: ReactNode; onClose: () => void 
   }
 }
 
-/** Opens the quick-note dialog. `variant="widget"` is the big card on the home screen. */
-export function QuickNote({ variant = "button" }: { variant?: "button" | "widget" }) {
+/** The top-bar button that opens the quick-note dialog. The mic wobbles and a ring pulses on hover. */
+export function QuickNote() {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   return (
     <>
-      {variant === "widget" ? (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="press group flex h-full min-h-40 w-full flex-col justify-between rounded-2xl border border-border bg-inverted p-6 text-left text-inverted-foreground transition-transform duration-300 hover:-translate-y-0.5"
-        >
-          <span className="flex size-12 items-center justify-center rounded-full border border-inverted-foreground/30 transition-transform duration-300 group-hover:scale-110">
-            <Icon name="mic" className="size-6" />
-          </span>
-          <span>
-            <span className="block text-xl font-semibold tracking-tight">Quick note</span>
-            <span className="mt-1 block text-sm opacity-70">Say what happened. It files itself.</span>
-          </span>
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="press inline-flex items-center gap-2 rounded-full border border-border px-3.5 py-2 text-sm font-medium transition-colors hover:bg-muted"
-        >
-          <Icon name="mic" className="size-4" />
-          <span className="max-sm:sr-only">Quick note</span>
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="press group inline-flex items-center gap-2 rounded-full border border-border px-3.5 py-2 text-sm font-medium transition-[background-color,border-color] hover:border-foreground hover:bg-muted"
+      >
+        <span className="relative flex size-4 items-center justify-center">
+          <span aria-hidden className="mic-ring absolute inset-[-6px] rounded-full border border-foreground opacity-0" />
+          <Icon name="mic" className="mic-icon relative size-4" />
+        </span>
+        <span className="max-sm:sr-only">Quick note</span>
+      </button>
       {open ? (
         <NoteBoundary onClose={close}>
           <NoteDialog open={open} onClose={close} />
