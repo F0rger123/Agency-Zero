@@ -76,7 +76,7 @@ export type DashboardSummary = {
 function Stat({ label, value, note }: { label: string; value: ReactNode; note?: string }) {
   return (
     <div className="h-full min-w-0 bg-background p-5 sm:p-6">
-      <p className="break-words text-2xl font-semibold tracking-tight sm:text-3xl">{typeof value === "number" ? <CountUp value={value} /> : value}</p>
+      <p className="break-words text-xl font-semibold tracking-tight sm:text-3xl">{typeof value === "number" ? <CountUp value={value} /> : value}</p>
       <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
         {label}
       </p>
@@ -219,32 +219,32 @@ export function RecurringRevenue({ summary }: { summary: DashboardSummary }) {
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4">
-        <div className="bg-background p-6">
-          <p className="text-3xl font-semibold tracking-tight">
+        <div className="min-w-0 bg-background p-4 sm:p-6">
+          <p className="break-words text-xl font-semibold tracking-tight sm:text-3xl">
             {moneyNode(recurring.mrr_cents, currency)}
           </p>
           <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
             MRR
           </p>
         </div>
-        <div className="bg-background p-6">
-          <p className="text-3xl font-semibold tracking-tight">
+        <div className="min-w-0 bg-background p-4 sm:p-6">
+          <p className="break-words text-xl font-semibold tracking-tight sm:text-3xl">
             {moneyNode(recurring.arr_cents, currency)}
           </p>
           <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
             ARR
           </p>
         </div>
-        <div className="bg-background p-6">
-          <p className="text-3xl font-semibold tracking-tight">
+        <div className="min-w-0 bg-background p-4 sm:p-6">
+          <p className="break-words text-xl font-semibold tracking-tight sm:text-3xl">
             {recurring.recurring_client_count}
           </p>
           <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
             Recurring clients
           </p>
         </div>
-        <div className="bg-background p-6">
-          <p className="text-3xl font-semibold tracking-tight">
+        <div className="min-w-0 bg-background p-4 sm:p-6">
+          <p className="break-words text-xl font-semibold tracking-tight sm:text-3xl">
             {recurring.recurring_service_count}
           </p>
           <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
