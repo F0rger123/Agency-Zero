@@ -13,7 +13,7 @@ import { LockInButton, LockInProvider } from "@/app/app/lock-in/lock-in";
 
 function Wordmark() {
   return (
-    <Link href="/app" aria-label="Agency Zero home" className="press">
+    <Link href="/" prefetch={false} aria-label="Agency Zero website" className="press">
       <CrmLogo />
     </Link>
   );
@@ -47,7 +47,8 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
   usePrefetchSections();
 
   return (
-    <div className="min-h-screen">
+    <LockInProvider>
+      <div className="min-h-screen">
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-3 px-5 lg:px-8">
           <Wordmark />
@@ -105,11 +106,10 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
         </nav>
       </Modal>
 
-      <LockInProvider>
-        <main>
-          <div className="mx-auto w-full max-w-6xl px-5 py-8 lg:px-8 lg:py-10">{children}</div>
-        </main>
-      </LockInProvider>
-    </div>
+      <main>
+        <div className="mx-auto w-full max-w-6xl px-5 py-8 lg:px-8 lg:py-10">{children}</div>
+      </main>
+      </div>
+    </LockInProvider>
   );
 }

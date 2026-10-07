@@ -15,7 +15,7 @@
   --color-inverted: #0a0a0a;
   --color-inverted-foreground: #ffffff;
   /* Money only: the one hue in the CRM, so currency reads at a glance. */
-  --color-money: #15803d;
+  --color-money: #1fa34a;
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, "Noto Sans", sans-serif;

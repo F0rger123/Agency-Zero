@@ -15,7 +15,6 @@ import {
   RevenueCards,
   type RevenueSummary,
   RecentActivity,
-  RecurringRevenue,
   UpcomingDeadlines,
   WaitingOnClient,
   type DashboardSummary,
@@ -172,9 +171,6 @@ export default async function DashboardPage() {
         ) : null}
         <Panel className="lg:col-span-2">
           <RecentActivity summary={summary} />
-        </Panel>
-        <Panel className="lg:col-span-2">
-          <RecurringRevenue summary={summary} />
         </Panel>
       </div>
     </>
