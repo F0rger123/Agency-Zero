@@ -1,16 +1,17 @@
+import { ZeroMark } from "@/components/zero-mark";
+
 /**
- * Instant feedback while a section loads. Next.js shows this the moment a link is tapped (and can prefetch
- * it), so moving between sections never feels stuck. Quiet blocks, no spinner, no layout shift.
+ * Shown the instant a section is tapped, while its data loads. A thin bar sweeps across the top and the
+ * zero draws itself in a loop. Quiet, centered, and it never shifts the layout.
  */
 export default function Loading() {
   return (
-    <div aria-busy="true" aria-label="Loading" className="animate-pulse">
-      <div className="h-7 w-48 rounded-md bg-muted" />
-      <div className="mt-3 h-4 w-80 max-w-full rounded-md bg-muted" />
-      <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, index) => (
-          <div key={index} className="h-32 rounded-2xl border border-border bg-muted/40" />
-        ))}
+    <div aria-busy="true" aria-label="Loading" role="status">
+      <div className="fixed inset-x-0 top-16 z-20 h-0.5 overflow-hidden">
+        <div className="loader-bar h-full w-1/3 bg-foreground" />
+      </div>
+      <div className="flex min-h-[55vh] items-center justify-center">
+        <ZeroMark className="size-14 text-foreground" draw loop />
       </div>
     </div>
   );

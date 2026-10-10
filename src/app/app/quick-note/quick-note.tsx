@@ -3,6 +3,7 @@
 import { Component, useActionState, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon } from "@/components/icons";
 import { Modal } from "@/components/modal";
+import { useOnline } from "@/components/offline";
 import type { NoteContext, ProposedAction } from "@/lib/quick-note";
 import { applyNoteActionsAction, organizeNoteAction, type ApplyState, type OrganizeState } from "./actions";
 
@@ -159,6 +160,25 @@ function Review({ initial, context, ai, onDone }: { initial: ProposedAction[]; c
   );
 }
 
+const DRAFT_KEY = "az-note-drafts";
+
+function readDrafts(): string[] {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(DRAFT_KEY) ?? "[]");
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string").slice(0, 30) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeDrafts(list: string[]) {
+  try {
+    window.localStorage.setItem(DRAFT_KEY, JSON.stringify(list));
+  } catch {
+    // Storage blocked: the draft only lives until the dialog closes.
+  }
+}
+
 function NoteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [text, setText] = useState("");
   const [listening, setListening] = useState(false);
@@ -168,6 +188,10 @@ function NoteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [reviewKey, setReviewKey] = useState(0);
   const [reviewing, setReviewing] = useState(false);
   const supported = typeof window !== "undefined" && recognitionCtor() !== null;
+  const online = useOnline();
+  // Notes written with no connection wait here until there is one to organise them.
+  const [drafts, setDrafts] = useState<string[]>(readDrafts);
+  const [savedNotice, setSavedNotice] = useState("");
 
   const stop = useCallback(() => {
     recognition.current?.stop();
@@ -223,6 +247,15 @@ function NoteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
         <form
           action={(formData) => {
             stop();
+            if (!navigator.onLine) {
+              const next = [...drafts, text.trim()];
+              writeDrafts(next);
+              setDrafts(next);
+              setText("");
+              setSavedNotice("Saved on this device. Open Quick note again when you are back online to organise it.");
+              return;
+            }
+            setSavedNotice("");
             setReviewKey((key) => key + 1);
             setReviewing(true);
             organize(formData);
@@ -254,6 +287,31 @@ function NoteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
               </button>
             ) : null}
           </div>
+          {drafts.length > 0 && online ? (
+            <div className="rounded-lg border border-border p-3">
+              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Saved while offline</p>
+              <ul className="mt-2 space-y-2">
+                {drafts.map((draft, index) => (
+                  <li key={index} className="flex items-start justify-between gap-3 text-sm">
+                    <span className="min-w-0 truncate">{draft}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = drafts.filter((_, position) => position !== index);
+                        writeDrafts(next);
+                        setDrafts(next);
+                        setText((current) => (current ? `${current} ${draft}` : draft));
+                      }}
+                      className="press shrink-0 text-xs underline underline-offset-4"
+                    >
+                      Use
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {savedNotice ? <p role="status" className="text-sm font-medium">{savedNotice}</p> : null}
           {listening ? <p role="status" className="text-xs text-muted-foreground">Listening… tap the mic again when you are done.</p> : null}
           {!supported ? <p className="text-xs text-muted-foreground">Voice typing is not available in this browser. Use your keyboard&apos;s microphone key, or type.</p> : null}
           {voiceError ? <p role="alert" className="text-xs font-medium">{voiceError}</p> : null}
@@ -264,7 +322,7 @@ function NoteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
               disabled={pending || !text.trim()}
               className="press rounded-md bg-inverted px-4 py-2 text-sm font-medium text-inverted-foreground transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {pending ? "Organising…" : "Organise"}
+              {pending ? "Organising…" : online ? "Organise" : "Save for later"}
             </button>
             <button type="button" onClick={onClose} className="press rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted">
               Cancel

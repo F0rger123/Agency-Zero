@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { getAccessState } from "@/lib/access";
 import { MigrationWarning, NoAccess } from "@/components/no-access";
 import { AppShell } from "@/components/app-shell";
+import { AppSplash } from "@/components/app-splash";
 import { SetupRequired } from "@/components/states";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
@@ -58,9 +59,12 @@ export default async function AppLayout({
   }
 
   return (
-    <AppShell email={session.user.email}>
-      {access.status === "legacy" ? <MigrationWarning /> : null}
-      {children}
-    </AppShell>
+    <>
+      <AppSplash />
+      <AppShell email={session.user.email}>
+        {access.status === "legacy" ? <MigrationWarning /> : null}
+        {children}
+      </AppShell>
+    </>
   );
 }

@@ -88,3 +88,6 @@ Statuses: `Idea` → `Exploring` → `Scheduled` (moved into spec/roadmap) → `
 - Shoots: create the prep tasks / a "shoot day" reminder automatically from a schedule; link finished shoots to social_posts (content calendar); per-client shoot packages in the services catalogue.
 - Work items: paste-a-message extraction into bugs/feature requests (needs the AI proposal layer first); client-facing status page for their bugs and requests.
 
+## Offline writes (2026-10-10)
+Queue creates/edits made offline (tasks, notes, time entries first; never payments or invoices) with client-generated ids, replay on reconnect, and show conflicts. Needs an `idempotency_key` on the target tables and a visible "waiting to sync" list.
+

@@ -1,5 +1,15 @@
 # Handoff log (newest first)
 
+## 2026-10-10 — Claude — offline mode, install as app, opening splash, loader, DB check script
+
+**No migrations.** New read-only helper: `supabase/scripts/check-applied.sql` (lists which of 0020/0022–0026 are applied; changes nothing; verified against a fresh database with every migration applied). `/app/system` remains the in-app check.
+
+- **Offline** (`public/sw.js`, `src/components/offline.tsx`, `public/offline.html`, `public/_headers`): service worker caches static assets (cache first) and pages (network first, 4 s timeout, fall back to the last copy on the device). Redirects, `/api`, `/auth`, `/login` and every non-GET request are never touched. After the owner opens the CRM the main sections are quietly saved once per 6 h. Sign-out clears every cached page. Offline bar shows while the device has no connection. Lock In already worked offline (localStorage). Quick note saves a draft on the device when offline and offers it again when back online.
+- **Honest limits**: offline is read-only for CRM data (last saved copy). Creating or editing records, payments, and AI organising need a connection (they are server actions on Supabase). A full offline-write queue with sync and conflict handling is a separate project (see "Offline writes" in IDEAS). Pages never opened on the device show `offline.html`.
+- **Install as an app**: `src/app/manifest.ts` (start_url `/app`, standalone, black splash colour, icons in `public/icons`). Browser menu → Install / Add to Home Screen.
+- **Opening splash** (`AppSplash`, CSS only): the zero draws itself, the name rises letter by letter, fades out (~2.4 s). Plays on a full load, once per browser session; client navigation never replays it. **Loader** (`src/app/app/loading.tsx`) is now a top sweep bar plus a looping zero, replacing the grey skeleton blocks.
+- Unverified on real phones/Safari (service worker + standalone install). Verify: open the CRM online, browse a few sections, switch to airplane mode, reopen.
+
 ## 2026-10-06 (2) — Claude — CRM redesign: widget home, customer hub, dialogs/wizards, delete, one-time charges, quick note
 
 **No migrations in this round.** Nothing to apply. One optional env var: `ANTHROPIC_API_KEY` (Cloudflare Worker **Secret**, never `NEXT_PUBLIC_`). Without it, Quick note still works with a simple offline organiser.

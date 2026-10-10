@@ -1417,3 +1417,72 @@ html:has(.site) {
   .group:hover .mic-ring { animation: none; }
   .group:hover .mic-icon, .group:hover .menu-bar { transform: none; }
 }
+
+/* The zero mark: strokes that draw themselves. */
+@keyframes zero-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+.zero-ring, .zero-slash { stroke-dasharray: 1; stroke-dashoffset: 1; animation: zero-draw 0.9s var(--ease-out) forwards; }
+.zero-slash { animation-delay: 0.35s; animation-duration: 0.6s; }
+.zero-loop { animation: zero-loop 1.6s ease-in-out infinite; }
+.zero-slash.zero-loop { animation-delay: 0.2s; }
+@keyframes zero-loop {
+  0% { stroke-dashoffset: 1; }
+  55% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -1; }
+}
+@keyframes loader-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+.loader-bar { animation: loader-sweep 1.1s ease-in-out infinite; }
+
+/* Opening splash for the CRM. */
+.app-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  color: #fff;
+  animation: splash-out 0.55s ease-in 1.85s forwards;
+}
+html[data-splash="seen"] .app-splash { display: none; }
+.app-splash-inner { display: flex; flex-direction: column; align-items: center; }
+.app-splash-mark { width: 9rem; height: 9rem; }
+.app-splash-name {
+  margin: 1rem 0 0;
+  display: flex;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.4em;
+  padding-left: 0.4em; /* balances the trailing letter-spacing so the name sits dead center */
+}
+.app-splash-name span {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: splash-letter 0.5s var(--ease-out) forwards;
+  animation-delay: calc(0.75s + var(--i, 0) * 0.04s);
+}
+.app-splash-line {
+  display: block;
+  margin-top: 1.75rem;
+  height: 1px;
+  width: 12rem;
+  background: rgb(255 255 255 / 0.55);
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: splash-line 1.1s var(--ease-out) 0.6s forwards;
+}
+@keyframes splash-letter { to { opacity: 1; transform: none; } }
+@keyframes splash-line { to { transform: scaleX(1); } }
+@keyframes splash-out { to { opacity: 0; visibility: hidden; pointer-events: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .app-splash { animation-duration: 0.3s; animation-delay: 0.6s; }
+  .zero-ring, .zero-slash, .app-splash-name span, .app-splash-line { animation: none; stroke-dashoffset: 0; opacity: 1; transform: none; }
+  .loader-bar { animation: none; }
+}
