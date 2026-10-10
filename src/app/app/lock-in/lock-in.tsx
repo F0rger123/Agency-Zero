@@ -302,7 +302,7 @@ function Setup() {
   return (
     <div className="grid flex-1 gap-8 py-6 lg:grid-cols-[minmax(0,320px)_1fr] lg:gap-12">
       <div className="flex flex-col items-center text-center">
-        <Hourglass progress={0} running={false} className="h-[min(12rem,26dvh)] w-auto sm:h-64" />
+        <Hourglass progress={0} running={false} className="h-48 w-auto sm:h-64" />
         <p className="mt-4 text-5xl font-semibold tabular-nums tracking-tight sm:text-6xl">{clock(minutes * 60_000)}</p>
         <p className="mt-1 text-sm text-muted-foreground">How long are you locking in for?</p>
         <div className="mt-5 flex flex-wrap justify-center gap-2" role="group" aria-label="Duration">
@@ -499,8 +499,8 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
   return (
     <div className="grid flex-1 gap-8 py-6 lg:grid-cols-[minmax(0,360px)_1fr] lg:gap-12">
       <div className="flex flex-col items-center text-center">
-        <Hourglass progress={frac} running={session.status === "running"} className="h-[min(14rem,30dvh)] w-auto sm:h-72" />
-        <p aria-live="off" className="mt-4 text-5xl font-semibold tabular-nums tracking-tight sm:text-7xl">
+        <Hourglass progress={frac} running={session.status === "running"} className="h-56 w-auto sm:h-72" />
+        <p aria-live="off" className="mt-4 text-6xl font-semibold tabular-nums tracking-tight sm:text-7xl">
           {done ? "00:00" : clock(left)}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">

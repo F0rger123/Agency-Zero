@@ -1452,14 +1452,14 @@ html:has(.site) {
 }
 html[data-splash="seen"] .app-splash { display: none; }
 .app-splash-inner { display: flex; flex-direction: column; align-items: center; }
-.app-splash-mark { width: min(8rem, 30vw, 22dvh); height: min(8rem, 30vw, 22dvh); }
+.app-splash-mark { width: 9rem; height: 9rem; }
 .app-splash-name {
   margin: 1rem 0 0;
   display: flex;
-  font-size: clamp(0.7rem, 3.2vw, 0.95rem);
+  font-size: 1rem;
   font-weight: 600;
-  letter-spacing: 0.34em;
-  padding-left: 0.34em; /* balances the trailing letter-spacing so the name sits dead center */
+  letter-spacing: 0.4em;
+  padding-left: 0.4em; /* balances the trailing letter-spacing so the name sits dead center */
 }
 .app-splash-name span {
   display: inline-block;
@@ -1472,7 +1472,7 @@ html[data-splash="seen"] .app-splash { display: none; }
   display: block;
   margin-top: 1.75rem;
   height: 1px;
-  width: min(11rem, 52vw);
+  width: 12rem;
   background: rgb(255 255 255 / 0.55);
   transform: scaleX(0);
   transform-origin: left;
