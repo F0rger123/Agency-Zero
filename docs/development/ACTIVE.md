@@ -13,6 +13,7 @@ Claim work here before starting; move to "Recently done" (with commit) when fini
 - P1 item 6: unified work items (task/bug/feature_request) — migration `0016`.
 
 ## Recently done
+- 2026-10-10: L&M Tire and Wheel prospect landing page (static, `clients/lm-tire-wheel/`, not deployed).
 - 2026-10-10: meeting notes, estimates, client portal (0027), fresh-project install scripts, offline mode, splash/loader.
 - 2026-10-06: CRM redesign (no sidebar, widget home, customer hub), dialogs/wizards for all creation, delete project/task/shoot/schedule, one-time charges, voice quick note, green animated money, project quick edit.
 - 2026-10-06: public copy/positioning/contact pass; CRM passkeys (0026) + login redesign.

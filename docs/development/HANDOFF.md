@@ -1,5 +1,13 @@
 # Handoff log (newest first)
 
+## 2026-10-10 (3) — Claude — L&M Tire and Wheel landing page (prospect pitch)
+
+**No migrations, no app code changed.** New static folder `clients/lm-tire-wheel/` (index.html + WebP assets + README). It sits outside `public/`/`src/`, so it is **not deployed** with the site.
+- One-page redesign of lmtire-wheel.com using their copy, logo, brand red (#EE2738), gallery photos, services, staff-pick products/prices, Affirm, apparel, hours/areas, and 5 real Google reviews (4.9 from 2,127 reviews, scraped from their Maps listing).
+- Shopping/contact/financing link out to their existing RideStyler store. Live open/closed status. Lightbox gallery, mobile quick-action bar, JSON-LD TireShop.
+- Verified: headless Chromium at 1440px and 390px, no console errors, no horizontal overflow. The Maps iframe could not be verified offline (fallback map image shows).
+- Next: owner reviews it, re-checks product prices, and gets the business owner's OK before showing or hosting it publicly.
+
 ## 2026-10-10 (2) — Claude — meeting notes, estimates, client portal, fresh-project install scripts
 
 **Migration to apply: `0027_meetings_estimates_portal.sql`** (additive; app degrades to a "needs 0027" hint on each new screen if it is missing; `/app/system` has probes). The owner also said they never created a Supabase project for the CRM and will run SQL later: for a brand-new empty project run **every** migration in order with the generated files in `supabase/scripts/fresh/` (`00_README.txt` has the steps; regenerate with `OWNER_EMAIL=... supabase/scripts/build-fresh-install.sh`). Verified by applying all 28 generated files to an empty database (all checks pass, owner row set). I could not create the Supabase project myself: no Supabase connector is connected to this session (see below).
