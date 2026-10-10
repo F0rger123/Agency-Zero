@@ -450,3 +450,52 @@ do $$ begin
   assert (select count(*) from public.social_posts) = 0, 'anon cannot read posts';
 end $$;
 reset role;
+
+-- ── meetings, estimates, client portal (0027) ─────────────────────────────
+reset role;
+reset request.jwt.claim.sub;
+insert into public.quotes (id, client_id, number, title, kind, status, public_token, public_token_hash, total_cents) values
+  ('30000000-0000-0000-0000-0000000000a1', '10000000-0000-0000-0000-000000000001', 'EST-1', 'Site estimate', 'estimate', 'sent', 'est-tok', 'est-hash', 120000),
+  ('30000000-0000-0000-0000-0000000000a2', '10000000-0000-0000-0000-000000000001', 'EST-DRAFT', 'Secret draft', 'estimate', 'draft', 'draft-tok', 'draft-hash', 99900);
+do $$ begin
+  assert (public.get_public_quote('est-hash') ->> 'kind') = 'estimate', 'public quote exposes its kind';
+  assert public.get_public_portal('nope') is null, 'unknown portal link returns nothing';
+end $$;
+-- portal is off until the owner enables it
+update public.clients set portal_token = 'portal-tok', portal_token_hash = 'portal-hash' where id = '10000000-0000-0000-0000-000000000001';
+do $$ begin assert public.get_public_portal('portal-hash') is null, 'a disabled portal returns nothing'; end $$;
+update public.clients set portal_enabled = true where id = '10000000-0000-0000-0000-000000000001';
+set role anon;
+do $$
+declare p jsonb := public.get_public_portal('portal-hash');
+begin
+  assert p ->> 'client_name' = 'Acme', 'anon portal shows the client';
+  assert jsonb_array_length(p -> 'quotes') >= 1, 'portal lists sent estimates/proposals';
+  assert not (p ->> 'quotes') like '%Secret draft%', 'portal never shows draft quotes';
+  assert (p ->> 'quotes') like '%est-tok%', 'portal carries the document link token';
+  assert (p ->> 'contracts') like '%ctok%', 'portal lists sent contracts';
+  assert (p ->> 'invoices') like '%INV-9%', 'portal lists issued invoices';
+  assert not (p ->> 'invoices') like '%INV-10%', 'portal never shows draft invoices';
+end $$;
+do $$ begin
+  assert (select count(*) from public.meetings) = 0, 'anon cannot read meetings';
+  assert (select count(*) from public.clients) = 0, 'anon cannot read clients (portal tokens stay private)';
+end $$;
+reset role;
+
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';   -- owner
+insert into public.meetings (client_id, title, notes, action_items)
+  values ('10000000-0000-0000-0000-000000000001', 'Kickoff', 'They want a warmer red.', '[{"text":"Send palette","done":false}]');
+update public.meetings set status = 'done', ended_at = now(), decisions = 'Go with option B';
+do $$ begin
+  assert (select count(*) from public.meetings) = 1, 'owner reads meetings';
+  assert (select status from public.meetings) = 'done', 'owner updates a meeting';
+end $$;
+select pg_temp.expect_error($q$insert into public.meetings (client_id, title) values ('10000000-0000-0000-0000-000000000001', '  ')$q$, 'check');
+select pg_temp.expect_error($q$insert into public.meetings (client_id, action_items) values ('10000000-0000-0000-0000-000000000001', '{}'::jsonb)$q$, 'check');
+select pg_temp.expect_error($q$update public.quotes set kind = 'invoice'$q$, 'check');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';   -- stranger
+do $$ begin assert (select count(*) from public.meetings) = 0, 'stranger cannot read meetings'; end $$;
+select pg_temp.expect_error($q$insert into public.meetings (client_id, title) values ('10000000-0000-0000-0000-000000000001', 'x')$q$, 'row-level security');
+reset role;

@@ -28,6 +28,8 @@ type Line = {
 };
 type Quote = {
   id: string;
+  /** "quote" or "estimate" (migration 0027); absent on a database that is behind. */
+  kind?: string;
   client_id: string;
   number: string;
   title: string;
@@ -297,6 +299,13 @@ function Fields({
         <div>
           <FieldLabel label="Title" htmlFor="quote-title" required />
           <TextInput id="quote-title" name="title" required defaultValue={quote?.title} placeholder="Website proposal" />
+        </div>
+        <div>
+          <FieldLabel label="Type" htmlFor="quote-kind" hint="same link and accept flow; only the wording differs" />
+          <SelectInput id="quote-kind" name="kind" defaultValue={quote?.kind ?? "quote"}>
+            <option value="quote">Quote / proposal</option>
+            <option value="estimate">Estimate</option>
+          </SelectInput>
         </div>
         <div>
           <FieldLabel label="Number" htmlFor="quote-number" required />

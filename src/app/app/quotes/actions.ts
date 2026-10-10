@@ -135,6 +135,26 @@ function quoteValues(formData: FormData): { values: Record<string, unknown>; lin
   };
 }
 
+/**
+ * Saves whether the document is a quote or an estimate (migration 0027). Done after the atomic save so the save RPC
+ * does not need to change. A database that is behind quietly keeps "quote"; asking for an estimate there says why not.
+ */
+async function applyKind(
+  supabase: Awaited<ReturnType<typeof getUserClient>> extends infer A ? (A extends { supabase: infer S } ? S : never) : never,
+  id: string,
+  formData: FormData,
+): Promise<string | null> {
+  const kind = field(formData, "kind");
+  if (!kind) return null;
+  if (!["quote", "estimate"].includes(kind)) return "Choose quote or estimate.";
+  const { error } = await supabase.from("quotes").update({ kind }).eq("id", id);
+  if (!error) return null;
+  if (kind === "quote") return null;
+  return /kind|schema cache/i.test(error.message)
+    ? "Saved as a quote: estimates need database update 0027. Apply it in the Supabase SQL editor, then set the type again."
+    : readableError(error.message);
+}
+
 export async function createQuoteAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = quoteValues(formData);
   if (!("values" in parsed)) return parsed;
@@ -142,7 +162,7 @@ export async function createQuoteAction(_previous: ActionState, formData: FormDa
   if ("error" in auth) return auth;
   const token = createPublicToken();
   // Header + line items are saved in one transaction (migration 0015).
-  const { error } = await auth.supabase.rpc("save_quote", {
+  const { data: createdId, error } = await auth.supabase.rpc("save_quote", {
     p_id: null,
     p_header: parsed.values,
     p_lines: parsed.lines,
@@ -150,9 +170,11 @@ export async function createQuoteAction(_previous: ActionState, formData: FormDa
     p_token_hash: token.hash,
   });
   if (error) return { error: readableError(error.message) };
+  const kindProblem = typeof createdId === "string" ? await applyKind(auth.supabase, createdId, formData) : null;
   revalidatePath("/app/quotes");
   revalidatePath("/app");
-  return { success: "Quote created." };
+  if (kindProblem) return { success: `Created. ${kindProblem}` };
+  return { success: field(formData, "kind") === "estimate" ? "Estimate created." : "Quote created." };
 }
 
 export async function updateQuoteAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
@@ -175,9 +197,11 @@ export async function updateQuoteAction(_previous: ActionState, formData: FormDa
     p_lines: parsed.lines,
   });
   if (error) return { error: readableError(error.message) };
+  const kindProblem = await applyKind(auth.supabase, id, formData);
   revalidatePath("/app/quotes");
   revalidatePath(`/app/quotes/${id}`);
   revalidatePath("/app");
+  if (kindProblem) return { success: `Saved. ${kindProblem}` };
   return { success: "Quote saved." };
 }
 

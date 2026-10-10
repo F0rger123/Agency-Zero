@@ -27,7 +27,7 @@ handoff per AGENTS.md.
 8. **Create-in-context everywhere**: quotes, contracts, invoices, meetings, files from
    inside client/project workspaces with client/project prefilled.
 9. **Activity log** table (who/what/when, entity refs) feeding workspaces and, later, AI.
-10. Meetings + checklists; 🟡 video shoots done as recurring `shoot_schedules`/`shoots` with per-shoot checklists (2026-10-05, 0024); meetings + meeting checklists still to do.
+10. Meetings + checklists; 🟡 video shoots done as recurring `shoot_schedules`/`shoots` with per-shoot checklists (2026-10-05, 0024); ✅ meetings with action-item checklists done 2026-10-10 (0027).
 11. ✅ Performance (local JWT verification, bounded lists/pickers). Still later: searchable async pickers, pagination UI.
 
 ## P2 — Money
@@ -49,4 +49,4 @@ handoff per AGENTS.md.
 22. Daily briefing, workload suggestions.
 
 ## Later
-Client portal · white-label reports · integrations from IDEAS.md.
+(Client portal v1 shipped 2026-10-10: links, accept, sign, invoices read-only; online payment and client messaging still later.) · white-label reports · integrations from IDEAS.md.

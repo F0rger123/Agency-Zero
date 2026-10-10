@@ -14,6 +14,7 @@ type Quote = {
   number: string;
   title: string;
   notes: string | null;
+  kind?: "quote" | "estimate";
   status: string;
   issued_on: string;
   valid_until: string | null;
@@ -69,7 +70,7 @@ export default async function PublicQuotePage({ params }: { params: Promise<{ to
       <ViewBeacon markViewed={markQuoteViewedAction.bind(null, token)} />
       <header className="border-b border-border pb-10">
         <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-          {quote.business_name || "Agency Zero"} · Proposal
+          {quote.business_name || "Agency Zero"} · {quote.kind === "estimate" ? "Estimate" : "Proposal"}
         </p>
         <h1 className="mt-5 text-3xl font-semibold tracking-tight">{quote.title}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -89,6 +90,7 @@ export default async function PublicQuotePage({ params }: { params: Promise<{ to
       <QuoteDocument
         token={token}
         status={quote.status}
+        kind={quote.kind ?? "quote"}
         currency={quote.currency}
         discountCents={quote.discount_cents}
         taxRate={quote.tax_rate}
@@ -102,7 +104,7 @@ export default async function PublicQuotePage({ params }: { params: Promise<{ to
       />
 
       <footer className="mt-16 border-t border-border pt-5 text-xs text-muted-foreground">
-        Questions about this proposal? Contact the agency owner directly.
+        Questions about this {quote.kind === "estimate" ? "estimate" : "proposal"}? Contact the agency owner directly.
       </footer>
     </main>
   );

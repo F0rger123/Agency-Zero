@@ -14,6 +14,9 @@ import { QuotesTab } from "./client-tabs/quotes-tab";
 import { ContractsTab } from "./client-tabs/contracts-tab";
 import { InvoicesTab } from "./client-tabs/invoices-tab";
 import { RemindersTab, type ClientReminder } from "./client-tabs/reminders-tab";
+import { MeetingsTab } from "./client-tabs/meetings-tab";
+import { PortalTab, type ClientPortal } from "./client-tabs/portal-tab";
+import type { Meeting } from "@/lib/meetings";
 import { NotesTab } from "./client-tabs/notes-tab";
 import { ActivityTab } from "./client-tabs/activity-tab";
 import { FilesTab } from "./client-tabs/files-tab";
@@ -40,6 +43,8 @@ type Tab =
   | "Contracts"
   | "Invoices & payments"
   | "Reminders"
+  | "Meetings"
+  | "Portal"
   | "Notes"
   | "Activity"
   | "Files"
@@ -51,6 +56,9 @@ export function ClientWorkspace({
   shoots = null,
   projectTemplates = [],
   reminders = null,
+  meetings = null,
+  portal = null,
+  siteUrl = "",
 }: {
   data: ClientWorkspaceData;
   templates?: { id: string; label: string }[];
@@ -60,6 +68,11 @@ export function ClientWorkspace({
   projectTemplates?: { id: string; label: string }[];
   /** Reminders attached to this client; null when they could not be loaded. */
   reminders?: ClientReminder[] | null;
+  /** Meeting notes for this client (migration 0027); null when the database has not applied it yet. */
+  meetings?: Meeting[] | null;
+  /** Client portal state (migration 0027); null when the database has not applied it yet. */
+  portal?: ClientPortal | null;
+  siteUrl?: string;
 }) {
   // null = the customer home (big section widgets); otherwise one section is open.
   const [tab, setTab] = useState<Tab | null>(null);
@@ -74,6 +87,8 @@ export function ClientWorkspace({
     { tab: "Contracts", label: "Contracts", icon: "contracts", blurb: "Agreements and signatures.", count: data.contracts.length },
     { tab: "Invoices & payments", label: "Invoices", icon: "invoices", blurb: "Billing and money received.", count: data.invoices.length },
     { tab: "Reminders", label: "Reminders", icon: "reminders", blurb: "Follow-ups for this customer.", count: reminders ? reminders.length : null },
+    { tab: "Meetings", label: "Meetings", icon: "calendar", blurb: "Take notes live, follow up after.", count: meetings ? meetings.length : null },
+    { tab: "Portal", label: "Portal", icon: "social", blurb: "A private link for quotes, contracts and invoices.", count: null },
     { tab: "Notes", label: "Notes", icon: "dashboard", blurb: "Context worth keeping.", count: data.notes.length },
     { tab: "Activity", label: "Activity", icon: "leads", blurb: "Calls, emails and meetings.", count: data.communications.length },
     { tab: "Files", label: "Files", icon: "workload", blurb: "Private documents.", count: data.files.length },
@@ -197,6 +212,8 @@ export function ClientWorkspace({
             {tab === "Contracts" ? <ContractsTab data={data} templates={templates} /> : null}
             {tab === "Invoices & payments" ? <InvoicesTab data={data} currency={currency} /> : null}
             {tab === "Reminders" ? <RemindersTab data={data} reminders={reminders} /> : null}
+            {tab === "Meetings" ? <MeetingsTab data={data} meetings={meetings} /> : null}
+            {tab === "Portal" ? <PortalTab data={data} portal={portal} siteUrl={siteUrl} /> : null}
             {tab === "Notes" ? <NotesTab data={data} /> : null}
             {tab === "Activity" ? <ActivityTab data={data} /> : null}
             {tab === "Files" ? <FilesTab data={data} /> : null}

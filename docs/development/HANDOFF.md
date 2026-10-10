@@ -1,5 +1,16 @@
 # Handoff log (newest first)
 
+## 2026-10-10 (2) — Claude — meeting notes, estimates, client portal, fresh-project install scripts
+
+**Migration to apply: `0027_meetings_estimates_portal.sql`** (additive; app degrades to a "needs 0027" hint on each new screen if it is missing; `/app/system` has probes). The owner also said they never created a Supabase project for the CRM and will run SQL later: for a brand-new empty project run **every** migration in order with the generated files in `supabase/scripts/fresh/` (`00_README.txt` has the steps; regenerate with `OWNER_EMAIL=... supabase/scripts/build-fresh-install.sh`). Verified by applying all 28 generated files to an empty database (all checks pass, owner row set). I could not create the Supabase project myself: no Supabase connector is connected to this session (see below).
+
+- **Meetings** (customer hub → Meetings): start a meeting (title, who, where, project, agenda), live notes that autosave (900 ms debounce), voice typing, decisions, action-item checklist, End/Reopen, "turn open items into tasks" (creates tasks on the client/project), delete. Typing with no signal is kept in localStorage and sent when back online. Table `meetings` (owner-only RLS).
+- **Estimates**: `quotes.kind` quote|estimate, chosen on the quote form; public page and buttons say Estimate/Proposal accordingly. Set after the atomic `save_quote` RPC (RPC unchanged); a database behind 0027 keeps "quote" and says so.
+- **Client portal** (customer hub → Portal): create/turn off/regenerate a private link `/p/<token>`; "Preview as the client". The page lists what is waiting (sent proposals/estimates → `/q/<token>`, sent contracts → `/c/<token>`), invoices to pay, history. It reads only the anonymous `get_public_portal()`; accepting/signing uses the existing secure pages, so responses reach the CRM exactly as before. Home has a new **Client responses** panel (accepted/declined/signed in the last 14 days). `/p/` is disallowed in robots and `noindex`.
+- Tests: SQL cases (owner/stranger/anon, portal off/on, drafts never exposed) + vitest for `src/lib/meetings.ts`.
+- **Not built yet / limits**: no emailing of the link (the owner does not want email integrations; send it yourself), no online payment from the portal (invoices are read-only there), estimates do not yet show a badge in lists (kept off list queries so a database behind 0027 cannot break them).
+- Unverified against real Supabase; browser-smoked against a mock.
+
 ## 2026-10-10 — Claude — offline mode, install as app, opening splash, loader, DB check script
 
 **No migrations.** New read-only helper: `supabase/scripts/check-applied.sql` (lists which of 0020/0022–0026 are applied; changes nothing; verified against a fresh database with every migration applied). `/app/system` remains the in-app check.

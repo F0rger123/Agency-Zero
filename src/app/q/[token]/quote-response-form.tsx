@@ -37,6 +37,7 @@ function makeMoney(currency: string) {
 export function QuoteDocument({
   token,
   status,
+  kind = "quote",
   currency,
   discountCents,
   taxRate,
@@ -50,6 +51,7 @@ export function QuoteDocument({
 }: {
   token: string;
   status: string;
+  kind?: "quote" | "estimate";
   currency: string;
   discountCents: number;
   taxRate: number;
@@ -245,10 +247,10 @@ export function QuoteDocument({
           </div>
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <button type="submit" name="decision" value="rejected" className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-muted">
-              Reject quote
+              Decline {kind === "estimate" ? "estimate" : "quote"}
             </button>
             <SubmitButton pendingLabel="Accepting…">
-              Accept quote{total > 0 ? ` · ${money(total)}` : ""}
+              Accept {kind === "estimate" ? "estimate" : "quote"}{total > 0 ? ` · ${money(total)}` : ""}
             </SubmitButton>
             <FormMessage {...state} />
           </div>
@@ -259,7 +261,7 @@ export function QuoteDocument({
         </section>
       ) : (
         <p className="mt-12 border-t border-border pt-6 text-sm font-medium">
-          This quote is {status}.
+          This {kind === "estimate" ? "estimate" : "quote"} is {status}.
           {status === "accepted" && acceptedAt ? ` Accepted ${new Date(acceptedAt).toLocaleString()}` : ""}
           {status === "rejected" && rejectedAt ? ` Rejected ${new Date(rejectedAt).toLocaleString()}` : ""}
           {respondedBy ? ` · responded by ${respondedBy}` : ""}.

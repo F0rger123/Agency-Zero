@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { siteUrl } from "@/lib/seo";
 
-const privatePaths = ["/app", "/login", "/auth", "/q/", "/c/"];
+const privatePaths = ["/app", "/login", "/auth", "/q/", "/c/", "/p/"];
 
 /**
  * Search and AI crawlers are explicitly welcome on the public marketing pages (answer engines can only cite what they can

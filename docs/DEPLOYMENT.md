@@ -243,3 +243,17 @@ The CRM's **Quick note** (microphone button in the top bar and on Home) can orga
 2. Cloudflare dashboard → Workers & Pages → the Agency Zero Worker → Settings → Variables and Secrets → **Add** → type **Secret**, name `ANTHROPIC_API_KEY`, paste the key → Deploy.
 3. Without the key the feature still works with a simple organiser (keeps your words as a note on the client you name). Nothing is saved until you press Save in the review step.
 
+## A brand-new Supabase project (first-time setup)
+
+Use this when the CRM has never had its own Supabase project.
+
+1. Create the project in the Supabase dashboard (https://supabase.com/dashboard). Any email can own the Supabase account; it does not have to be the CRM owner's email.
+2. Authentication > Users > Add user: create the CRM owner's sign-in (default `drummerforger@gmail.com`), auto-confirm, strong password.
+3. SQL editor: run the files in `supabase/scripts/fresh/` **in numeric order** (`00_README.txt` lists the steps). To use a different owner email: `OWNER_EMAIL=you@example.com supabase/scripts/build-fresh-install.sh` and run the regenerated files.
+4. Copy Project URL, publishable (anon) key and `service_role` key into the Cloudflare Worker (URL and anon key as **Build** variables; `SUPABASE_SERVICE_ROLE_KEY` as a **Secret**), redeploy.
+5. Authentication > URL Configuration: set Site URL and Redirect URLs.
+6. Open `/app/system`: every row should be OK.
+
+## Client portal
+Customer > Portal > Create portal link. Send the link (message or email you write yourself). The client sees proposals/estimates to accept, contracts to sign and invoices; their responses appear in the CRM and on Home > Client responses. "Make a new link" revokes the old one.
+

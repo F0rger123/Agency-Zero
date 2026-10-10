@@ -7,7 +7,7 @@ import { todayIso } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { DataFailure, MigrationsRequired, SetupRequired } from "@/components/states";
 import { HomeWidgets } from "./home-widgets";
-import { AgendaPanel, InvoicesPanel, Panel, RemindersPanel, type AgendaEvent, type InvoiceRow, type ReminderRow } from "./home-panels";
+import { AgendaPanel, InvoicesPanel, Panel, RemindersPanel, ResponsesPanel, type AgendaEvent, type InvoiceRow, type ReminderRow, type ResponseRow } from "./home-panels";
 import {
   DeliveryPanel,
   type UpcomingShoot,
@@ -53,7 +53,8 @@ export default async function DashboardPage() {
   // Two cheap aggregates in parallel. Revenue is a separate read model so a
   // missing migration 0018 degrades only the revenue cards, never the dashboard.
   const nowIso = new Date().toISOString();
-  const [{ data, error }, revenueResponse, leadsResponse, shootsResponse, eventsResponse, remindersResponse, unpaidResponse, bugsResponse] = await Promise.all([
+  const since = new Date(new Date().getTime() - 14 * 86400000).toISOString();
+  const [{ data, error }, revenueResponse, leadsResponse, shootsResponse, eventsResponse, remindersResponse, unpaidResponse, quotesAnsweredResponse, contractsSignedResponse, bugsResponse] = await Promise.all([
     retryOnClockSkew(() => supabase.rpc("get_dashboard_summary", { p_today: today })),
     retryOnClockSkew(() => supabase.rpc("get_revenue_summary", { p_today: today })),
     // New website inquiries (migration 0019). Errors (e.g. not applied yet) just hide the strip.
@@ -75,6 +76,16 @@ export default async function DashboardPage() {
       .in("status", ["sent", "partially_paid", "overdue"])
       .order("due_on")
       .limit(5),
+    supabase
+      .from("quotes")
+      .select("id, title, status, accepted_at, rejected_at, clients(name)")
+      .or(`accepted_at.gte.${since},rejected_at.gte.${since}`)
+      .limit(10),
+    supabase
+      .from("contracts")
+      .select("id, title, signed_at, clients(name)")
+      .gte("signed_at", since)
+      .limit(10),
     supabase.from("tasks").select("severity").eq("kind", "bug").not("status", "in", "(done,cancelled)").limit(500),
   ]);
   const upcomingShoots = (shootsResponse.error ? null : (shootsResponse.data ?? [])) as unknown as UpcomingShoot[] | null;
@@ -82,6 +93,32 @@ export default async function DashboardPage() {
   const events = (eventsResponse.error ? null : (eventsResponse.data ?? [])) as AgendaEvent[] | null;
   const reminders = (remindersResponse.error ? null : (remindersResponse.data ?? [])) as ReminderRow[] | null;
   const unpaid = (unpaidResponse.error ? null : (unpaidResponse.data ?? [])) as unknown as InvoiceRow[] | null;
+  const clientName = (value: unknown) => ((Array.isArray(value) ? value[0] : value) as { name?: string } | null)?.name ?? null;
+  const responses: ResponseRow[] | null =
+    quotesAnsweredResponse.error || contractsSignedResponse.error
+      ? null
+      : [
+          ...((quotesAnsweredResponse.data ?? []) as unknown as { id: string; title: string; accepted_at: string | null; rejected_at: string | null; clients: unknown }[]).map((quote): ResponseRow => ({
+            id: `q-${quote.id}`,
+            kind: "quote",
+            title: quote.title,
+            client: clientName(quote.clients),
+            outcome: quote.accepted_at ? "accepted" : "declined",
+            at: (quote.accepted_at ?? quote.rejected_at) as string,
+            href: `/app/quotes/${quote.id}`,
+          })),
+          ...((contractsSignedResponse.data ?? []) as unknown as { id: string; title: string; signed_at: string; clients: unknown }[]).map((contract): ResponseRow => ({
+            id: `c-${contract.id}`,
+            kind: "contract",
+            title: contract.title,
+            client: clientName(contract.clients),
+            outcome: "signed",
+            at: contract.signed_at,
+            href: `/app/contracts/${contract.id}`,
+          })),
+        ]
+          .sort((a, b) => (a.at < b.at ? 1 : -1))
+          .slice(0, 6);
   const newLeads = leadsResponse.error ? 0 : (leadsResponse.count ?? 0);
   const revenue = revenueResponse.error ? null : (revenueResponse.data as RevenueSummary | null);
 
@@ -151,6 +188,7 @@ export default async function DashboardPage() {
         <Panel className="lg:col-span-2">
           <KpiGrid summary={summary} />
         </Panel>
+        <ResponsesPanel rows={responses} />
         <AgendaPanel events={events} />
         <RemindersPanel reminders={reminders} now={nowIso} />
         <Panel>

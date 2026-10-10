@@ -48,6 +48,17 @@ const probes: Probe[] = [
   table("project_phases", "0025"),
   table("project_templates", "0025"),
   table("passkeys", "0026"),
+  table("meetings", "0027"),
+  {
+    name: "estimates + client portal columns (quotes.kind, clients.portal_*)",
+    migration: "0027",
+    run: (s) => s.from("clients").select("portal_token, portal_enabled", { count: "exact", head: true }),
+  },
+  {
+    name: "function get_public_portal()",
+    migration: "0027",
+    run: (s) => s.rpc("get_public_portal", { p_token_hash: "probe" }),
+  },
 ];
 
 /**

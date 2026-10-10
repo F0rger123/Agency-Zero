@@ -111,3 +111,34 @@ export function InvoicesPanel({ invoices, today }: { invoices: InvoiceRow[] | nu
     </Panel>
   );
 }
+
+export type ResponseRow = { id: string; kind: "quote" | "contract"; title: string; client: string | null; outcome: "accepted" | "declined" | "signed"; at: string; href: string };
+
+/** What clients did on their own: accepted or declined a quote or estimate, signed a contract. */
+export function ResponsesPanel({ rows }: { rows: ResponseRow[] | null }) {
+  if (rows === null) return null;
+  return (
+    <Panel>
+      <PanelHeader title="Client responses" href="/app/quotes" link="Quotes" />
+      {rows.length === 0 ? (
+        <Empty>Nothing new in the last two weeks.</Empty>
+      ) : (
+        <ul className="mt-4 space-y-2">
+          {rows.map((row) => (
+            <li key={row.id}>
+              <Link href={row.href} prefetch className="flex items-center justify-between gap-3 rounded-xl bg-muted/60 px-4 py-3 transition-colors hover:bg-muted">
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-medium">{row.client ?? row.title}</span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {row.outcome === "signed" ? "Signed" : row.outcome === "accepted" ? "Accepted" : "Declined"} · {row.title}
+                  </span>
+                </span>
+                <span className="shrink-0 text-xs text-muted-foreground">{when(row.at)}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  );
+}

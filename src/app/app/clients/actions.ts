@@ -1,5 +1,6 @@
 "use server";
 
+import { createPublicToken } from "@/lib/public-tokens";
 import { revalidatePath } from "next/cache";
 import { getUserClient, notFoundWhenNoRows } from "@/lib/actions";
 import {
@@ -424,4 +425,44 @@ export async function deleteClientFileAction(
   if (missing) return missing;
   revalidatePath(`/app/clients/${clientId}`);
   return { success: "File removed." };
+}
+
+/**
+ * Client portal link (migration 0027): one private page per client listing what they can act on.
+ * enable = create the link if needed and switch it on; regenerate = revoke the old link and issue a new one;
+ * disable = switch it off (the link stays reserved so turning it on again restores the same URL).
+ */
+export async function setClientPortalAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const clientId = field(formData, "client_id");
+  const mode = field(formData, "mode");
+  if (!clientId || !["enable", "disable", "regenerate"].includes(mode)) return { error: "Portal request is incomplete." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+
+  const patch: Record<string, string | boolean> = {};
+  if (mode === "disable") {
+    patch.portal_enabled = false;
+  } else {
+    const current = await auth.supabase.from("clients").select("portal_token").eq("id", clientId).maybeSingle();
+    if (current.error) return { error: portalError(current.error.message) };
+    if (!current.data) return { error: "Client not found." };
+    if (mode === "regenerate" || !current.data.portal_token) {
+      const token = createPublicToken();
+      patch.portal_token = token.token;
+      patch.portal_token_hash = token.hash;
+    }
+    patch.portal_enabled = true;
+  }
+  const { error, count } = await auth.supabase.from("clients").update(patch, { count: "exact" }).eq("id", clientId);
+  if (error) return { error: portalError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Client");
+  if (missing) return missing;
+  revalidatePath(`/app/clients/${clientId}`);
+  return { success: mode === "disable" ? "Portal turned off." : mode === "regenerate" ? "New portal link created. The old one no longer works." : "Portal is on." };
+}
+
+function portalError(message: string): string {
+  return /portal_|schema cache|column/i.test(message)
+    ? "The client portal needs database update 0027. Apply it in the Supabase SQL editor, then try again."
+    : readableError(message);
 }

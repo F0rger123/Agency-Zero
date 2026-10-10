@@ -6,6 +6,8 @@ import { isMissingTable } from "@/lib/forms";
 import { PageHeader } from "@/components/page-header";
 import { DataFailure, MigrationsRequired, SetupRequired } from "@/components/states";
 import { ClientWorkspace, type ClientWorkspaceData } from "../client-workspace";
+import type { Meeting } from "@/lib/meetings";
+import type { ClientPortal } from "../client-tabs/portal-tab";
 import type { ShootsOverview } from "../../shoots/shoots-view";
 import { todayIso } from "@/lib/format";
 
@@ -27,7 +29,7 @@ export default async function ClientDetailPage({
 
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data, error }, templatesResponse, shootsResponse, projectTemplatesResponse, remindersResponse] = await Promise.all([
+  const [{ data, error }, templatesResponse, shootsResponse, projectTemplatesResponse, remindersResponse, meetingsResponse, portalResponse] = await Promise.all([
     supabase.rpc("get_client_workspace", { p_client_id: id }),
     // Contract templates for the "new contract" form inside the client workspace.
     supabase.from("contract_templates").select("id, name, active").order("name").limit(100),
@@ -35,7 +37,20 @@ export default async function ClientDetailPage({
     supabase.rpc("get_shoots_overview", { p_client_id: id, p_today: todayIso() }),
     supabase.from("project_templates").select("id, name").eq("active", true).order("name").limit(100),
     supabase.from("reminders").select("id, message, due_at").eq("subject_type", "client").eq("subject_id", id).eq("done", false).order("due_at").limit(100),
+    // Meeting notes and the client portal (0027): each degrades to a "needs 0027" hint on a database that is behind.
+    supabase
+      .from("meetings")
+      .select("id, client_id, project_id, title, meeting_at, location, attendees, agenda, notes, decisions, action_items, status, ended_at")
+      .eq("client_id", id)
+      .order("meeting_at", { ascending: false })
+      .limit(50),
+    supabase.from("clients").select("portal_token, portal_enabled").eq("id", id).maybeSingle(),
   ]);
+  const meetings = meetingsResponse.error ? null : ((meetingsResponse.data ?? []) as Meeting[]);
+  const portal: ClientPortal | null =
+    portalResponse.error || !portalResponse.data
+      ? null
+      : { enabled: Boolean(portalResponse.data.portal_enabled), token: (portalResponse.data.portal_token as string | null) ?? null };
   const reminders = remindersResponse.error ? null : ((remindersResponse.data ?? []) as { id: string; message: string; due_at: string }[]);
   const projectTemplates = projectTemplatesResponse.error
     ? []
@@ -91,7 +106,7 @@ export default async function ClientDetailPage({
           "Client record"
         }
       />
-      <ClientWorkspace data={workspace} templates={templates} shoots={shoots} projectTemplates={projectTemplates} reminders={reminders} />
+      <ClientWorkspace data={workspace} templates={templates} shoots={shoots} projectTemplates={projectTemplates} reminders={reminders} meetings={meetings} portal={portal} siteUrl={(process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "")} />
     </>
   );
 }
