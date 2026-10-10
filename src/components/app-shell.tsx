@@ -51,7 +51,7 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
 
   return (
     <LockInProvider>
-      <div className="min-h-screen">
+      <div className="min-h-dvh">
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-3 px-5 lg:px-8">
           <Wordmark />

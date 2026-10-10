@@ -18,7 +18,7 @@ export function NoAccess({
 }) {
   const sql = `update public.app_owner set user_id = '${userId}' where id = 1;`;
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col justify-center px-6 py-16">
+    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-6 py-16">
       <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Agency Zero</p>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">
         {problem ? "Could not verify access" : "This account is not set up as the owner"}

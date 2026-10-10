@@ -55,10 +55,10 @@ export function Modal({
         onClick={onClose}
         className="modal-backdrop absolute inset-0 cursor-default bg-foreground/30 backdrop-blur-sm"
       />
-      <div className="modal-card relative flex max-h-[92vh] w-full max-w-2xl flex-col rounded-t-2xl border border-border bg-background shadow-2xl sm:rounded-2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+      <div className="modal-card relative flex max-h-[min(92dvh,46rem)] w-full max-w-2xl flex-col rounded-t-2xl border border-border bg-background shadow-2xl sm:rounded-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-4 sm:px-6 sm:py-5">
           <div>
-            <h2 id={titleId} className="text-lg font-semibold tracking-tight">
+            <h2 id={titleId} className="text-base font-semibold tracking-tight sm:text-lg">
               {title}
             </h2>
             {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
@@ -72,7 +72,7 @@ export function Modal({
             <Icon name="close" className="size-5" />
           </button>
         </div>
-        <div data-modal-body className="overflow-y-auto px-6 py-6">
+        <div data-modal-body className="overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 sm:py-6">
           {children}
         </div>
       </div>
