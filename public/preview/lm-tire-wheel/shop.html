@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shop Wheels, Tires &amp; Apparel | L&amp;M Tire and Wheel</title>
+<meta name="description" content="Shop custom wheels, tires and L&amp;M apparel online. Fuel, Method, KG1, TIS, Nitto, Toyo, BFGoodrich, Michelin and more. Fitment confirmed by our team, installed same day in Abbottstown, PA.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" type="image/png" href="assets/logo-light.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body class="no-js" data-page="shop">
+<div data-chrome="header"></div>
+
+<main>
+  <section class="page-hero photo" style="--hero-img:url('assets/builds/01-lg.webp')">
+    <div class="wrap">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span>/</span><span>Shop</span></nav>
+      <p class="eyebrow">Shop online &middot; install in Abbottstown</p>
+      <h1 class="display">The <span class="red">shop.</span></h1>
+      <p class="lede" style="color:#d4d4d8">Real inventory from the brands we trust. Add what you like to your cart and check out in a minute. We confirm the fit for your vehicle, lock in the price and set up your install. No payment is taken online.</p>
+      <div class="shop-tabs" role="tablist" aria-label="Product type">
+        <button class="shop-tab" role="tab" data-type="wheel" aria-selected="true"><svg><use href="#i-wheel"/></svg>Wheels <small data-count="wheel"></small></button>
+        <button class="shop-tab" role="tab" data-type="tire" aria-selected="false"><svg><use href="#i-tire"/></svg>Tires <small data-count="tire"></small></button>
+        <button class="shop-tab" role="tab" data-type="apparel" aria-selected="false"><svg><use href="#i-shirt"/></svg>Apparel <small data-count="apparel"></small></button>
+      </div>
+      <div class="vehicle-bar" data-vehicle-bar>
+        <span class="ic"><svg><use href="#i-car"/></svg></span>
+        <span data-vehicle-text><b>Add your vehicle</b><small>We'll double-check every wheel and tire fits before anything is ordered.</small></span>
+        <button class="btn btn-ghost btn-sm" type="button" data-vehicle-open>Set vehicle</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap shop" aria-label="Products">
+    <aside class="filters" data-filters aria-label="Filters">
+      <div class="sheet-head"><b>Filters</b><button class="menu-btn" type="button" aria-label="Close filters" data-filters-close><svg><use href="#i-close"/></svg></button></div>
+      <div data-filter-groups></div>
+      <button class="btn btn-ghost btn-sm" type="button" data-clear>Clear all filters</button>
+      <button class="btn btn-red sheet-done" type="button" data-filters-close>Show results</button>
+    </aside>
+
+    <div>
+      <div class="toolbar">
+        <label class="search"><span class="sr-only">Search</span><svg><use href="#i-search"/></svg>
+          <input class="input" type="search" data-search placeholder="Search brand, style or tire size (e.g. 275/65R18)" autocomplete="off"></label>
+        <label class="sr-only" for="sort">Sort</label>
+        <select class="select" id="sort" data-sort>
+          <option value="featured">Featured</option>
+          <option value="low">Price: low to high</option>
+          <option value="high">Price: high to low</option>
+          <option value="name">Name A&ndash;Z</option>
+        </select>
+        <button class="btn btn-ghost btn-sm filter-btn" type="button" data-filters-open><svg><use href="#i-sliders"/></svg> Filters</button>
+      </div>
+      <p class="result-count" data-result-count></p>
+      <div class="pgrid" data-grid></div>
+      <div class="more-wrap"><button class="btn btn-ghost" type="button" data-more hidden>Show more</button></div>
+      <div class="note" style="margin-top:28px"><svg><use href="#i-info"/></svg><span>This is a hand-picked slice of what we carry. We have access to <b>3,000+ wheel styles</b> and every major tire brand. Don't see it? <a href="contact.html?topic=quote" style="text-decoration:underline">Ask for a quote</a> or call <a href="tel:+17172590567" style="text-decoration:underline">717-259-0567</a>. *Affirm estimates at 15% APR for 12 months; rates 0&ndash;36% APR, subject to eligibility.</span></div>
+    </div>
+  </section>
+</main>
+
+<dialog class="sheet-dialog" data-vehicle-dialog aria-label="Your vehicle" style="width:min(560px, 100vw - 24px)">
+  <form class="form-card" method="dialog" data-vehicle-form style="border:0;border-radius:0">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2 class="form-step" style="margin:0">Your vehicle</h2>
+      <button class="menu-btn" type="button" aria-label="Close" data-vehicle-close><svg><use href="#i-close"/></svg></button>
+    </div>
+    <p class="pd-sub">We save it on this device and use it to confirm fitment on every order.</p>
+    <div class="grid-2">
+      <div class="field"><label for="v-year">Year <i>*</i></label><select class="select" id="v-year" name="year" required></select><span class="err">Pick a year</span></div>
+      <div class="field"><label for="v-make">Make <i>*</i></label><select class="select" id="v-make" name="make" required></select><span class="err">Pick a make</span></div>
+    </div>
+    <div class="grid-2">
+      <div class="field"><label for="v-model">Model <i>*</i></label><input class="input" id="v-model" name="model" required placeholder="e.g. F-150, Wrangler"><span class="err">Enter the model</span></div>
+      <div class="field"><label for="v-trim">Trim / lift <span style="color:var(--dim);font-weight:500">(optional)</span></label><input class="input" id="v-trim" name="trim" placeholder="e.g. XLT, 2.5&Prime; level"></div>
+    </div>
+    <div class="pd-actions"><button class="btn btn-red" type="submit">Save vehicle</button><button class="btn btn-ghost" type="button" data-vehicle-clear>Clear</button></div>
+  </form>
+</dialog>
+
+<div data-chrome="footer"></div>
+<script src="catalog.js"></script>
+<script src="site.js"></script>
+<script>
+(function () {
+  "use strict";
+  var LM = window.LM;
+  var all = window.LM_CATALOG || [];
+  var params = new URLSearchParams(location.search);
+  var PAGE = 24;
+  var state = {
+    type: ["wheel", "tire", "apparel"].indexOf(params.get("type")) !== -1 ? params.get("type") : "wheel",
+    brands: params.get("brand") ? [params.get("brand")] : [],
+    diam: [], tags: [], price: [], app: [],
+    q: params.get("q") || "",
+    sort: "featured",
+    shown: PAGE
+  };
+  var grid = document.querySelector("[data-grid]");
+  var search = document.querySelector("[data-search]");
+  var sortSel = document.querySelector("[data-sort]");
+  var more = document.querySelector("[data-more]");
+  var groupsEl = document.querySelector("[data-filter-groups]");
+  var filtersEl = document.querySelector("[data-filters]");
+  search.value = state.q;
+
+  ["wheel", "tire", "apparel"].forEach(function (k) {
+    document.querySelector('[data-count="' + k + '"]').textContent = all.filter(function (p) { return p.kind === k; }).length;
+  });
+
+  var PRICES = [["u200", "Under $200", 0, 200], ["200", "$200–$400", 200, 400], ["400", "$400–$600", 400, 600], ["600", "$600+", 600, 1e9]];
+  var TIRE_TAGS = [["All Season", "All season"], ["All Terrain", "All terrain"], ["All Weather", "All weather"], ["Performance", "Performance"], ["Summer", "Summer"],
+    ["Winter", "Winter"], ["3PMS", "Severe snow (3PMS)"], ["Run-Flat", "Run-flat"], ["EV Compatible", "EV compatible"]];
+  var APP = [["tee", "T-shirts"], ["hat", "Hats"], ["beanie", "Beanies"]];
+
+  function uniq(a) { return a.filter(function (v, i) { return a.indexOf(v) === i; }); }
+  function chips(name, items, selected) {
+    return '<div class="chips">' + items.map(function (it) {
+      return '<button class="chip" type="button" data-f="' + name + '" data-v="' + LM.esc(it[0]) + '" aria-pressed="' + (selected.indexOf(String(it[0])) !== -1) + '">' + LM.esc(it[1]) + '</button>';
+    }).join("") + '</div>';
+  }
+  function renderFilters() {
+    var items = all.filter(function (p) { return p.kind === state.type; });
+    var html = "";
+    if (state.type !== "apparel") {
+      var brands = uniq(items.map(function (p) { return p.brand; })).sort();
+      html += '<div class="f-group"><h4>Brand</h4>' + chips("brands", brands.map(function (b) { return [b, b]; }), state.brands) + '</div>';
+    }
+    if (state.type === "wheel") {
+      var d = uniq([].concat.apply([], items.map(function (p) { return p.diameters || []; }))).sort(function (a, b) { return a - b; });
+      html += '<div class="f-group"><h4>Diameter</h4>' + chips("diam", d.map(function (x) { return [String(x), x + "″"]; }), state.diam) + '</div>';
+    }
+    if (state.type === "tire") html += '<div class="f-group"><h4>Tire type</h4>' + chips("tags", TIRE_TAGS, state.tags) + '</div>';
+    if (state.type === "apparel") html += '<div class="f-group"><h4>Type</h4>' + chips("app", APP, state.app) + '</div>';
+    if (state.type !== "apparel") html += '<div class="f-group"><h4>Price per ' + state.type + '</h4>' + chips("price", PRICES.map(function (p) { return [p[0], p[1]]; }), state.price) + '</div>';
+    groupsEl.innerHTML = html;
+  }
+  function digits(s) { return String(s).replace(/[^0-9]/g, ""); }
+  function matches(p) {
+    if (p.kind !== state.type) return false;
+    if (state.brands.length && state.brands.indexOf(p.brand) === -1) return false;
+    if (state.diam.length && !(p.diameters || []).some(function (x) { return state.diam.indexOf(String(x)) !== -1; })) return false;
+    if (state.tags.length && !state.tags.every(function (t) { return (p.tags || []).indexOf(t) !== -1; })) return false;
+    if (state.app.length && state.app.indexOf(p.apparelType) === -1) return false;
+    if (state.price.length && !state.price.some(function (k) {
+      var r = PRICES.filter(function (x) { return x[0] === k; })[0]; return p.price >= r[2] && p.price < r[3];
+    })) return false;
+    var q = state.q.trim().toLowerCase();
+    if (q) {
+      var hay = [p.brand, p.model, p.finish, (p.tags || []).join(" "), (p.diameters || []).join("″ ")].join(" ").toLowerCase();
+      var qd = digits(q);
+      var sizeHit = qd.length >= 5 && (p.sizes || []).some(function (s) { return digits(s).indexOf(qd) === 0; });
+      if (!sizeHit && !q.split(/\s+/).every(function (w) { return hay.indexOf(w) !== -1; })) return false;
+    }
+    return true;
+  }
+  function sorted(list) {
+    var l = list.slice();
+    if (state.sort === "low") l.sort(function (a, b) { return a.price - b.price; });
+    else if (state.sort === "high") l.sort(function (a, b) { return b.price - a.price; });
+    else if (state.sort === "name") l.sort(function (a, b) { return (a.brand + a.model).localeCompare(b.brand + b.model); });
+    else l.sort(function (a, b) { return (b.featured || 0) - (a.featured || 0); });
+    return l;
+  }
+  function render() {
+    var list = sorted(all.filter(matches));
+    var label = { wheel: "wheels", tire: "tires", apparel: "items" }[state.type];
+    document.querySelector("[data-result-count]").innerHTML = "<b>" + list.length + "</b> " + label + (list.length === 1 ? "" : "") +
+      (state.q ? ' matching “' + LM.esc(state.q) + '”' : "");
+    if (!list.length) {
+      grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><b>No matches in this selection</b>We can still get it. Try clearing a filter, or <a href="contact.html?topic=quote" style="color:var(--red-2);text-decoration:underline">ask for a quote</a> and we\'ll find it for you.</div>';
+    } else {
+      grid.innerHTML = list.slice(0, state.shown).map(LM.cardHtml).join("");
+    }
+    more.hidden = list.length <= state.shown;
+    more.textContent = "Show more (" + (list.length - state.shown) + " left)";
+    var u = new URL(location.href);
+    u.searchParams.set("type", state.type);
+    if (state.brands.length === 1) u.searchParams.set("brand", state.brands[0]); else u.searchParams.delete("brand");
+    if (state.q) u.searchParams.set("q", state.q); else u.searchParams.delete("q");
+    u.searchParams.delete("vehicle"); u.searchParams.delete("size");
+    history.replaceState(null, "", u.pathname + u.search + location.hash);
+  }
+  function setType(t) {
+    state.type = t; state.brands = []; state.diam = []; state.tags = []; state.price = []; state.app = []; state.shown = PAGE;
+    document.querySelectorAll("[data-type]").forEach(function (b) { b.setAttribute("aria-selected", String(b.getAttribute("data-type") === t)); });
+    search.placeholder = t === "tire" ? "Search brand, style or tire size (e.g. 275/65R18)" : t === "wheel" ? "Search brand, style or finish" : "Search hats, tees, beanies";
+    renderFilters(); render();
+  }
+  document.querySelectorAll("[data-type]").forEach(function (b) {
+    b.addEventListener("click", function () { setType(b.getAttribute("data-type")); });
+  });
+  groupsEl.addEventListener("click", function (e) {
+    var c = e.target.closest("[data-f]");
+    if (!c) return;
+    var arr = state[c.getAttribute("data-f")];
+    var v = c.getAttribute("data-v");
+    var i = arr.indexOf(v);
+    if (i === -1) arr.push(v); else arr.splice(i, 1);
+    c.setAttribute("aria-pressed", String(i === -1));
+    state.shown = PAGE; render();
+  });
+  document.querySelector("[data-clear]").addEventListener("click", function () {
+    state.brands = []; state.diam = []; state.tags = []; state.price = []; state.app = []; state.q = ""; search.value = "";
+    renderFilters(); render();
+  });
+  var t;
+  search.addEventListener("input", function () { clearTimeout(t); t = setTimeout(function () { state.q = search.value; state.shown = PAGE; render(); }, 120); });
+  sortSel.addEventListener("change", function () { state.sort = sortSel.value; render(); });
+  more.addEventListener("click", function () { state.shown += PAGE; render(); });
+  document.querySelector("[data-filters-open]").addEventListener("click", function () { filtersEl.classList.add("sheet"); document.querySelector("[data-scrim]").classList.add("open"); });
+  document.querySelectorAll("[data-filters-close]").forEach(function (b) {
+    b.addEventListener("click", function () { filtersEl.classList.remove("sheet"); document.querySelector("[data-scrim]").classList.remove("open"); });
+  });
+  document.querySelector("[data-scrim]").addEventListener("click", function () { filtersEl.classList.remove("sheet"); });
+
+  // Vehicle
+  var vd = document.querySelector("[data-vehicle-dialog]");
+  var vf = document.querySelector("[data-vehicle-form]");
+  LM.fillYearMake(vf.year, vf.make);
+  function showVehicle() {
+    var v = LM.vehicle.get();
+    var el = document.querySelector("[data-vehicle-text]");
+    var btn = document.querySelector("[data-vehicle-open]");
+    if (v) {
+      el.innerHTML = "<b>Shopping for your " + LM.esc([v.year, v.make, v.model, v.trim].filter(Boolean).join(" ")) + "</b><small>We confirm every wheel and tire fits it before anything is ordered.</small>";
+      btn.textContent = "Change";
+    } else {
+      el.innerHTML = "<b>Add your vehicle</b><small>We'll double-check every wheel and tire fits before anything is ordered.</small>";
+      btn.textContent = "Set vehicle";
+    }
+  }
+  function openVehicle() {
+    var v = LM.vehicle.get() || {};
+    vf.year.value = v.year || ""; vf.make.value = v.make || ""; vf.model.value = v.model || ""; vf.trim.value = v.trim || "";
+    vd.showModal();
+  }
+  document.querySelector("[data-vehicle-open]").addEventListener("click", openVehicle);
+  document.querySelector("[data-vehicle-close]").addEventListener("click", function () { vd.close(); });
+  document.querySelector("[data-vehicle-clear]").addEventListener("click", function () { LM.vehicle.set(null); vd.close(); showVehicle(); });
+  vf.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var ok = true;
+    ["year", "make", "model"].forEach(function (n) {
+      var bad = !vf[n].value.trim();
+      vf[n].closest(".field").classList.toggle("invalid", bad);
+      if (bad) ok = false;
+    });
+    if (!ok) return;
+    LM.vehicle.set({ year: vf.year.value, make: vf.make.value, model: vf.model.value.trim(), trim: vf.trim.value.trim() });
+    vd.close(); showVehicle();
+  });
+  showVehicle();
+
+  setType(state.type);
+  if (params.get("brand")) { state.brands = [params.get("brand")]; renderFilters(); render(); }
+  if (params.get("vehicle")) setTimeout(openVehicle, 300);
+  if (params.get("size")) setTimeout(function () { search.focus(); }, 300);
+})();
+</script>
+</body>
+</html>

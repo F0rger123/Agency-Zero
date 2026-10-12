@@ -1,5 +1,17 @@
 # Handoff log (newest first)
 
+## 2026-10-12 — Claude — L&M Tire and Wheel full website preview + pitch page (live under /preview/)
+
+**No migrations.** Static files only, plus three small app-level changes: `src/app/robots.ts` disallows `/preview/`,
+`public/_headers` sends `X-Robots-Tag: noindex` for `/preview/*`, `public/sw.js` skips `/preview/`.
+- Moved the L&M page from `clients/lm-tire-wheel/` to `public/preview/lm-tire-wheel/` and grew it into a 7-page site:
+  home, shop (224 real products scraped from their store), product sheet, cart, checkout, services + booking, financing + calculator,
+  contact, and `compare.html` (before/after pitch with measured numbers and a QR code). See that folder's README.
+- Forms/checkout are **preview mode**: they validate and confirm but nothing is sent (stated on every success screen + top bar).
+- Verified: Playwright suite (all pages at 1440 and 390 px, no console errors, no horizontal overflow; shop filters, tire-size
+  search, add to cart, checkout validation + success, contact, service booking, financing calculator, deep links).
+- Next: owner shows it to L&M; if they buy, wire submissions to SMS/email, connect a live catalog feed, Affirm, and launch on lmtire-wheel.com.
+
 ## 2026-10-10 (3) — Claude — L&M Tire and Wheel landing page (prospect pitch)
 
 **No migrations, no app code changed.** New static folder `clients/lm-tire-wheel/` (index.html + WebP assets + README). It sits outside `public/`/`src/`, so it is **not deployed** with the site.

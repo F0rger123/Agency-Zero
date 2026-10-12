@@ -1,3 +1,6 @@
 /sw.js
   Cache-Control: no-cache
   Service-Worker-Allowed: /
+
+/preview/*
+  X-Robots-Tag: noindex, nofollow

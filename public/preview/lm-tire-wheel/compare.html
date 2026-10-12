@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your New Website | L&amp;M Tire and Wheel × Agency Zero</title>
+<meta name="description" content="A side-by-side look at L&amp;M Tire and Wheel's current website and the new one built by Agency Zero.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" type="image/png" href="assets/logo-light.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<style>
+  .pitch-top { border-bottom: 1px solid var(--line); }
+  .pitch-top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 68px; }
+  .pitch-top img { height: 34px; width: auto; }
+  .pitch-top .by { font-size: 13px; color: var(--muted); }
+  .pitch-top .by b { color: #fff; }
+  .pitch-hero { padding: clamp(56px, 9vw, 120px) 0 clamp(40px, 6vw, 70px); position: relative; isolation: isolate; overflow: hidden; }
+  .pitch-hero::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(900px 420px at 85% -10%, rgba(238,39,56,0.25), transparent 65%); }
+  .pitch-hero h1 { font-size: clamp(56px, 10vw, 150px); }
+
+  .ba { position: relative; border-radius: 22px; overflow: hidden; border: 1px solid var(--line-2); user-select: none; touch-action: pan-y; background: #111; }
+  .ba img { display: block; width: 100%; height: auto; pointer-events: none; }
+  .ba .after { position: absolute; inset: 0; clip-path: inset(0 0 0 var(--pos, 50%)); }
+  .ba .handle { position: absolute; top: 0; bottom: 0; left: var(--pos, 50%); width: 3px; margin-left: -1.5px; background: #fff; box-shadow: 0 0 20px rgba(0,0,0,.6); }
+  .ba .knob {
+    position: absolute; top: 50%; left: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 99px; background: #fff; color: #0a0a0b;
+    display: grid; place-items: center; box-shadow: 0 10px 30px rgba(0,0,0,.5); font-weight: 900; letter-spacing: -2px;
+  }
+  .ba .tag { position: absolute; top: 14px; padding: 6px 12px; border-radius: 99px; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .ba .tag.old { left: 14px; background: rgba(255,255,255,.92); color: #0a0a0b; }
+  .ba .tag.new { right: 14px; background: var(--red); color: #fff; }
+  .ba input[type=range] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: ew-resize; margin: 0; }
+  .ba.phone { max-width: 390px; margin-inline: auto; border-radius: 34px; border: 8px solid #222; }
+
+  .phones { display: grid; gap: 28px; grid-template-columns: 1fr; justify-items: center; }
+  @media (min-width: 760px) { .phones { grid-template-columns: 1fr 1fr; } }
+  .phone-frame { width: min(340px, 100%); border-radius: 40px; border: 10px solid #232327; overflow: hidden; background: #000; box-shadow: 0 40px 80px -30px rgba(0,0,0,.8); }
+  .phone-frame img { width: 100%; display: block; }
+  .phone-cap { text-align: center; margin-top: 14px; font-weight: 700; }
+  .phone-cap small { display: block; color: var(--muted); font-weight: 500; }
+
+  .metrics { display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); }
+  @media (min-width: 960px) { .metrics { grid-template-columns: repeat(4, 1fr); } }
+  .metric { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 22px; display: grid; gap: 8px; }
+  .metric .k { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+  .metric .vs { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .metric .was { color: var(--dim); text-decoration: line-through; font-size: 18px; font-weight: 700; }
+  .metric .now { font-family: var(--display); font-size: clamp(40px, 5vw, 60px); line-height: 1; }
+  .metric .gain { font-size: 13px; font-weight: 800; color: #4ade80; }
+  .metric p { margin: 0; color: var(--muted); font-size: 13.5px; }
+
+  .why { display: grid; gap: 14px; }
+  @media (min-width: 900px) { .why { grid-template-columns: repeat(2, 1fr); } }
+  .why-card { background: var(--panel); border: 1px solid var(--line); border-radius: 22px; padding: 26px; display: grid; gap: 12px; align-content: start; }
+  .why-card h3 { margin: 0; font-size: 21px; line-height: 1.25; }
+  .why-card .row2 { display: grid; gap: 10px; }
+  @media (min-width: 560px) { .why-card .row2 { grid-template-columns: 1fr 1fr; } }
+  .was-box, .now-box { border-radius: 14px; padding: 14px 16px; font-size: 14px; line-height: 1.5; }
+  .was-box { background: rgba(255,255,255,.03); border: 1px dashed var(--line-2); color: var(--muted); }
+  .now-box { background: rgba(238,39,56,.08); border: 1px solid rgba(238,39,56,.35); color: #ececee; }
+  .was-box b, .now-box b { display: block; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 4px; }
+  .was-box b { color: var(--dim); }
+  .now-box b { color: var(--red-2); }
+
+  .try { display: grid; gap: 10px; counter-reset: t; }
+  @media (min-width: 900px) { .try { grid-template-columns: repeat(2, 1fr); } }
+  .try a {
+    display: flex; align-items: center; gap: 16px; padding: 18px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line);
+    transition: border-color .2s, transform .25s var(--ease);
+  }
+  .try a:hover { border-color: var(--red); transform: translateY(-2px); }
+  .try a::before { counter-increment: t; content: counter(t); width: 36px; height: 36px; border-radius: 99px; background: var(--red); display: grid; place-items: center; font-weight: 800; flex: none; }
+  .try b { display: block; }
+  .try small { color: var(--muted); font-size: 13.5px; }
+  .try svg { margin-left: auto; width: 18px; height: 18px; color: var(--dim); flex: none; }
+
+  .launch { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .launch th, .launch td { text-align: left; padding: 14px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .launch th { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+  .launch td:first-child { font-weight: 700; white-space: nowrap; }
+  .launch td { color: #d4d4d8; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 20px; background: var(--panel); }
+
+  @media (max-width: 640px) {
+    .table-wrap { border: 0; background: none; overflow: visible; }
+    .launch thead { display: none; }
+    .launch, .launch tbody, .launch tr, .launch td { display: block; width: 100%; }
+    .launch tr { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 6px 4px; margin-bottom: 10px; }
+    .launch td { border: 0; padding: 6px 12px; }
+    .launch td:first-child { font-size: 17px; color: #fff; }
+    .launch td:nth-child(2)::before { content: "Preview: "; color: var(--dim); font-weight: 700; }
+    .launch td:nth-child(3)::before { content: "At launch: "; color: var(--red-2); font-weight: 700; }
+  }
+  .qr-card { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 22px; padding: 22px; }
+  .qr-card img { width: 132px; height: 132px; background: #fff; border-radius: 14px; padding: 8px; }
+  .qr-card b { display: block; font-size: 18px; }
+  .qr-card p { margin: 6px 0 0; color: var(--muted); }
+  .method { font-size: 13px; color: var(--dim); margin-top: 14px; }
+</style>
+</head>
+<body class="no-js" data-page="compare">
+
+<div class="pitch-top">
+  <div class="wrap">
+    <img src="assets/logo-light.png" alt="L&amp;M Tire and Wheel" width="512" height="166">
+    <span class="by">A new website, built by <b>Agency Zero</b></span>
+  </div>
+</div>
+
+<main>
+  <section class="pitch-hero">
+    <div class="wrap">
+      <p class="eyebrow">For the L&amp;M Tire and Wheel family</p>
+      <h1 class="display">Your shop<br>deserves <span class="red">better.</span></h1>
+      <p class="lede" style="font-size:clamp(17px,1.6vw,20px);max-width:62ch">You've built one of the best-reviewed shops around: <b style="color:#fff">4.9 stars from 2,127 Google reviews</b> and nearly 40 years of custom builds. Your website should show that. So we built you a new one, using your photos, your products, your prices and your customers' own words. Here's how it compares.</p>
+      <div class="hero-actions" style="margin-top:30px">
+        <a class="btn btn-red" href="index.html">Open the new website <svg><use href="#i-arrow"/></svg></a>
+        <a class="btn btn-ghost" href="#side-by-side">See it side by side</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="side-by-side" style="padding-top:20px" aria-labelledby="sbs-title">
+    <div class="wrap">
+      <div class="section-head split reveal">
+        <div>
+          <p class="eyebrow">Drag to compare</p>
+          <h2 class="display h2" id="sbs-title">Before <span class="red">&amp; after.</span></h2>
+        </div>
+        <p class="lede">The first thing a customer sees on a computer. Slide the handle left and right.</p>
+      </div>
+      <div class="ba reveal" data-ba style="--pos:50%">
+        <img src="assets/compare/old-desk.webp" alt="The current lmtire-wheel.com homepage" width="1440" height="900">
+        <div class="after"><img src="assets/compare/new-desk.webp" alt="The new L&amp;M homepage" width="1440" height="900"></div>
+        <div class="handle"><span class="knob">&lsaquo;&rsaquo;</span></div>
+        <span class="tag old">Today</span><span class="tag new">New</span>
+        <input type="range" min="0" max="100" value="50" aria-label="Compare before and after">
+      </div>
+
+      <div class="section-head reveal" style="margin:80px 0 36px">
+        <p class="eyebrow">On a phone</p>
+        <h2 class="display h2">Where most of your <span class="red">customers are.</span></h2>
+        <p class="lede">Most people searching for tires near them are on their phone. Here's the first screen they see.</p>
+      </div>
+      <div class="phones">
+        <div class="reveal"><div class="phone-frame"><img src="assets/compare/old-mob.webp" alt="Current site on a phone" width="780" height="1688" loading="lazy"></div>
+          <p class="phone-cap">Today<small>Search box, a flat banner, and a chat pop-up covering the text</small></p></div>
+        <div class="reveal"><div class="phone-frame" style="border-color:#3a1216"><img src="assets/compare/new-mob.webp" alt="New site on a phone" width="780" height="1688" loading="lazy"></div>
+          <p class="phone-cap">New<small>Your real builds, one-tap shopping, your rating up front</small></p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0" aria-labelledby="num-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">Measured, not guessed</p>
+        <h2 class="display h2" id="num-title">Lighter. <span class="red">Faster.</span></h2>
+        <p class="lede">We loaded both homepages in the same browser, same computer, same connection, with nothing cached.</p>
+      </div>
+      <div class="metrics">
+        <div class="metric reveal"><span class="k">Data to download</span><div class="vs"><span class="was">5.8 MB</span><span class="now">1.1 MB</span></div><span class="gain">5&times; lighter</span><p>Less waiting on one bar of signal out on Route 30.</p></div>
+        <div class="metric reveal"><span class="k">Files loaded</span><div class="vs"><span class="was">238</span><span class="now">15</span></div><span class="gain">16&times; fewer</span><p>Every file is another trip to a server before the page settles.</p></div>
+        <div class="metric reveal"><span class="k">Scripts (code)</span><div class="vs"><span class="was">1.7 MB</span><span class="now">0.12 MB</span></div><span class="gain">14&times; less code</span><p>Phones have to run all of it. Less code means less lag and battery.</p></div>
+        <div class="metric reveal"><span class="k">Outside services</span><div class="vs"><span class="was">22</span><span class="now">2</span></div><span class="gain">Only Google Fonts &amp; Maps</span><p>Fewer third parties tracking your customers and slowing the page.</p></div>
+      </div>
+      <p class="method">Homepage only, Chromium, cache disabled, October 2026. The new homepage also includes your 200+ product catalog for the shop.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0" aria-labelledby="why-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">What changed</p>
+        <h2 class="display h2" id="why-title">Why it <span class="red">sells more.</span></h2>
+      </div>
+      <div class="why">
+        <div class="why-card reveal"><h3>Your 2,127 reviews do the selling</h3><div class="row2">
+          <div class="was-box"><b>Today</b>Your 4.9 stars don't appear anywhere on the homepage.</div>
+          <div class="now-box"><b>New</b>Your rating in the first screen, plus a full section of real customer reviews that name Jake, Amy and the owner.</div></div></div>
+        <div class="why-card reveal"><h3>Your builds are the hero, not a flyer</h3><div class="row2">
+          <div class="was-box"><b>Today</b>A flat banner graphic with the words baked into the picture, which Google can't read and gets blurry on phones.</div>
+          <div class="now-box"><b>New</b>Your own Tacoma in front of the shop, crisp headline text, and a 20-photo gallery of builds that opens full screen.</div></div></div>
+        <div class="why-card reveal"><h3>A shop that feels like L&amp;M</h3><div class="row2">
+          <div class="was-box"><b>Today</b>A stock store template that looks like hundreds of other tire sites.</div>
+          <div class="now-box"><b>New</b>Wheels, tires and apparel in your style: filters, tire-size search, a set-of-4 cart, Affirm estimates and a 1-minute checkout that confirms fitment.</div></div></div>
+        <div class="why-card reveal"><h3>Built for thumbs</h3><div class="row2">
+          <div class="was-box"><b>Today</b>79 links and buttons too small to tap comfortably on a phone, and a chat pop-up covering your intro.</div>
+          <div class="now-box"><b>New</b>A Call / Directions / Shop bar that follows you down the page, big buttons, and a live "Open now" status.</div></div></div>
+        <div class="why-card reveal"><h3>Every service, bookable</h3><div class="row2">
+          <div class="was-box"><b>Today</b>Services are a list of paragraphs. To book, customers have to find the contact page.</div>
+          <div class="now-box"><b>New</b>A services page with a booking form (vehicle, service, preferred day) that knows you're closed on weekends.</div></div></div>
+        <div class="why-card reveal"><h3>Financing that actually explains itself</h3><div class="row2">
+          <div class="was-box"><b>Today</b>Financing is a short Affirm box with a link out, and no idea what a set of tires would cost per month.</div>
+          <div class="now-box"><b>New</b>How it works in 3 steps, a payment calculator, an FAQ, and "from $X/mo" on every product and cart.</div></div></div>
+        <div class="why-card reveal"><h3>One story, told the same way</h3><div class="row2">
+          <div class="was-box"><b>Today</b>The homepage says "36 years" and "34 years"; the About page says "since 1987". Images are labeled just "Tire", "Wheel", or broken code.</div>
+          <div class="now-box"><b>New</b>"Family owned since 1987" everywhere, and every photo described properly for Google and for screen readers.</div></div></div>
+        <div class="why-card reveal"><h3>Ready for Google Maps searches</h3><div class="row2">
+          <div class="was-box"><b>Today</b>Hours and address sit at the bottom of a long page.</div>
+          <div class="now-box"><b>New</b>Hours, address, map and the towns you serve (York, Hanover, Gettysburg…) up front, and built into the page data Google reads.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0" aria-labelledby="try-title">
+    <div class="wrap">
+      <div class="section-head split reveal">
+        <div>
+          <p class="eyebrow">Take it for a spin</p>
+          <h2 class="display h2" id="try-title">Try <span class="red">everything.</span></h2>
+        </div>
+        <div class="qr-card">
+          <img src="assets/compare/qr.svg" alt="QR code to open the new website on your phone" width="132" height="132">
+          <div><b>Open it on your phone</b><p>Point your camera here. It's built phone-first.</p></div>
+        </div>
+      </div>
+      <div class="try">
+        <a class="reveal" href="shop.html?type=tire&amp;q=275%2F65R18"><span><b>Find tires by size</b><small>Search 275/65R18 and see what fits.</small></span><svg><use href="#i-arrow"/></svg></a>
+        <a class="reveal" href="shop.html?type=wheel&amp;brand=Fuel"><span><b>Pick a set of Fuel wheels</b><small>Open one, choose a size, add 4 to the cart.</small></span><svg><use href="#i-arrow"/></svg></a>
+        <a class="reveal" href="checkout.html"><span><b>Check out</b><small>Vehicle, install day, contact, Affirm or pay at the shop.</small></span><svg><use href="#i-arrow"/></svg></a>
+        <a class="reveal" href="services.html#book"><span><b>Book a service</b><small>Try picking a Saturday. It knows you're closed.</small></span><svg><use href="#i-arrow"/></svg></a>
+        <a class="reveal" href="financing.html#calculator"><span><b>Estimate a payment</b><small>Slide to a lift + wheels + tires package.</small></span><svg><use href="#i-arrow"/></svg></a>
+        <a class="reveal" href="index.html#reviews"><span><b>Read your reviews</b><small>Straight from your Google listing.</small></span><svg><use href="#i-arrow"/></svg></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0" aria-labelledby="launch-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">From preview to live</p>
+        <h2 class="display h2" id="launch-title">What happens <span class="red">at launch.</span></h2>
+        <p class="lede">Everything here is clickable today. A few things get connected when you say go:</p>
+      </div>
+      <div class="table-wrap reveal">
+        <table class="launch">
+          <thead><tr><th>Piece</th><th>In this preview</th><th>When it goes live</th></tr></thead>
+          <tbody>
+            <tr><td>Orders &amp; forms</td><td>Work end to end, but stay in your browser</td><td>Every order, booking and message texts and emails the shop instantly</td></tr>
+            <tr><td>Product catalog</td><td>224 real wheels, tires and apparel items with your current prices</td><td>Connected to your full catalog and stock, so prices stay current on their own</td></tr>
+            <tr><td>Fitment</td><td>Customer enters their vehicle; your team confirms</td><td>Optional automatic year/make/model fitment lookup</td></tr>
+            <tr><td>Financing</td><td>Calculator and "from $X/mo" estimates</td><td>Your existing Affirm account, with Affirm's live pre-qualification</td></tr>
+            <tr><td>Address</td><td>Preview link</td><td>Your own lmtire-wheel.com address</td></tr>
+            <tr><td>Text-us chat</td><td>Not included</td><td>We can keep your current text widget if you like it</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="cta-title">
+    <div class="wrap">
+      <div class="cta reveal">
+        <p class="eyebrow">Built by Agency Zero, for L&amp;M</p>
+        <h2 class="display" id="cta-title">Let's put it <span class="red">to work.</span></h2>
+        <p class="lede" style="color:#d4d4d8">Click around, show the crew, try it on your phone. Anything you want changed, from wording to photos to products, we'll change.</p>
+        <div class="hero-actions">
+          <a class="btn btn-red" href="index.html">Open the new website <svg><use href="#i-arrow"/></svg></a>
+          <a class="btn btn-ghost" href="https://theagencyzero.com/contact">Talk to Agency Zero</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer style="padding-bottom:56px"><div class="wrap"><div class="legal" style="margin-top:0;border-top:0;padding-top:0">
+  <span>Prepared for L&amp;M Tire and Wheel, Abbottstown, PA. Private preview.</span><span>Agency Zero &middot; theagencyzero.com</span>
+</div></div></footer>
+
+<script src="catalog.js"></script>
+<script src="site.js"></script>
+<script>
+(function () {
+  "use strict";
+  document.querySelectorAll("[data-ba]").forEach(function (ba) {
+    var r = ba.querySelector("input[type=range]");
+    r.addEventListener("input", function () { ba.style.setProperty("--pos", r.value + "%"); });
+  });
+})();
+</script>
+</body>
+</html>

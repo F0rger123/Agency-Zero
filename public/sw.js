@@ -31,7 +31,7 @@ self.addEventListener("message", (event) => {
 });
 
 const isStatic = (url) => url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/") || url.pathname.startsWith("/images/") || /\.(?:woff2?|png|jpg|jpeg|svg|webp|ico)$/.test(url.pathname);
-const skip = (url) => url.pathname.startsWith("/api/") || url.pathname.startsWith("/auth") || url.pathname.startsWith("/login") || url.pathname === "/sw.js";
+const skip = (url) => url.pathname.startsWith("/preview/") || url.pathname.startsWith("/api/") || url.pathname.startsWith("/auth") || url.pathname.startsWith("/login") || url.pathname === "/sw.js";
 
 /** One cache entry per page and per kind (full HTML vs the router's RSC data), ignoring Next's cache-busting query. */
 function pageKey(request) {

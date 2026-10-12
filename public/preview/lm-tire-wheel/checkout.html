@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Checkout | L&amp;M Tire and Wheel</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" type="image/png" href="assets/logo-light.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body class="no-js" data-page="checkout">
+<div data-chrome="header"></div>
+
+<main>
+  <section class="page-hero" style="padding-bottom:36px">
+    <div class="wrap">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span>/</span><a href="shop.html">Shop</a><span>/</span><span>Checkout</span></nav>
+      <h1 class="display">Check<span class="red">out.</span></h1>
+      <p class="lede">Four quick steps. No payment is taken online: we call to confirm fitment, final price and your install time, then you pay at the shop or with Affirm.</p>
+    </div>
+  </section>
+
+  <div class="wrap" data-checkout-root>
+    <div class="checkout">
+      <form novalidate data-checkout style="display:grid;gap:14px">
+
+        <div class="form-card" data-vehicle-step>
+          <h2 class="form-step"><span>1</span>Your vehicle</h2>
+          <div class="grid-2">
+            <div class="field"><label for="c-year">Year <i>*</i></label><select class="select" id="c-year" name="Vehicle year" required></select><span class="err">Pick a year</span></div>
+            <div class="field"><label for="c-make">Make <i>*</i></label><select class="select" id="c-make" name="Vehicle make" required></select><span class="err">Pick a make</span></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label for="c-model">Model <i>*</i></label><input class="input" id="c-model" name="Vehicle model" required placeholder="e.g. Silverado 1500"><span class="err">Enter the model</span></div>
+            <div class="field"><label for="c-trim">Trim / lift <span style="color:var(--dim);font-weight:500">(optional)</span></label><input class="input" id="c-trim" name="Trim or lift" placeholder="e.g. LT Trail Boss, 2&Prime; level"></div>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <h2 class="form-step"><span data-n="2">2</span>Install or pickup</h2>
+          <div class="choice cols-2" data-need-one>
+            <label><input type="radio" name="Fulfillment" value="Install at L&amp;M" checked><span><b>Install at our shop</b><small>Mount, balance &amp; install by ASE certified techs. Most done same day.</small></span></label>
+            <label><input type="radio" name="Fulfillment" value="Pick up in store"><span><b>Pick up in store</b><small>We'll text you when it's ready at 185 W King St.</small></span></label>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label for="c-day">Preferred day</label><input class="input" type="date" id="c-day" name="Preferred day"></div>
+            <div class="field"><label for="c-time">Preferred time</label>
+              <select class="select" id="c-time" name="Preferred time"><option>Morning (9&ndash;12)</option><option>Afternoon (12&ndash;3)</option><option>Late afternoon (3&ndash;close)</option><option>Whenever it's ready</option></select></div>
+          </div>
+          <p class="fine" style="margin:0">Open Mon 9&ndash;5, Tue&ndash;Wed 9&ndash;6, Thu&ndash;Fri 9&ndash;5. No appointment needed, but picking a time helps us have your order staged.</p>
+        </div>
+
+        <div class="form-card">
+          <h2 class="form-step"><span data-n="3">3</span>Your details</h2>
+          <div class="grid-2">
+            <div class="field"><label for="c-name">Full name <i>*</i></label><input class="input" id="c-name" name="Name" required autocomplete="name"><span class="err">Enter your name</span></div>
+            <div class="field"><label for="c-phone">Mobile phone <i>*</i></label><input class="input" type="tel" id="c-phone" name="Phone" required autocomplete="tel" placeholder="717-555-0123"><span class="err">Enter a 10-digit phone number</span></div>
+          </div>
+          <div class="field"><label for="c-email">Email <i>*</i></label><input class="input" type="email" id="c-email" name="Email" required autocomplete="email" placeholder="you@example.com"><span class="err">Enter a valid email</span></div>
+          <div class="field"><label for="c-notes">Anything we should know?</label><textarea class="textarea" id="c-notes" name="Notes" placeholder="Lift height, the look you're going for, current tire size, TPMS, trade-in wheels…"></textarea></div>
+        </div>
+
+        <div class="form-card">
+          <h2 class="form-step"><span data-n="4">4</span>How you'll pay</h2>
+          <div class="choice" data-need-one>
+            <label><input type="radio" name="Payment" value="Pay at the shop" checked><span><b>Pay at the shop</b><small>Card or cash when you pick up or after install.</small></span></label>
+            <label><input type="radio" name="Payment" value="Affirm"><span><b>Pay over time with Affirm</b><small data-affirm-line>Split it into monthly payments. We'll send your Affirm link with the confirmed total.</small></span></label>
+            <label><input type="radio" name="Payment" value="Wholesale account"><span><b>Wholesale / fleet account</b><small>Bill to your L&amp;M account.</small></span></label>
+          </div>
+          <div class="note"><svg><use href="#i-info"/></svg><span>Nothing is charged now. We'll call or text within shop hours to confirm fitment for your vehicle, the exact price and availability.</span></div>
+          <button class="btn btn-red" type="submit" style="width:100%">Place order request <svg><use href="#i-arrow"/></svg></button>
+        </div>
+      </form>
+
+      <aside class="form-card summary" aria-label="Order summary">
+        <h2 class="form-step">Order summary</h2>
+        <div data-summary-items></div>
+        <div data-summary-totals style="display:grid;gap:10px"></div>
+        <a class="link-btn" href="shop.html" style="justify-self:start">Keep shopping</a>
+        <p class="fine" style="margin:0">Prices are starting prices per wheel or tire as listed; final price depends on size and is confirmed before you pay. Install, balancing and TPMS pricing confirmed with your order. *Affirm estimate at 15% APR for 12 months; rates 0&ndash;36% APR, subject to eligibility.</p>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<div data-chrome="footer"></div>
+<script src="catalog.js"></script>
+<script src="site.js"></script>
+<script>
+(function () {
+  "use strict";
+  var LM = window.LM;
+  var form = document.querySelector("[data-checkout]");
+  var root = document.querySelector("[data-checkout-root]");
+  LM.fillYearMake(form.querySelector("#c-year"), form.querySelector("#c-make"));
+  var v = LM.vehicle.get();
+  if (v) {
+    form.querySelector("#c-year").value = v.year; form.querySelector("#c-make").value = v.make;
+    form.querySelector("#c-model").value = v.model; form.querySelector("#c-trim").value = v.trim || "";
+  }
+  var day = form.querySelector("#c-day");
+  day.min = new Date().toISOString().slice(0, 10);
+
+  function needsVehicle() { return LM.cart.items().some(function (i) { return i.kind !== "apparel"; }); }
+  function render() {
+    var items = LM.cart.items();
+    if (!items.length) {
+      root.innerHTML = '<div class="cart-empty" style="padding:80px 0">' + LM.icon("cart") +
+        '<b style="color:#fff;font-size:20px">Your cart is empty</b><span>Add wheels, tires or gear, then come back here.</span>' +
+        '<a class="btn btn-red" href="shop.html">Go to the shop</a></div>';
+      return;
+    }
+    document.querySelector("[data-summary-items]").innerHTML = items.map(function (i) { return LM.cart.lineHtml(i, true); }).join("");
+    document.querySelector("[data-summary-totals]").innerHTML = LM.cart.totalsHtml();
+    document.querySelector("[data-affirm-line]").textContent = "Estimated from " + "$" + Math.round(LM.monthly(LM.cart.total())) + "/mo*. We'll send your Affirm link with the confirmed total.";
+    var vs = document.querySelector("[data-vehicle-step]");
+    vs.hidden = !needsVehicle();
+    vs.querySelectorAll("select, input").forEach(function (el) { el.disabled = vs.hidden; });
+    document.querySelectorAll("[data-n]").forEach(function (el) { el.textContent = Number(el.getAttribute("data-n")) - (vs.hidden ? 1 : 0); });
+  }
+  document.addEventListener("lm:cart", function () { if (document.querySelector("[data-summary-items]")) render(); });
+  render();
+
+  if (form.isConnected) form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var items = LM.cart.items();
+    var total = LM.cart.total();
+    var ref = LM.submit(form, "order", { items: items, total: total });
+    if (!ref) return;
+    if (needsVehicle()) LM.vehicle.set({ year: form.querySelector("#c-year").value, make: form.querySelector("#c-make").value,
+      model: form.querySelector("#c-model").value.trim(), trim: form.querySelector("#c-trim").value.trim() });
+    var name = (form.querySelector("#c-name").value.trim().split(" ")[0] || "");
+    var payment = (form.querySelector('input[name="Payment"]:checked') || {}).value;
+    LM.cart.clear();
+    root.innerHTML = '<div class="checkout" style="grid-template-columns:1fr"><div class="form-card">' +
+      LM.successHtml("Order received" + (name ? ", " + LM.esc(name) : "") + "!", ref,
+        "We'll call or text you during shop hours to confirm fitment, your final price and install time" +
+        (payment === "Affirm" ? ", and send your Affirm link" : "") + ". Estimated total " + LM.money(total) + ".") +
+      '<div style="max-width:560px;margin:0 auto;width:100%">' + items.map(function (i) { return LM.cart.lineHtml(i, true); }).join("") + '</div>' +
+      '</div></div>';
+    root.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+})();
+</script>
+</body>
+</html>
