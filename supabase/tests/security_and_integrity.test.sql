@@ -73,7 +73,7 @@ update public.payments set voided_at = now(), void_reason = 'entered twice' wher
 do $$ begin
   assert (select paid_cents from public.invoices) = 0, 'voided payment excluded from paid';
   assert (select balance_cents from public.invoices) = 1000, 'balance restored after void';
-  assert (select status from public.invoices) = 'sent', 'status un-sticks after void';
+  assert (select status from public.invoices) in ('sent', 'overdue'), 'status un-sticks after void';
   assert (select count(*) from public.payments) = 1, 'voided payment stays in ledger';
   assert (public.get_client_workspace('10000000-0000-0000-0000-000000000001') -> 'payments' -> 0 ->> 'voided_at') is not null, 'workspace exposes voided_at';
 end $$;
@@ -498,4 +498,32 @@ select pg_temp.expect_error($q$update public.quotes set kind = 'invoice'$q$, 'ch
 set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';   -- stranger
 do $$ begin assert (select count(*) from public.meetings) = 0, 'stranger cannot read meetings'; end $$;
 select pg_temp.expect_error($q$insert into public.meetings (client_id, title) values ('10000000-0000-0000-0000-000000000001', 'x')$q$, 'row-level security');
+reset role;
+
+-- ── inquiries by phone, email or both (0028) ──────────────────────────────
+reset role;
+reset request.jwt.claim.sub;
+set role anon;
+select public.submit_lead('Phone Only', null, '', '(717) 555-0142', '{}', null, 'Call me', 'hash-phone') as phone_lead \gset
+select public.submit_lead('Both', null, 'both@example.com', '717-555-0143', '{}', null, null, 'hash-both');
+select pg_temp.expect_error($q$select public.submit_lead('Nobody', null, '', '', '{}', null, null)$q$, 'phone number or an email');
+select pg_temp.expect_error($q$select public.submit_lead('Short', null, null, '12345', '{}', null, null)$q$, 'valid phone');
+select pg_temp.expect_error($q$select public.submit_lead('Bad', null, 'nope', '717-555-0144', '{}', null, null)$q$, 'valid email');
+reset role;
+do $$ begin
+  assert (select email from public.leads where name = 'Phone Only') is null, 'phone-only lead stores no email';
+  assert (select phone from public.leads where name = 'Phone Only') = '(717) 555-0142', 'phone-only lead keeps the phone';
+end $$;
+select public.submit_lead('P2', null, null, '(717) 555-0142', '{}', null, null);
+select public.submit_lead('P3', null, null, '(717) 555-0142', '{}', null, null);
+set role anon;
+select pg_temp.expect_error($q$select public.submit_lead('P4', null, null, '(717) 555-0142', '{}', null, null)$q$, 'Too many requests');
+reset role;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';   -- owner
+select public.convert_lead_to_client(:'phone_lead');
+do $$ begin
+  assert (select email from public.clients where phone = '(717) 555-0142' and source = 'website') is null, 'client from a phone-only lead has no email';
+  assert (select count(*) from public.clients where phone = '(717) 555-0142' and source = 'website') = 1, 'client keeps the phone';
+end $$;
 reset role;

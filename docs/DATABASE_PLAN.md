@@ -355,3 +355,4 @@ available for a scheduled/back-office sweep.
 | 0025 | Project phases (`project_phases`, `tasks.phase_id`) + `project_templates` (6 seeded), `apply_project_template()`, `move_project_phase()`, `get_project_phases()` |
 | 0026 | Passkeys: `passkeys` (public WebAuthn credentials, owner-only RLS, no insert grant) + `passkey_challenges` (server-only) |
 | 0027 | Meeting notes (`meetings`, owner-only RLS), estimates (`quotes.kind`, `get_public_quote` returns it), client portal (`clients.portal_token/_hash/_enabled`, anonymous `get_public_portal`) |
+| 0028 | Website inquiries by phone, email or both: `leads.email` nullable (email or phone required), `submit_lead()` validates phone (7–15 digits) and rate-limits by phone when there is no email |

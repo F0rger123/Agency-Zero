@@ -15,6 +15,7 @@ import "server-only";
 export type LeadForEmail = {
   name: string;
   business: string;
+  /** Either may be empty: an inquiry needs a phone number, an email, or both. */
   email: string;
   phone: string;
   services: string[];
@@ -33,14 +34,16 @@ export async function notifyOwnerOfLead(lead: LeadForEmail): Promise<{ sent: boo
     ``,
     `Name:     ${lead.name}`,
     `Business: ${lead.business || "—"}`,
-    `Email:    ${lead.email}`,
+    `Email:    ${lead.email || "—"}`,
     `Phone:    ${lead.phone || "—"}`,
     `Needs:    ${lead.services.length ? lead.services.join(", ") : "—"}`,
     `Budget:   ${lead.budget || "—"}`,
     ``,
     lead.details || "(no details)",
     ``,
-    `Reply to this email to answer ${lead.name}. It is also saved in the CRM under Leads.`,
+    lead.email
+      ? `Reply to this email to answer ${lead.name}. It is also saved in the CRM under Leads.`
+      : `${lead.name} gave a phone number only. It is saved in the CRM under Leads.`,
   ];
 
   try {
@@ -50,7 +53,7 @@ export async function notifyOwnerOfLead(lead: LeadForEmail): Promise<{ sent: boo
       body: JSON.stringify({
         from,
         to: [to],
-        reply_to: lead.email,
+        ...(lead.email ? { reply_to: lead.email } : {}),
         subject: `New inquiry: ${lead.name}${lead.business ? ` (${lead.business})` : ""}`,
         text: lines.join("\n"),
       }),

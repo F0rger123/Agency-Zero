@@ -9,7 +9,18 @@ import { BUDGETS, SERVICE_OPTIONS, TIMELINES } from "./options";
 const initial: LeadState = {};
 const GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/+=<>#%";
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const STEPS = 8;
+const PHONE_OK = (value: string) => {
+  const digits = value.replace(/\D/g, "").length;
+  return digits >= 7 && digits <= 15;
+};
+const STEPS = 9;
+
+type Reach = "" | "phone" | "email" | "both";
+const REACH_OPTIONS: { value: Exclude<Reach, "">; label: string; note: string }[] = [
+  { value: "phone", label: "Phone", note: "Call or text me" },
+  { value: "email", label: "Email", note: "Write me a message" },
+  { value: "both", label: "Both", note: "Phone and email" },
+];
 
 /** Big text that decodes from random characters into the real message, left to right. */
 function DecodeText({ text, delay = 0, duration = 1500, className = "" }: { text: string; delay?: number; duration?: number; className?: string }) {
@@ -62,6 +73,7 @@ export function ContactWizard() {
   const [direction, setDirection] = useState<1 | -1>(1);
   const [values, setValues] = useState({ name: "", email: "", business: "", phone: "", website: "", details: "", budget: "", timeline: "" });
   const [services, setServices] = useState<string[]>([]);
+  const [reach, setReach] = useState<Reach>("");
   const [noWebsite, setNoWebsite] = useState(false);
   const [noSocial, setNoSocial] = useState(false);
   const [error, setError] = useState("");
@@ -82,7 +94,7 @@ export function ContactWizard() {
   useEffect(() => {
     if (!hasInteracted.current) return;
     const frame = requestAnimationFrame(() => {
-      const field = formRef.current?.querySelector<HTMLElement>(`[data-step="${step}"] input:not([type=checkbox]):not([type=hidden]), [data-step="${step}"] textarea, [data-step="${step}"] select`);
+      const field = formRef.current?.querySelector<HTMLElement>(`[data-step="${step}"] input:not([type=checkbox]):not([type=hidden]):not(:disabled), [data-step="${step}"] textarea, [data-step="${step}"] select`);
       field?.focus({ preventScroll: true });
     });
     return () => cancelAnimationFrame(frame);
@@ -93,8 +105,10 @@ export function ContactWizard() {
 
   const problem = (index: number): string => {
     if (index === 0 && !values.name.trim()) return "Please tell me your name.";
-    if (index === 1 && !EMAIL.test(values.email.trim())) return "Please enter a valid email address.";
-    if (index === 3 && services.length === 0) return "Pick at least one. “Not sure yet” is fine.";
+    if (index === 1 && !reach) return "Choose how I can reach you.";
+    if (index === 2 && (reach === "email" || reach === "both") && !EMAIL.test(values.email.trim())) return "Please enter a valid email address.";
+    if (index === 2 && (reach === "phone" || reach === "both") && !PHONE_OK(values.phone)) return "Please enter a phone number I can call or text.";
+    if (index === 4 && services.length === 0) return "Pick at least one. “Not sure yet” is fine.";
     return "";
   };
 
@@ -109,6 +123,14 @@ export function ContactWizard() {
     setDirection(1);
     if (step < STEPS - 1) setStep(step + 1);
     else formRef.current?.requestSubmit();
+  };
+  /** Picking how to be reached moves straight on to the matching details screen. */
+  const chooseReach = (value: Exclude<Reach, "">) => {
+    setReach(value);
+    setError("");
+    hasInteracted.current = true;
+    setDirection(1);
+    setStep(2);
   };
   const back = () => {
     setError("");
@@ -193,24 +215,55 @@ export function ContactWizard() {
           <input id="w-name" name="name" value={values.name} onChange={set("name")} maxLength={160} autoComplete="name" enterKeyHint="next" className="field mt-8" placeholder="Jane Smith" />
         </div>
 
-        {/* 1 email */}
+        {/* 1 how to reach */}
         <div data-step="1" className={stepClass(1)}>
-          <label htmlFor="w-email" className="t-title !text-[1.9rem] !leading-[1.1]">Where can I reach you?</label>
-          <input id="w-email" name="email" type="email" inputMode="email" value={values.email} onChange={set("email")} maxLength={254} autoComplete="email" autoCapitalize="none" enterKeyHint="next" className="field mt-8" placeholder="you@company.com" />
+          <p className="t-title !text-[1.9rem] !leading-[1.1]">How can I reach you?</p>
+          <p className="t-body mt-3 !text-[0.92rem]">Pick one. You can change it later.</p>
+          <div role="radiogroup" aria-label="How can I reach you?" className="mt-8 space-y-3">
+            {REACH_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={reach === option.value}
+                onClick={() => chooseReach(option.value)}
+                className={`flex w-full items-center justify-between border px-5 py-5 text-left transition-colors ${reach === option.value ? "border-bone bg-bone text-ink" : "border-rule-strong text-bone"}`}
+              >
+                <span>
+                  <span className="block text-lg font-medium">{option.label}</span>
+                  <span className={`mt-0.5 block text-sm ${reach === option.value ? "text-ink/70" : "text-mist"}`}>{option.note}</span>
+                </span>
+                <span aria-hidden>→</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* 2 business + phone */}
+        {/* 2 the contact details they chose (the unused field is disabled so it is never sent) */}
         <div data-step="2" className={stepClass(2)}>
-          <p className="t-title !text-[1.9rem] !leading-[1.1]">Tell me about your business.</p>
-          <p className="t-body mt-3 !text-[0.92rem]">Both are optional.</p>
-          <label htmlFor="w-business" className="sr-only">Business name</label>
-          <input id="w-business" name="business" value={values.business} onChange={set("business")} maxLength={200} autoComplete="organization" enterKeyHint="next" className="field mt-6" placeholder="Business name" />
-          <label htmlFor="w-phone" className="sr-only">Phone</label>
-          <input id="w-phone" name="phone" type="tel" inputMode="tel" value={values.phone} onChange={set("phone")} maxLength={40} autoComplete="tel" enterKeyHint="next" className="field mt-4" placeholder="Phone number" />
+          <p className="t-title !text-[1.9rem] !leading-[1.1]">
+            {reach === "phone" ? "What's your number?" : reach === "email" ? "What's your email?" : "Your phone and email."}
+          </p>
+          <p className="t-body mt-3 !text-[0.92rem]">{reach === "phone" ? "I will call or text." : reach === "email" ? "I will write back." : "I will use whichever is quicker."}</p>
+          <div className={reach === "phone" ? "hidden" : ""}>
+            <label htmlFor="w-email" className="sr-only">Email</label>
+            <input id="w-email" name="email" type="email" inputMode="email" value={values.email} onChange={set("email")} maxLength={254} autoComplete="email" autoCapitalize="none" enterKeyHint="next" disabled={reach === "phone" || reach === ""} className="field mt-8" placeholder="you@company.com" />
+          </div>
+          <div className={reach === "email" ? "hidden" : ""}>
+            <label htmlFor="w-phone" className="sr-only">Phone</label>
+            <input id="w-phone" name="phone" type="tel" inputMode="tel" value={values.phone} onChange={set("phone")} maxLength={40} autoComplete="tel" enterKeyHint="next" disabled={reach === "email" || reach === ""} className={`field ${reach === "both" ? "mt-5" : "mt-8"}`} placeholder="(555) 123-4567" />
+          </div>
         </div>
 
-        {/* 3 services */}
+        {/* 3 business */}
         <div data-step="3" className={stepClass(3)}>
+          <label htmlFor="w-business" className="t-title !text-[1.9rem] !leading-[1.1]">What&apos;s your business called?</label>
+          <p className="t-body mt-3 !text-[0.92rem]">Optional.</p>
+          <input id="w-business" name="business" value={values.business} onChange={set("business")} maxLength={200} autoComplete="organization" enterKeyHint="next" className="field mt-6" placeholder="Business name" />
+        </div>
+
+        {/* 4 services */}
+        <div data-step="4" className={stepClass(4)}>
           <p className="t-title !text-[1.9rem] !leading-[1.1]">What do you need?</p>
           <p className="t-body mt-3 !text-[0.92rem]">Pick everything that applies.</p>
           <div className="mt-6 flex flex-wrap gap-2.5">
@@ -228,8 +281,8 @@ export function ContactWizard() {
           </div>
         </div>
 
-        {/* 4 budget + start (dropdowns) */}
-        <div data-step="4" className={stepClass(4)}>
+        {/* 5 budget + start (dropdowns) */}
+        <div data-step="5" className={stepClass(5)}>
           <p className="t-title !text-[1.9rem] !leading-[1.1]">Budget and timing.</p>
           <p className="t-body mt-3 !text-[0.92rem]">A rough idea is plenty.</p>
           <div className="mt-8">
@@ -240,8 +293,8 @@ export function ContactWizard() {
           </div>
         </div>
 
-        {/* 5 website */}
-        <div data-step="5" className={stepClass(5)}>
+        {/* 6 website */}
+        <div data-step="6" className={stepClass(6)}>
           <label htmlFor="w-website" className="t-title !text-[1.9rem] !leading-[1.1]">Do you have a website?</label>
           <p className="t-body mt-3 !text-[0.92rem]">Paste the address so I can take a look.</p>
           <input id="w-website" name="website" type="url" inputMode="url" value={values.website} onChange={set("website")} autoCapitalize="none" autoCorrect="off" maxLength={300} disabled={noWebsite} enterKeyHint="next" className="field mt-6 disabled:opacity-40" placeholder="https://yourbusiness.com" />
@@ -251,8 +304,8 @@ export function ContactWizard() {
           </label>
         </div>
 
-        {/* 6 socials */}
-        <div data-step="6" className={stepClass(6)}>
+        {/* 7 socials */}
+        <div data-step="7" className={stepClass(7)}>
           <p className="t-title !text-[1.9rem] !leading-[1.1]">Where are you on social?</p>
           <p className="t-body mt-3 !text-[0.92rem]">Paste a link or @handle.</p>
           <div className={`mt-4 transition-opacity ${noSocial ? "opacity-40" : ""}`}>
@@ -274,8 +327,8 @@ export function ContactWizard() {
           </label>
         </div>
 
-        {/* 7 details */}
-        <div data-step="7" className={stepClass(7)}>
+        {/* 8 details */}
+        <div data-step="8" className={stepClass(8)}>
           <label htmlFor="w-details" className="t-title !text-[1.9rem] !leading-[1.1]">Anything else?</label>
           <p className="t-body mt-3 !text-[0.92rem]">What are you trying to achieve? Optional.</p>
           <textarea id="w-details" name="details" value={values.details} onChange={set("details")} rows={5} maxLength={3000} className="field mt-6 resize-none" placeholder="Timing, examples you like, who it's for…" />
@@ -286,7 +339,7 @@ export function ContactWizard() {
         {error || state.error ? (
           <p role="alert" className="mb-3 text-sm text-bone">{error || state.error}</p>
         ) : null}
-        <button type="button" onClick={next} disabled={pending} className="btn btn-solid w-full justify-between disabled:opacity-60">
+        <button type="button" onClick={next} disabled={pending} className={`btn btn-solid w-full justify-between disabled:opacity-60 ${step === 1 && !reach ? "invisible" : ""}`}>
           {step === STEPS - 1 ? (pending ? "Sending…" : "Send inquiry") : "Next"} <span className="arrow" aria-hidden>→</span>
         </button>
       </footer>

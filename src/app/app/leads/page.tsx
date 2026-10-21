@@ -15,7 +15,7 @@ type Lead = {
   id: string;
   name: string;
   business: string | null;
-  email: string;
+  email: string | null;
   phone: string | null;
   services: string[];
   budget: string | null;
@@ -93,12 +93,21 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                   {lead.name}
                   {lead.business ? <span className="text-muted-foreground"> · {lead.business}</span> : null}
                 </p>
-                <p className="mt-1 text-sm">
-                  <a href={`mailto:${lead.email}`} className="underline decoration-border underline-offset-4">
-                    {lead.email}
-                  </a>
-                </p>
-                {lead.phone ? <p className="mt-1 text-sm text-muted-foreground">{lead.phone}</p> : null}
+                {lead.email ? (
+                  <p className="mt-1 text-sm">
+                    <a href={`mailto:${lead.email}`} className="underline decoration-border underline-offset-4">
+                      {lead.email}
+                    </a>
+                  </p>
+                ) : null}
+                {lead.phone ? (
+                  <p className={`mt-1 text-sm ${lead.email ? "text-muted-foreground" : ""}`}>
+                    <a href={`tel:${lead.phone.replace(/[^+\d]/g, "")}`} className="underline decoration-border underline-offset-4">
+                      {lead.phone}
+                    </a>
+                    {lead.email ? null : <span className="ml-2 text-xs text-muted-foreground">phone only</span>}
+                  </p>
+                ) : null}
                 <p className="mt-3 text-xs text-faint-foreground">
                   {dateTimeLabel(lead.created_at)} · <span className="uppercase tracking-widest">{lead.status}</span>
                 </p>

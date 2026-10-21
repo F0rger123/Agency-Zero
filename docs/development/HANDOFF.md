@@ -1,5 +1,12 @@
 # Handoff log (newest first)
 
+## 2026-10-21 — Claude — contact form: reach by phone, email or both
+
+**Migration to apply: `0028_leads_phone_or_email.sql`** (additive). Until it is applied the website still works: a phone-only inquiry is refused with "Please add an email address too…" and email or both keep working exactly as before.
+- Phone wizard (`contact-wizard.tsx`): step 2 is now "How can I reach you?" with Phone / Email / Both; tapping one moves straight to a details screen that shows only the matching field(s). The unused field is disabled so it is never sent. Business moved to its own step; 9 steps total. Desktop form has the same choice (chips) with only the relevant fields required.
+- Server (`contact/actions.ts`): needs at least one of phone/email; any email must be valid; phone must have 7–15 digits. `lead-notify.ts` handles no email (no reply-to, says phone only). Leads page shows phone-only leads with a tap-to-call link; converting a phone-only lead creates a client with no email.
+- Tests: SQL cases for 0028 (phone-only, both, neither, bad phone, bad email, phone rate limit, convert) and a vitest case. Also fixed a date-dependent SQL test (an invoice due 2026-10-15 became "overdue" in real time) so `npm run test:db` passes again.
+
 ## 2026-10-12 — Claude — L&M Tire and Wheel full website preview + pitch page (live under /preview/)
 
 **No migrations.** Static files only, plus three small app-level changes: `src/app/robots.ts` disallows `/preview/`,

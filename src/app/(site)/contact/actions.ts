@@ -62,7 +62,11 @@ export async function submitLeadAction(_previous: LeadState, formData: FormData)
   const services = formData.getAll("services").map(String);
 
   if (!name) return { error: "Please tell me your name." };
-  if (!EMAIL.test(email)) return { error: "Please enter a valid email address." };
+  // Phone, email or both: at least one is needed, and whatever is given must be usable.
+  const phoneDigits = phone.replace(/\D/g, "").length;
+  if (!email && !phone) return { error: "Please add a phone number or an email address." };
+  if (email && !EMAIL.test(email)) return { error: "Please enter a valid email address." };
+  if (phone && (phoneDigits < 7 || phoneDigits > 15)) return { error: "Please enter a valid phone number." };
   if (services.some((s) => !SERVICE_OPTIONS.some((option) => option.value === s))) {
     return { error: "Please choose from the listed services." };
   }
@@ -121,6 +125,8 @@ export async function submitLeadAction(_previous: LeadState, formData: FormData)
     if (/does not exist|schema cache|Could not find the function/i.test(error.message)) {
       return { error: `This form is temporarily unavailable. Please email ${site.email}.` };
     }
+    // A database that has not applied 0028 still insists on an email: say so instead of a vague failure.
+    if (!email && /valid email address/i.test(error.message)) return { error: "Please add an email address too. Phone-only inquiries are not switched on yet." };
     if (/Please enter|Invalid/.test(error.message)) return { error: error.message };
     return { error: `Something went wrong. Please email ${site.email}.` };
   }

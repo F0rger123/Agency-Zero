@@ -25,6 +25,7 @@ function Step({ number, title, hint, children }: { number: string; title: string
 function LongForm() {
   const [state, action, pending] = useActionState(submitLeadAction, initial);
   const [startedAt] = useState(() => Date.now());
+  const [reach, setReach] = useState<"phone" | "email" | "both">("email");
   const [noWebsite, setNoWebsite] = useState(false);
   const [noSocial, setNoSocial] = useState(false);
 
@@ -61,14 +62,29 @@ function LongForm() {
             <label htmlFor="business" className="t-label">Business</label>
             <input id="business" name="business" maxLength={200} autoComplete="organization" enterKeyHint="next" className="field" placeholder="Company name" />
           </div>
-          <div>
-            <label htmlFor="email" className="t-label">Email *</label>
-            <input id="email" name="email" type="email" inputMode="email" required maxLength={254} autoComplete="email" autoCapitalize="none" enterKeyHint="next" className="field" placeholder="you@company.com" />
-          </div>
-          <div>
-            <label htmlFor="phone" className="t-label">Phone (optional)</label>
-            <input id="phone" name="phone" type="tel" inputMode="tel" maxLength={40} autoComplete="tel" enterKeyHint="next" className="field" placeholder="+1 …" />
-          </div>
+          <fieldset className="sm:col-span-2">
+            <legend className="t-label">How can I reach you? *</legend>
+            <div className="mt-3 flex flex-wrap gap-3" role="radiogroup" aria-label="How can I reach you?">
+              {([["phone", "Phone"], ["email", "Email"], ["both", "Both"]] as const).map(([value, label]) => (
+                <label key={value} className="contents">
+                  <input type="radio" name="reach" value={value} checked={reach === value} onChange={() => setReach(value)} className="peer sr-only" />
+                  <span className="chip">{label}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          {reach !== "phone" ? (
+            <div>
+              <label htmlFor="email" className="t-label">Email *</label>
+              <input id="email" name="email" type="email" inputMode="email" required maxLength={254} autoComplete="email" autoCapitalize="none" enterKeyHint="next" className="field" placeholder="you@company.com" />
+            </div>
+          ) : null}
+          {reach !== "email" ? (
+            <div>
+              <label htmlFor="phone" className="t-label">Phone *</label>
+              <input id="phone" name="phone" type="tel" inputMode="tel" required minLength={7} maxLength={40} autoComplete="tel" enterKeyHint="next" className="field" placeholder="(555) 123-4567" />
+            </div>
+          ) : null}
         </div>
       </Step>
 

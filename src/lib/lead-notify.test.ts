@@ -49,4 +49,17 @@ describe("notifyOwnerOfLead", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network down")));
     expect(await notifyOwnerOfLead(lead)).toEqual({ sent: false, reason: "network down" });
   });
+
+  it("handles a phone-only inquiry: no reply-to, and says so", async () => {
+    process.env.RESEND_API_KEY = "re_test";
+    process.env.LEAD_NOTIFY_EMAIL = "owner@example.com";
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+    await notifyOwnerOfLead({ ...lead, email: "", phone: "717-555-0142" });
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body.reply_to).toBeUndefined();
+    expect(body.text).toContain("phone number only");
+    expect(body.text).toContain("717-555-0142");
+  });
 });
+
