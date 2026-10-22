@@ -26,5 +26,18 @@ select * from (
   union all
   select '0026', 'passkeys tables',
          to_regclass('public.passkeys') is not null and to_regclass('public.passkey_challenges') is not null
+  union all
+  select '0027', 'meetings table',
+         to_regclass('public.meetings') is not null
+  union all
+  select '0027', 'estimates + client portal (quotes.kind, clients.portal_token)',
+         exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'quotes' and column_name = 'kind')
+         and exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'clients' and column_name = 'portal_token')
+  union all
+  select '0027', 'get_public_portal()',
+         exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname = 'get_public_portal')
+  union all
+  select '0028', 'phone-only inquiries (leads.email can be empty)',
+         exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'leads' and column_name = 'email' and is_nullable = 'YES')
 ) checks
 order by migration, what;
