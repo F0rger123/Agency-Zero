@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Engine, type Mode, type RemoteCursor, type Style, type Tool } from "@/lib/whiteboard/engine";
 import { newId } from "@/lib/whiteboard/ids";
@@ -25,6 +26,10 @@ const SHAPES: { kind: ShapeKind; label: string }[] = [
   { kind: "arrow", label: "Arrow" },
 ];
 const TEXT_SIZES = [26, 40, 64];
+const INK_NAMES = ["Ink", "Grey", "Red", "Orange", "Green", "Blue", "Purple"];
+const NOTE_NAMES = ["Yellow", "Pink", "Blue", "Green"];
+const WIDTH_NAMES = ["Thin", "Medium", "Thick"];
+const TOOL_KEYS: Partial<Record<Tool, string>> = { select: "V", pen: "P", eraser: "E", shape: "S", text: "T", note: "N" };
 
 const slug = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "board";
 
@@ -90,6 +95,9 @@ export function BoardEditor({
   const [title, setTitle] = useState(initialTitle);
   const [confirmClear, setConfirmClear] = useState(false);
   const [dock, setDock] = useState(false);
+  const [dockOffset, setDockOffset] = useState({ x: 0, y: 0 });
+  const dockDrag = useRef<{ id: number; x: number; y: number; ox: number; oy: number } | null>(null);
+  const router = useRouter();
 
   const viewOnly = role === "guest" && shareMode === "view";
   const live = useRef({ frame: 0, following: true, present: false, dock: false, shareMode: initialShareMode, token: initialToken });
@@ -379,6 +387,9 @@ export function BoardEditor({
           endPresent();
           return;
         }
+        if (event.key === "+" || event.key === "=") return engine.zoomBy(1.25);
+        if (event.key === "-") return engine.zoomBy(0.8);
+        if (event.key === "0") return engine.fit();
         if (!live.current.dock) return;
       }
       const meta = event.metaKey || event.ctrlKey;
@@ -473,20 +484,24 @@ export function BoardEditor({
       type="button"
       aria-label={label}
       aria-pressed={tool === key}
-      title={label}
+      data-tip={TOOL_KEYS[key] ? `${label} · ${TOOL_KEYS[key]}` : label}
       onClick={onClick ?? (() => (setTool(key), setMenu(null)))}
-      className={`wb-btn ${tool === key ? "wb-btn-on" : ""}`}
+      className={`wb-btn wb-tool ${tool === key ? "wb-btn-on" : ""}`}
     >
       <WbIcon name={icon} />
     </button>
   );
 
   const toolbar = (
-        <div className={`pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]`} data-wb-menu>
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+          style={present ? { transform: `translate(${dockOffset.x}px, ${dockOffset.y}px)` } : undefined}
+          data-wb-menu
+        >
           {showStyle ? (
             <div className="wb-rise pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1.5 rounded-2xl border border-border bg-background/95 px-3 py-2 shadow-lg backdrop-blur">
               <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Colour">
-                {(tool === "note" ? NOTE_COLORS : INK).map((color) => {
+                {(tool === "note" ? NOTE_COLORS : INK).map((color, index) => {
                   const chosen = (tool === "note" ? style.noteColor : style.color) === color;
                   return (
                     <button
@@ -494,9 +509,10 @@ export function BoardEditor({
                       type="button"
                       role="radio"
                       aria-checked={chosen}
-                      aria-label={color}
+                      aria-label={(tool === "note" ? NOTE_NAMES : INK_NAMES)[index]}
+                      data-tip={(tool === "note" ? NOTE_NAMES : INK_NAMES)[index]}
                       onClick={() => setStyle((value) => (tool === "note" ? { ...value, noteColor: color } : { ...value, color }))}
-                      className={`size-7 rounded-full border transition-transform ${chosen ? "scale-110 border-foreground ring-2 ring-foreground/20" : "border-black/10"}`}
+                      className={`wb-swatch size-7 rounded-full border ${chosen ? "wb-swatch-on border-foreground ring-2 ring-foreground/20" : "border-black/10"}`}
                       style={{ background: color }}
                     />
                   );
@@ -504,8 +520,8 @@ export function BoardEditor({
               </div>
               {tool === "pen" || tool === "shape" ? (
                 <div className="flex items-center gap-1" role="radiogroup" aria-label="Thickness">
-                  {PEN_WIDTHS.map((width) => (
-                    <button key={width} type="button" role="radio" aria-checked={style.width === width} aria-label={`Thickness ${width}`} onClick={() => setStyle((value) => ({ ...value, width }))} className={`grid size-8 place-items-center rounded-full transition-colors ${style.width === width ? "bg-muted" : ""}`}>
+                  {PEN_WIDTHS.map((width, index) => (
+                    <button key={width} type="button" role="radio" aria-checked={style.width === width} aria-label={WIDTH_NAMES[index]} data-tip={WIDTH_NAMES[index]} onClick={() => setStyle((value) => ({ ...value, width }))} className={`wb-chip grid size-8 place-items-center rounded-full ${style.width === width ? "bg-muted" : ""}`}>
                       <span className="rounded-full bg-foreground" style={{ width: 4 + width, height: 4 + width }} />
                     </button>
                   ))}
@@ -514,7 +530,7 @@ export function BoardEditor({
               {tool === "text" ? (
                 <div className="flex items-center gap-1" role="radiogroup" aria-label="Text size">
                   {TEXT_SIZES.map((size, index) => (
-                    <button key={size} type="button" role="radio" aria-checked={style.textSize === size} aria-label={`Text size ${["small", "medium", "large"][index]}`} onClick={() => setStyle((value) => ({ ...value, textSize: size }))} className={`grid size-8 place-items-center rounded-full font-semibold transition-colors ${style.textSize === size ? "bg-muted" : ""}`} style={{ fontSize: 11 + index * 4 }}>A</button>
+                    <button key={size} type="button" role="radio" aria-checked={style.textSize === size} aria-label={`Text size ${["small", "medium", "large"][index]}`} data-tip={["Small", "Medium", "Large"][index]} onClick={() => setStyle((value) => ({ ...value, textSize: size }))} className={`wb-chip grid size-8 place-items-center rounded-full font-semibold ${style.textSize === size ? "bg-muted" : ""}`} style={{ fontSize: 11 + index * 4 }}>A</button>
                   ))}
                 </div>
               ) : null}
@@ -523,7 +539,7 @@ export function BoardEditor({
           {menu === "shapes" ? (
             <div className="wb-rise pointer-events-auto flex items-center gap-1 rounded-2xl border border-border bg-background/95 p-1.5 shadow-lg backdrop-blur" role="radiogroup" aria-label="Shape">
               {SHAPES.map((shape) => (
-                <button key={shape.kind} type="button" role="radio" aria-checked={style.shape === shape.kind && tool === "shape"} aria-label={shape.label} title={shape.label} onClick={() => (setStyle((value) => ({ ...value, shape: shape.kind })), setTool("shape"), setMenu(null))} className={`wb-btn !size-11 ${style.shape === shape.kind && tool === "shape" ? "wb-btn-on" : ""}`}>
+                <button key={shape.kind} type="button" role="radio" aria-checked={style.shape === shape.kind && tool === "shape"} aria-label={shape.label} data-tip={shape.label} onClick={() => (setStyle((value) => ({ ...value, shape: shape.kind })), setTool("shape"), setMenu(null))} className={`wb-btn wb-tool !size-11 ${style.shape === shape.kind && tool === "shape" ? "wb-btn-on" : ""}`}>
                   <WbIcon name={shape.kind} />
                 </button>
               ))}
@@ -531,7 +547,6 @@ export function BoardEditor({
           ) : null}
           {menu === "more" ? (
             <div className="wb-rise pointer-events-auto w-[min(92vw,16rem)] rounded-2xl border border-border bg-background/95 p-1.5 shadow-lg backdrop-blur">
-              <button type="button" className="wb-menu-item" disabled={!hist.redo} onClick={() => (engine?.redo(), setMenu(null))}>Redo</button>
               {present ? null : (
                 <>
                   <button type="button" className="wb-menu-item" onClick={() => (engine?.zoomBy(1.25), setMenu(null))}>Zoom in</button>
@@ -542,19 +557,54 @@ export function BoardEditor({
               <button type="button" className="wb-menu-item text-red-600" onClick={() => (setConfirmClear(true), setMenu(null))}>Clear this frame…</button>
             </div>
           ) : null}
-          <div className="pointer-events-auto grid w-full max-w-[30rem] grid-cols-8 gap-0.5 rounded-[1.6rem] border border-border bg-background/95 p-1 shadow-xl backdrop-blur">
+          <div className="pointer-events-auto flex w-full max-w-[33rem] items-center gap-0.5 rounded-[1.6rem] border border-border bg-background/95 p-1 shadow-xl backdrop-blur">
+            {present ? (
+              <button
+                type="button"
+                aria-label="Move the toolbar (double-click to put it back)"
+                data-tip="Drag to move"
+                onPointerDown={(event) => {
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                  dockDrag.current = { id: event.pointerId, x: event.clientX, y: event.clientY, ox: dockOffset.x, oy: dockOffset.y };
+                }}
+                onPointerMove={(event) => {
+                  const drag = dockDrag.current;
+                  if (!drag || drag.id !== event.pointerId) return;
+                  const limitX = window.innerWidth / 2 - 60;
+                  setDockOffset({
+                    x: Math.max(-limitX, Math.min(limitX, drag.ox + event.clientX - drag.x)),
+                    y: Math.max(-(window.innerHeight - 140), Math.min(0, drag.oy + event.clientY - drag.y)),
+                  });
+                }}
+                onPointerUp={() => (dockDrag.current = null)}
+                onDoubleClick={() => setDockOffset({ x: 0, y: 0 })}
+                className="wb-grip grid h-11 w-7 shrink-0 cursor-grab touch-none place-items-center rounded-full text-muted-foreground active:cursor-grabbing"
+              >
+                <svg viewBox="0 0 8 16" className="h-4 w-2" fill="currentColor" aria-hidden>
+                  {[2, 6, 10, 14].flatMap((y) => [<circle key={`a${y}`} cx="2" cy={y} r="1.2" />, <circle key={`b${y}`} cx="6" cy={y} r="1.2" />])}
+                </svg>
+              </button>
+            ) : null}
             {toolButton("select", "select", "Move")}
             {toolButton("pen", "pen", "Pen")}
             {toolButton("eraser", "eraser", "Eraser")}
             {toolButton("shape", "shapes", "Shapes", () => (setMenu(menu === "shapes" ? null : "shapes"), tool !== "shape" && setTool("shape")))}
             {toolButton("text", "text", "Text")}
             {toolButton("note", "note", "Sticky note")}
-            <button type="button" aria-label="Undo" title="Undo" disabled={!hist.undo} onClick={() => engine?.undo()} className="wb-btn disabled:opacity-30">
+            <button type="button" aria-label="Undo" data-tip="Undo · Ctrl Z" disabled={!hist.undo} onClick={() => engine?.undo()} className="wb-btn wb-tool disabled:opacity-30">
               <WbIcon name="undo" />
             </button>
-            <button type="button" aria-label="More" title="More" aria-pressed={menu === "more"} onClick={() => setMenu(menu === "more" ? null : "more")} className={`wb-btn ${menu === "more" ? "wb-btn-on" : ""}`}>
+            <button type="button" aria-label="Redo" data-tip="Redo · Ctrl Shift Z" disabled={!hist.redo} onClick={() => engine?.redo()} className="wb-btn wb-tool disabled:opacity-30">
+              <WbIcon name="redo" />
+            </button>
+            <button type="button" aria-label="More" data-tip="More" aria-pressed={menu === "more"} onClick={() => setMenu(menu === "more" ? null : "more")} className={`wb-btn wb-tool ${menu === "more" ? "wb-btn-on" : ""}`}>
               <WbIcon name="more" />
             </button>
+            {present ? (
+              <button type="button" aria-label="Hide tools" data-tip="Hide tools" onClick={() => (setDock(false), setMenu(null))} className="wb-btn wb-tool !w-9 shrink-0 !flex-none text-muted-foreground">
+                <WbIcon name="minimize" className="size-5" />
+              </button>
+            ) : null}
           </div>
         </div>
   );
@@ -674,10 +724,19 @@ export function BoardEditor({
 
       {/* Toolbar (also in presentation mode, when the tools are expanded) */}
       {toolsVisible ? toolbar : null}
+      {present && !dock && !viewOnly ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center pb-[max(0.9rem,env(safe-area-inset-bottom))]">
+          <button type="button" onClick={() => setDock(true)} aria-label="Show tools" className="wb-pill wb-lift wb-rise pointer-events-auto flex h-11 items-center gap-2 rounded-full px-4 text-sm font-medium">
+            <WbIcon name="pen" className="size-4" />
+            Tools
+            <WbIcon name="expand" className="size-4 text-muted-foreground" />
+          </button>
+        </div>
+      ) : null}
 
       {/* Zoom (desktop) */}
-      {drawable || viewOnly ? (
-        <div className="absolute bottom-4 right-4 z-10 hidden items-center gap-0.5 rounded-full border border-border bg-background/90 p-1 text-xs shadow-sm backdrop-blur md:flex">
+      {drawable || viewOnly || present ? (
+        <div className="absolute bottom-4 right-4 z-30 hidden items-center gap-0.5 rounded-full border border-border bg-background/90 p-1 text-xs shadow-sm backdrop-blur md:flex">
           <button type="button" aria-label="Zoom out" className="wb-btn !size-8" onClick={() => engine?.zoomBy(0.8)}><WbIcon name="minus" className="size-4" /></button>
           <span className="w-10 text-center tabular-nums text-muted-foreground">{zoom}%</span>
           <button type="button" aria-label="Zoom in" className="wb-btn !size-8" onClick={() => engine?.zoomBy(1.25)}><WbIcon name="plus" className="size-4" /></button>
@@ -688,21 +747,26 @@ export function BoardEditor({
       {/* Presenting */}
       {present ? (
         <>
-          <button type="button" aria-label="Exit presentation" onClick={endPresent} className="wb-pill absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-40 grid size-11 place-items-center rounded-full">
-            <WbIcon name="close" className="size-5" />
-          </button>
-          {viewOnly ? null : (
-            <button
-              type="button"
-              aria-pressed={dock}
-              aria-label={dock ? "Hide tools" : "Show tools"}
-              onClick={() => (setDock((value) => !value), setMenu(null))}
-              className={`wb-pill absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] z-40 flex h-11 items-center gap-2 rounded-full px-3.5 text-sm font-medium ${dock ? "!bg-foreground !text-background" : ""}`}
-            >
-              <WbIcon name="pen" className="size-5" />
-              <span className="hidden sm:inline">{dock ? "Hide tools" : "Tools"}</span>
+          <div className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-40 flex items-center gap-2">
+            <button type="button" onClick={endPresent} className="wb-pill wb-lift flex h-11 items-center gap-2 rounded-full px-4 text-sm font-medium">
+              <WbIcon name="stop" className="size-4" />
+              <span>Stop presenting</span>
             </button>
-          )}
+            {backHref ? (
+              <button
+                type="button"
+                aria-label="Close the board"
+                data-tip-below="Close the board"
+                onClick={() => {
+                  endPresent();
+                  router.push(backHref);
+                }}
+                className="wb-pill wb-lift grid size-11 place-items-center rounded-full"
+              >
+                <WbIcon name="close" className="size-5" />
+              </button>
+            ) : null}
+          </div>
           <button type="button" aria-label="Previous frame" disabled={frame === 0} onClick={() => goFrame(frame - 1, false)} className="wb-pill absolute left-3 top-1/2 z-30 hidden size-12 -translate-y-1/2 place-items-center rounded-full disabled:opacity-0 sm:grid">
             <WbIcon name="prev" />
           </button>

@@ -28,7 +28,7 @@ type Action =
   | { t: "shape"; id: string; x0: number; y0: number }
   | { t: "erase"; removed: Map<string, El>; last: Pt }
   | { t: "move"; id: string; orig: El; start: Pt; startScreen: Pt; dragged: boolean }
-  | { t: "pan"; last: Pt; vx: number; vy: number; lastT: number; startScreen: Pt; startT: number; swiped: boolean }
+  | { t: "pan"; last: Pt; vx: number; vy: number; lastT: number; startScreen: Pt; startT: number; swiped: boolean; swipe?: boolean }
   | { t: "create"; kind: "text" | "note"; at: Pt; startScreen: Pt; moved: boolean; targetId?: string };
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -168,8 +168,10 @@ export class Engine {
     this.requestRender();
   }
   setMode(mode: Mode) {
+    const wasPresenting = this.mode === "present";
     this.mode = mode;
     if (mode !== "present") this.annotate = false;
+    if (wasPresenting && mode !== "present") this.fit(false);
     if (mode !== "edit") this.finishText();
     if (mode === "present") this.fit(false);
     this.requestRender();
@@ -189,7 +191,8 @@ export class Engine {
     this.views[this.frame] = this.view;
     this.frame = index;
     this.selectedId = null;
-    this.view = this.views[index] ?? this.defaultView();
+    this.view = this.mode === "present" ? this.defaultView() : (this.views[index] ?? this.defaultView());
+    if (this.mode === "present") this.autoFit = true;
     this.anim = null;
     this.cb.onView();
     this.requestRender();
@@ -312,7 +315,7 @@ export class Engine {
     this.dpr = dpr;
     this.canvas.width = Math.round(rect.width * dpr);
     this.canvas.height = Math.round(rect.height * dpr);
-    if (this.autoFit || this.mode === "present") this.view = this.defaultView();
+    if (this.autoFit) this.view = this.defaultView();
     this.cb.onView();
     this.requestRender();
   }
@@ -418,7 +421,7 @@ export class Engine {
     const p = this.point(event);
     this.pointers.set(event.pointerId, p);
 
-    if (this.pointers.size === 2 && this.mode !== "present") {
+    if (this.pointers.size === 2) {
       // A second finger: whatever the first one started is not a drawing; switch to pinch and pan.
       this.cancelAction();
       const [aId, bId] = [...this.pointers.keys()];
@@ -434,7 +437,8 @@ export class Engine {
     const panning = event.button === 1 || (event.pointerType === "mouse" && this.spaceDown);
     const w = this.world(p);
     if (this.mode === "present" && !this.annotate) {
-      this.action = { t: "pan", last: p, vx: 0, vy: 0, lastT: performance.now(), startScreen: p, startT: performance.now(), swiped: false };
+      // A finger swipes between frames; a mouse drags the (zoomed) page around.
+      this.action = { t: "pan", last: p, vx: 0, vy: 0, lastT: performance.now(), startScreen: p, startT: performance.now(), swiped: false, swipe: event.pointerType !== "mouse" };
       return;
     }
     if (panning || this.mode === "view") {
@@ -490,7 +494,7 @@ export class Engine {
           this.action = { t: "move", id: hit.id, orig: JSON.parse(JSON.stringify(hit)) as El, start: w, startScreen: p, dragged: false };
         } else {
           this.selectedId = null;
-          this.action = { t: "pan", last: p, vx: 0, vy: 0, lastT: performance.now(), startScreen: p, startT: performance.now(), swiped: false };
+          this.action = { t: "pan", last: p, vx: 0, vy: 0, lastT: performance.now(), startScreen: p, startT: performance.now(), swiped: false, swipe: this.mode === "present" && event.pointerType !== "mouse" };
         }
         this.requestRender();
         break;
@@ -564,7 +568,7 @@ export class Engine {
         const dx = p.x - action.last.x;
         const dy = p.y - action.last.y;
         const now = performance.now();
-        if (this.mode === "present") {
+        if (this.mode === "present" && action.swipe) {
           if (!action.swiped && now - action.startT < 700 && Math.abs(p.x - action.startScreen.x) > 70 && Math.abs(p.x - action.startScreen.x) > Math.abs(p.y - action.startScreen.y) * 1.5) {
             action.swiped = true;
             this.cb.onSwipe(p.x < action.startScreen.x ? 1 : -1);
@@ -670,7 +674,7 @@ export class Engine {
         break;
       }
       case "pan": {
-        if (this.mode === "present") break;
+        if (this.mode === "present" && action.swipe) break;
         const speed = Math.hypot(action.vx, action.vy);
         if (speed > 0.05 && performance.now() - action.lastT < 80) {
           this.inertia = { vx: action.vx, vy: action.vy };
@@ -824,15 +828,16 @@ export class Engine {
 
   private wheel(event: WheelEvent) {
     event.preventDefault();
-    if (this.mode === "present") return;
     const rect = this.canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     this.userMovedCamera();
     this.inertia = null;
-    if (event.ctrlKey || event.metaKey) {
-      const unit = event.deltaMode === 1 ? 16 : 1;
-      this.view = zoomAt(this.view, x, y, Math.exp((-event.deltaY * unit) * 0.01));
+    if (event.ctrlKey || event.metaKey || this.mode === "present") {
+      // Trackpad pinch and ctrl-scroll zoom everywhere; while presenting, the plain scroll wheel zooms too.
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 400 : 1;
+      const speed = event.ctrlKey || event.metaKey ? 0.01 : 0.0015;
+      this.view = zoomAt(this.view, x, y, Math.exp(-event.deltaY * unit * speed));
     } else {
       const unit = event.deltaMode === 1 ? 16 : 1;
       this.view = { ...this.view, x: this.view.x - event.deltaX * unit, y: this.view.y - event.deltaY * unit };

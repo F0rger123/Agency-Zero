@@ -1,5 +1,14 @@
 # Handoff log (newest first)
 
+## 2026-10-23 — Claude — whiteboard presentation controls for mouse and keyboard
+
+**No migration.**
+- Present mode on a PC: the scroll wheel zooms around the cursor (ctrl/trackpad pinch too), a mouse drag pans the zoomed page (a finger still swipes between frames; two fingers pinch-zoom), `+` / `-` / `0` zoom in, out and back to fit, and the zoom widget (bottom right) shows there as well. Changing frame or leaving presentation refits the page.
+- Tools moved to the bottom: a "Tools" pill expands the toolbar; the toolbar has a grip on the left to drag it anywhere (double-click the grip to put it back) and a chevron on the right to hide it. The toolbar now has Redo next to Undo (removed from the More menu) in every mode.
+- Hover feedback (mouse only): tool buttons lift with a tooltip naming the tool and its shortcut, colour swatches grow with their colour name, thickness and text-size chips highlight, pills lift. Touch screens are unaffected; reduced motion turns the movement off.
+- Top right while presenting: "Stop presenting" (back to the editor) and a separate close button (leaves the board for the boards list; hidden for guests).
+- Browser-checked: wheel zoom, mouse drag keeps the frame, fit, show/hide tools, draw + undo + redo while presenting, dragging the toolbar, stop presenting, close.
+
 ## 2026-10-23 — Claude — haptics, simpler tasks, calmer Lock In
 
 **No migration.**

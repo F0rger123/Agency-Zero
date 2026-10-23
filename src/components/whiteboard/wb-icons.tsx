@@ -77,6 +77,9 @@ const paths: Record<string, ReactNode> = {
     </>
   ),
   prev: <path d="M14.5 5l-7 7 7 7" />,
+  stop: <rect x="6" y="6" width="12" height="12" rx="2" />,
+  minimize: <path d="M6 10l6 6 6-6" />,
+  expand: <path d="M6 14l6-6 6 6" />,
   next: <path d="M9.5 5l7 7-7 7" />,
 };
 
