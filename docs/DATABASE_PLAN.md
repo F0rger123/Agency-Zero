@@ -359,3 +359,4 @@ available for a scheduled/back-office sweep.
 | 0029 | Lock In sessions saved to the database: `lock_in_sessions` (client-generated id, upsert, owner-only RLS) |
 | 0030 | Service categories: nullable `services.category` (max 80 chars) used to group the Services page |
 | 0031 | General to-do list: `todos` (text, done, done_at; owner-only RLS) |
+| 0032 | Call whiteboards: `whiteboards` (owner-only RLS, board json, share token hash + mode) and anonymous `get_public_whiteboard()` |

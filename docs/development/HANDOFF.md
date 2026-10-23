@@ -1,5 +1,19 @@
 # Handoff log (newest first)
 
+## 2026-10-23 — Claude — Whiteboard for calls; Lock In stage redesign, no scrolling
+
+**Migration to apply: `0032_whiteboards.sql`** (table `whiteboards` + anonymous `get_public_whiteboard()`; paste-ready copy `supabase/scripts/apply-0032.sql`; probed on `/app/system` and in `check-applied.sql`). Supabase Realtime must be enabled for the project (it is by default): the live drawing uses a public **broadcast** channel `wb:<token>`; nothing needs configuring.
+- **Whiteboard** (`/app/whiteboard` list, `/app/whiteboard/[id]` full-screen editor, `/w/<token>` guest link; all real routes, no iframe):
+  - Four default frames (Their problem / What they need / How I help / The path forward) with a quiet header each and a timeline on frame 4; frame pills; Present mode (Fullscreen API where available, arrow keys/space, swipe, on-screen arrows, progress dots, fades between frames); guests follow the host's frame (can opt out).
+  - Tools: pen (7 colours, 3 widths), object eraser, shapes (rectangle, circle, line, arrow), text, sticky notes (4 colours), move/select (also pans empty space), undo/redo (per device), clear frame (keeps the template heading; undoable), zoom/fit, export current frame as PNG and all frames as PDF (own tiny PDF writer, no dependency).
+  - Engine in `src/lib/whiteboard/*` (pure data model/ops/geometry/PDF are unit-tested; `engine.ts` owns camera, pointer handling, history, rendering to one canvas). Pointer mapping uses the canvas bounding box and the inverse camera for every event; pinch keeps the drawing under both fingers; two-finger gestures cancel an in-progress stroke; mouse wheel pans, ctrl/pinch-wheel zooms, space/middle-drag pans; light inertia.
+  - Live sync: small batched operations over Supabase Realtime broadcast (`transport.ts`), live strokes while drawing, remote cursors with name labels, presence count, join handshake (host answers `hello` with a snapshot; guests also load the last saved copy from the RPC). The host's device autosaves the whole board (debounced, 3 MB cap) through `saveWhiteboardAction`; guests' drawings are saved only through the host.
+  - Share sheet: copy/native share, "Can draw / View only / Off", make a new link (old one dies).
+- **Known limits to tell the owner**: "View only" is enforced by the host's device ignoring guests (the channel itself is public to anyone holding the link), so treat the link as a secret. If the host closes the board, guests keep drawing live with each other but nothing is saved. In portrait phones the 16:9 page is shown larger from its left edge (pan to see the rest) so text stays readable; rotate for the whole page.
+- **Lock In**: no scrolling anywhere (fixed `100dvh` stage, only long lists scroll inside their panel); setup is now three steps (mode → time → checklist); the hourglass fill was replaced by a minute ring of 60 ticks, a progress arc with a leading dot and a faint breathing glow, a breathing ring for the no-timer mode, a checklist ring for to-do mode. Edit timer is a centered sheet. Notes moved fully into the session panel.
+- **Mobile fixes**: app header no longer overflows 360px on sub-pages (Home pill is icon-only on phones).
+- Tested: vitest (pure whiteboard code), SQL tests for 0032, and Playwright against the mock backend with a stand-in Realtime relay: two browsers drawing to each other, frame following, text/note/shape, present + swipe, PNG/PDF export, mobile 360/390px touch drawing (6/6 sample points of the stroke under the finger path), pinch zoom keeping the ink under the fingers, no horizontal overflow. **Not tested on a real phone or against real Supabase Realtime**: please try one call with a phone and a computer.
+
 ## 2026-10-23 — Claude — Lock In: countdown no longer "counts up", editable timer, calmer animation
 
 **No migration.**

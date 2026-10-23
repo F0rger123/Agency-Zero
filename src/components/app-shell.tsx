@@ -54,15 +54,15 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
     <LockInProvider>
       <div className="min-h-screen">
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-3 px-5 lg:px-8">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-2 px-4 sm:gap-3 sm:px-5 lg:px-8">
           <Wordmark />
           {isHome ? null : (
             <Link
               href="/app"
-              className="press ml-2 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm transition-colors hover:bg-muted"
+              className="press ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm transition-colors hover:bg-muted sm:ml-2"
             >
               <Icon name="dashboard" className="size-4" />
-              Home
+              <span className="max-sm:sr-only">Home</span>
             </Link>
           )}
           <div className="ml-auto flex items-center gap-2">

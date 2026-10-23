@@ -51,6 +51,12 @@ const probes: Probe[] = [
   table("meetings", "0027"),
   table("lock_in_sessions", "0029"),
   table("todos", "0031"),
+  table("whiteboards", "0032"),
+  {
+    name: "function get_public_whiteboard()",
+    migration: "0032",
+    run: (s) => s.rpc("get_public_whiteboard", { p_token_hash: "probe" }),
+  },
   {
     name: "service categories (services.category)",
     migration: "0030",

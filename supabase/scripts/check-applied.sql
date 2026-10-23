@@ -48,5 +48,9 @@ select * from (
   union all
   select '0031', 'to-do list table',
          to_regclass('public.todos') is not null
+  union all
+  select '0032', 'call whiteboards',
+         to_regclass('public.whiteboards') is not null
+         and exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname = 'get_public_whiteboard')
 ) checks
 order by migration, what;

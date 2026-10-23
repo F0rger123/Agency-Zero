@@ -107,6 +107,12 @@ const paths: Record<string, JSX.Element> = {
       <path d="M12 7h7.5M12 14.5h7.5M4.5 20.5h15" />
     </>
   ),
+  whiteboard: (
+    <>
+      <rect x="3" y="4.5" width="18" height="12.5" rx="1.8" />
+      <path d="M8 21l2.5-4M16 21l-2.5-4M7.5 12.5c1.4-2.8 2.7-2.8 4 0s2.6 2.8 4.5-.5" />
+    </>
+  ),
   settings: (
     <>
       <path d="M4 7.5h8.5M17.5 7.5H20" />

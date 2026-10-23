@@ -587,3 +587,31 @@ set role anon;
 do $$ begin assert (select count(*) from public.todos) = 0, 'anon cannot read to-dos'; end $$;
 reset role;
 
+-- ── whiteboards (0032) ─────────────────────────────────────────────────────
+reset role;
+reset request.jwt.claim.sub;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';   -- owner
+insert into public.whiteboards (title, data, public_token, public_token_hash)
+  values ('Call with Dana', '{"v":1,"frames":[]}', 'tok-wb-1', 'hash-wb-1');
+do $$ begin
+  assert (select count(*) from public.whiteboards) = 1, 'owner can create a board';
+end $$;
+select pg_temp.expect_error($q$insert into public.whiteboards (title, public_token, public_token_hash) values ('  ', 'a', 'b')$q$, 'check');
+select pg_temp.expect_error($q$insert into public.whiteboards (title, data, public_token, public_token_hash) values ('x', '[]', 'c', 'd')$q$, 'check');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';   -- stranger
+do $$ begin assert (select count(*) from public.whiteboards) = 0, 'stranger cannot read boards'; end $$;
+select pg_temp.expect_error($q$insert into public.whiteboards (title, public_token, public_token_hash) values ('sneaky', 'e', 'f')$q$, 'row-level security');
+reset role;
+set role anon;
+do $$ begin
+  assert (select count(*) from public.whiteboards) = 0, 'anon cannot read boards directly';
+  assert (select public.get_public_whiteboard('hash-wb-1')->>'title') = 'Call with Dana', 'anon can open a shared board with its link';
+  assert public.get_public_whiteboard('nope') is null, 'unknown link returns nothing';
+end $$;
+reset role;
+update public.whiteboards set share_mode = 'off' where public_token_hash = 'hash-wb-1';
+set role anon;
+do $$ begin assert public.get_public_whiteboard('hash-wb-1') is null, 'sharing off hides the board'; end $$;
+reset role;
+

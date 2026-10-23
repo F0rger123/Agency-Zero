@@ -6,7 +6,7 @@ import { AnimatedCheck, Burst } from "@/components/animated-check";
 import { Icon } from "@/components/icons";
 import { DictationHint, MicButton } from "@/components/mic-button";
 import { applyDictation } from "@/lib/dictation-text";
-import { useDictationTarget } from "@/lib/use-dictation";
+import { useDictation, useDictationTarget } from "@/lib/use-dictation";
 import {
   addItem,
   changeMode,
@@ -22,7 +22,6 @@ import {
   newSessionId,
   parseSession,
   pause,
-  progress,
   reopen,
   resume,
   startSession,
@@ -34,7 +33,7 @@ import {
 } from "@/lib/lock-in";
 import { completeLockInTasksAction, getLockInOptionsAction, listLockInSessionsAction, saveLockInSessionAction, type LockInOptions, type SavedSession } from "./actions";
 import { Hourglass } from "./hourglass";
-import { BigClock, FocusOrb, LiveBadge, MODE_INFO, ModeGlyph, ProgressRing } from "./visuals";
+import { BigClock, BreathRing, LiveBadge, MODE_INFO, ModeGlyph, TimerRing } from "./visuals";
 import { listTodosAction, setTodoDoneAction, type Todo } from "../todos/actions";
 import { TodoQuickAdd } from "../todos/todo-quick-add";
 
@@ -263,11 +262,7 @@ function MiniTimer({ session, onOpen }: { session: LockInSession; onOpen: () => 
       aria-label="Open Lock In session"
       className={`press fixed bottom-4 right-4 z-40 flex items-center gap-3 rounded-full border-[1.5px] border-foreground bg-background px-4 py-2.5 shadow-lg transition-transform hover:-translate-y-0.5 max-sm:bottom-3 max-sm:right-3 ${live ? "lock-in-mini-live" : ""}`}
     >
-      {hasClock(session.mode) ? (
-        <Hourglass progress={progress(session, now)} running={live} className="size-6" />
-      ) : (
-        <span aria-hidden className={`lock-in-dot size-3 rounded-full bg-foreground ${live ? "" : "lock-in-dot-still"}`} />
-      )}
+      <span aria-hidden className={`lock-in-dot size-3 rounded-full bg-foreground ${live ? "" : "lock-in-dot-still"}`} />
       <span className="text-left leading-tight">
         <span className="block text-base font-semibold tabular-nums">
           {text ?? (session.mode === "checklist" ? `${summary.done}/${summary.total || 0} done` : "Locked in")}
@@ -280,7 +275,7 @@ function MiniTimer({ session, onOpen }: { session: LockInSession; onOpen: () => 
   );
 }
 
-/* ── Full-screen setup / session / summary ──────────────────────────────────────────────────── */
+/* ── Full-screen setup / session: always fits the display, nothing scrolls except long lists inside a panel ─────── */
 
 const GOALS = [15, 25, 45, 60, 90, 120];
 const field = "w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-foreground";
@@ -301,14 +296,17 @@ function LockInScreen({ session, onClose }: { session: LockInSession | null; onC
   const canFullscreen = useCanFullscreen();
 
   useEffect(() => {
-    const previous = document.body.style.overflow;
+    const previousBody = document.body.style.overflow;
+    const previousHtml = document.documentElement.style.overscrollBehavior;
     document.body.style.overflow = "hidden";
+    document.documentElement.style.overscrollBehavior = "none";
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !document.fullscreenElement) onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = previous;
+      document.body.style.overflow = previousBody;
+      document.documentElement.style.overscrollBehavior = previousHtml;
       window.removeEventListener("keydown", onKey);
       if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
     };
@@ -321,7 +319,7 @@ function LockInScreen({ session, onClose }: { session: LockInSession | null; onC
 
   const live = session && session.status !== "done";
   return (
-    <div ref={root} role="dialog" aria-modal="true" aria-label="Lock In" className="modal-backdrop fixed inset-0 z-[60] h-dvh overflow-hidden bg-background">
+    <div ref={root} role="dialog" aria-modal="true" aria-label="Lock In" className="modal-backdrop fixed inset-0 z-[60] h-dvh touch-manipulation overflow-hidden overscroll-none bg-background pt-[env(safe-area-inset-top)]">
       <header className="flex h-14 items-center justify-between gap-3 px-4 sm:px-8">
         <span className="text-[11px] font-medium uppercase tracking-[0.28em] text-muted-foreground">Lock In</span>
         <div className="flex items-center gap-2">
@@ -347,7 +345,9 @@ function LockInScreen({ session, onClose }: { session: LockInSession | null; onC
           </button>
         </div>
       </header>
-      <div key={session ? "session" : "setup"} className="h-[calc(100dvh-3.5rem)] overflow-y-auto">{session ? <SessionView session={session} onExit={onClose} /> : <div className="mx-auto w-full max-w-6xl px-5 pb-10 sm:px-8"><Setup /></div>}</div>
+      <div key={session ? "session" : "setup"} className="h-[calc(100dvh-3.5rem-env(safe-area-inset-top))] overflow-hidden">
+        {session ? <SessionView session={session} onExit={onClose} /> : <Setup />}
+      </div>
     </div>
   );
 }
@@ -360,32 +360,38 @@ function FullscreenIcon({ exit }: { exit: boolean }) {
   );
 }
 
+type SetupStep = "mode" | "time" | "list";
+const PREVIEW_RING = "size-[min(70vw,30dvh)] landscape:size-[min(60dvh,30rem)]";
+
+/** Step by step (mode → time → checklist) so every step fits the screen. */
 function Setup() {
   const [mode, setMode] = useState<LockInMode>("stopwatch");
   const [goal, setGoal] = useState(0);
   const [custom, setCustom] = useState("");
   const [items, setItems] = useState<LockInItem[]>([]);
   const [draft, setDraft] = useState("");
-  const [notes, setNotes] = useState("");
   const [options, setOptions] = useState<LockInOptions | null>(null);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(false);
-  const { dictation, toggleFor, activeTarget } = useDictationTarget<"item" | "notes">((target, phrase) => {
-    if (target === "item") setDraft((current) => applyDictation(current, phrase));
-    else setNotes((current) => applyDictation(current, phrase));
-  });
+  const [step, setStep] = useState(0);
+  const dictation = useDictation((phrase) => setDraft((current) => applyDictation(current, phrase)));
+
+  const timed = mode === "stopwatch" || mode === "countdown";
+  const steps: SetupStep[] = timed ? ["mode", "time", "list"] : ["mode", "list"];
+  const current = steps[Math.min(step, steps.length - 1)];
+  const last = current === "list";
 
   const addCustom = () => {
     const text = draft.trim();
     if (!text) return;
-    setItems((current) => [...current, { id: newSessionId(), text: text.slice(0, 300), done: false, kind: "custom" }]);
+    setItems((existing) => [...existing, { id: newSessionId(), text: text.slice(0, 300), done: false, kind: "custom" }]);
     setDraft("");
   };
   const toggleRef = (kind: "task" | "project" | "todo", refId: string, text: string) =>
-    setItems((current) =>
-      current.some((item) => item.refId === refId)
-        ? current.filter((item) => item.refId !== refId)
-        : [...current, { id: newSessionId(), text, done: false, kind, refId }],
+    setItems((existing) =>
+      existing.some((item) => item.refId === refId)
+        ? existing.filter((item) => item.refId !== refId)
+        : [...existing, { id: newSessionId(), text, done: false, kind, refId }],
     );
   const loadOptions = async () => {
     setLoading(true);
@@ -399,7 +405,7 @@ function Setup() {
     dictation.stop();
     const pending = draft.trim();
     const all = pending ? [...items, { id: newSessionId(), text: pending.slice(0, 300), done: false, kind: "custom" as const }] : items;
-    const session = startSession(goal, all, notes, Date.now(), undefined, mode);
+    const session = startSession(goal, all, "", Date.now(), undefined, mode);
     writeSession(session);
     void syncSession(session);
   };
@@ -408,192 +414,199 @@ function Setup() {
     if (next === "countdown" && goal === 0) setGoal(25);
     if (next === "stopwatch" && custom === "" && goal === 25) setGoal(0);
   };
-  const timed = mode === "stopwatch" || mode === "countdown";
+
+  const preview =
+    mode === "stopwatch" || mode === "countdown" ? (
+      <TimerRing fraction={mode === "countdown" ? 1 : goal > 0 ? 0.0001 : null} seconds={0} className={PREVIEW_RING}>
+        <span className="text-[clamp(2.25rem,9dvh,4.75rem)] font-semibold leading-none tabular-nums tracking-tight">{mode === "countdown" ? clock((goal || 25) * 60_000) : "00:00"}</span>
+        <span className="mt-1.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{mode === "countdown" ? "to go" : goal > 0 ? `goal ${goal} min` : "counting up"}</span>
+      </TimerRing>
+    ) : mode === "checklist" ? (
+      <TimerRing fraction={0} seconds={null} className={PREVIEW_RING}>
+        <span className="text-[clamp(2.25rem,9dvh,4.75rem)] font-semibold leading-none tabular-nums tracking-tight">0<span className="text-muted-foreground">/{items.length}</span></span>
+        <span className="mt-1.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">to do</span>
+      </TimerRing>
+    ) : (
+      <BreathRing running className={PREVIEW_RING}>
+        <span className="text-[clamp(1.5rem,5dvh,2.75rem)] font-semibold leading-tight tracking-tight">Locked in</span>
+        <span className="mt-1.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">no timer</span>
+      </BreathRing>
+    );
 
   return (
-    <div className="py-4">
-      <section aria-label="Choose a mode" className="lock-in-enter">
-        <h2 className="text-lg font-semibold tracking-tight">How do you want to lock in?</h2>
-        <div role="radiogroup" aria-label="Lock In mode" className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {(Object.keys(MODE_INFO) as LockInMode[]).map((key) => {
-            const chosen = mode === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                role="radio"
-                aria-checked={chosen}
-                onClick={() => chooseMode(key)}
-                className={`lock-in-mode-card press relative flex flex-col items-start gap-3 rounded-2xl border-[1.5px] p-4 text-left ${chosen ? "border-foreground bg-muted" : "border-border hover:border-foreground/60"}`}
-              >
-                <ModeGlyph mode={key} />
-                <span>
-                  <span className="block text-base font-semibold tracking-tight">{MODE_INFO[key].title}</span>
-                  <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">{MODE_INFO[key].blurb}</span>
-                </span>
-                {chosen ? (
-                  <span aria-hidden className="az-check-pop absolute right-3 top-3 flex size-5 items-center justify-center rounded-full bg-foreground text-background">
-                    <svg viewBox="0 0 24 24" className="size-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-      </section>
+    <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-3 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-8 landscape:grid landscape:grid-cols-[minmax(0,1fr)_minmax(380px,34rem)] landscape:gap-10">
+      <div key={mode} className="lock-in-enter hidden items-center justify-center landscape:flex">{preview}</div>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <ol className="mb-3 flex items-center gap-2" aria-label="Steps">
+          {steps.map((name, index) => (
+            <li key={name} aria-current={index === step ? "step" : undefined} className={`h-1 flex-1 rounded-full transition-colors duration-500 ${index <= step ? "bg-foreground" : "bg-muted"}`} />
+          ))}
+        </ol>
 
-    <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,360px)_1fr] lg:gap-14">
-      <div key={mode} className="lock-in-enter flex flex-col items-center text-center lg:sticky lg:top-2 lg:self-start">
-        {timed ? (
-          <>
-            <Hourglass progress={0} running={false} className="h-56 w-auto sm:h-72" />
-            <p className="mt-4 text-6xl font-semibold tabular-nums tracking-tight sm:text-7xl">{mode === "countdown" ? clock((goal || 25) * 60_000) : "00:00"}</p>
-          </>
-        ) : mode === "checklist" ? (
-          <ProgressRing done={0} total={items.length} className="size-56 sm:size-72" />
-        ) : (
-          <FocusOrb running className="size-56 sm:size-72" />
-        )}
-        <p className="mt-2 text-sm text-muted-foreground">
-          {mode === "stopwatch"
-            ? "A timer that counts up. It only stops when you do."
-            : mode === "countdown"
-              ? "Counts down to zero, then shows how far over you are."
-              : mode === "checklist"
-                ? "No clock. Just tick things off."
-                : "No timer, no counting. Just you and the work."}
-        </p>
-        {timed ? <p className="mt-6 text-xs font-medium uppercase tracking-widest text-muted-foreground">{mode === "countdown" ? "How long?" : "Goal (optional)"}</p> : null}
-        {timed ? (
-        <div className="mt-3 flex flex-wrap justify-center gap-2" role="group" aria-label="Goal">
-          {mode === "stopwatch" ? (
+        <div key={current} className="lock-in-enter lock-in-no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          {current === "mode" ? (
+            <section aria-label="Choose a mode">
+              <h2 className="text-xl font-semibold tracking-tight">How do you want to lock in?</h2>
+              <div role="radiogroup" aria-label="Lock In mode" className="mt-3 grid grid-cols-2 gap-3">
+                {(Object.keys(MODE_INFO) as LockInMode[]).map((key) => {
+                  const chosen = mode === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      role="radio"
+                      aria-checked={chosen}
+                      onClick={() => chooseMode(key)}
+                      className={`lock-in-mode-card press relative flex flex-col items-start gap-2.5 rounded-2xl border-[1.5px] p-4 text-left ${chosen ? "border-foreground bg-muted" : "border-border hover:border-foreground/60"}`}
+                    >
+                      <ModeGlyph mode={key} />
+                      <span>
+                        <span className="block text-base font-semibold tracking-tight">{MODE_INFO[key].title}</span>
+                        <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">{MODE_INFO[key].blurb}</span>
+                      </span>
+                      {chosen ? (
+                        <span aria-hidden className="az-check-pop absolute right-3 top-3 flex size-5 items-center justify-center rounded-full bg-foreground text-background">
+                          <svg viewBox="0 0 24 24" className="size-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-5"><PastSessions /></div>
+            </section>
+          ) : null}
+
+          {current === "time" ? (
+            <section aria-label="Set the time" className="flex flex-col items-center text-center">
+              <h2 className="text-xl font-semibold tracking-tight">{mode === "countdown" ? "How long?" : "Set a goal?"}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{mode === "countdown" ? "It counts down to zero and stops." : "Optional. The ring fills as you get closer."}</p>
+              <div key={`${mode}-${goal}`} className="mt-4 landscape:hidden">{preview}</div>
+              <div className="mt-5 flex flex-wrap justify-center gap-2" role="group" aria-label="Length">
+                {mode === "stopwatch" ? (
+                  <button
+                    type="button"
+                    aria-pressed={goal === 0 && !custom}
+                    onClick={() => {
+                      setGoal(0);
+                      setCustom("");
+                    }}
+                    className={`press rounded-full border px-4 py-2 text-sm transition-colors ${goal === 0 && !custom ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"}`}
+                  >
+                    No goal
+                  </button>
+                ) : null}
+                {GOALS.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    aria-pressed={goal === preset && !custom}
+                    onClick={() => {
+                      setGoal(preset);
+                      setCustom("");
+                    }}
+                    className={`press rounded-full border px-4 py-2 text-sm transition-colors ${goal === preset && !custom ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"}`}
+                  >
+                    {preset}m
+                  </button>
+                ))}
+              </div>
+              <label className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
+                Custom
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={720}
+                  value={custom}
+                  onChange={(event) => {
+                    setCustom(event.target.value);
+                    setGoal(event.target.value ? clampMinutes(Number(event.target.value)) : mode === "countdown" ? 25 : 0);
+                  }}
+                  placeholder="minutes"
+                  className={`${field} w-28`}
+                />
+              </label>
+            </section>
+          ) : null}
+
+          {current === "list" ? (
+            <section aria-label="Checklist">
+              <h2 className="text-xl font-semibold tracking-tight">What are you getting done?</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Type or talk. You can add more any time during the session.</p>
+              <div className="mt-3 flex gap-2">
+                <label className="sr-only" htmlFor="lock-in-item">Checklist item</label>
+                <input
+                  id="lock-in-item"
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      addCustom();
+                    }
+                  }}
+                  placeholder="Add an item and press Enter"
+                  className={field}
+                />
+                <MicButton dictation={dictation} />
+                <button type="button" onClick={addCustom} className="press shrink-0 rounded-md border border-border px-4 text-sm font-medium transition-colors hover:bg-muted">
+                  Add
+                </button>
+              </div>
+              <DictationHint dictation={dictation} className="mt-2" />
+              {items.length > 0 ? (
+                <ul className="mt-3 space-y-2">
+                  {items.map((item) => (
+                    <li key={item.id} className="az-item-in flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-2.5 text-sm">
+                      <span className="min-w-0">
+                        {item.kind !== "custom" ? <span className="mr-2 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">{item.kind === "todo" ? "to-do" : item.kind}</span> : null}
+                        {item.text}
+                      </span>
+                      <button type="button" aria-label={`Remove ${item.text}`} onClick={() => setItems((existing) => existing.filter((entry) => entry.id !== item.id))} className="press -mr-1 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+                        <Icon name="close" className="size-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <div className="mt-5">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold tracking-tight">Pull in from your lists</h3>
+                  {options ? null : (
+                    <button type="button" onClick={loadOptions} disabled={loading} className="press rounded-md border border-border px-3.5 py-1.5 text-sm transition-colors hover:bg-muted disabled:opacity-50">
+                      {loading ? "Loading…" : "Choose"}
+                    </button>
+                  )}
+                </div>
+                {options?.error ? <p role="alert" className="mt-3 text-sm font-medium">{options.error}</p> : null}
+                {options && !options.error ? (
+                  <div className="mt-3 space-y-4">
+                    <PickList title="To-do list" empty="Nothing on your to-do list." rows={todos.map((todo) => ({ id: todo.id, label: todo.text, sub: null }))} selected={selected} onToggle={(row) => toggleRef("todo", row.id, row.label)} />
+                    <PickList title="Tasks" empty="No open tasks." rows={options.tasks.map((task) => ({ id: task.id, label: task.title, sub: task.client }))} selected={selected} onToggle={(row) => toggleRef("task", row.id, row.label)} />
+                    <PickList title="Projects" empty="No active projects." rows={options.projects.map((project) => ({ id: project.id, label: project.name, sub: project.client }))} selected={selected} onToggle={(row) => toggleRef("project", row.id, row.label)} />
+                  </div>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
+        </div>
+
+        <div className="flex shrink-0 gap-3 pt-3">
+          {step > 0 ? (
+            <button type="button" onClick={() => setStep((value) => Math.max(0, value - 1))} className="press rounded-xl border border-border px-5 py-3.5 text-base transition-colors hover:bg-muted">
+              Back
+            </button>
+          ) : null}
           <button
             type="button"
-            aria-pressed={goal === 0 && !custom}
-            onClick={() => {
-              setGoal(0);
-              setCustom("");
-            }}
-            className={`press rounded-full border px-4 py-2 text-sm transition-colors ${goal === 0 && !custom ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"}`}
+            onClick={() => (last ? start() : setStep((value) => Math.min(value + 1, steps.length - 1)))}
+            className={`press flex-1 rounded-xl bg-inverted px-6 py-3.5 text-base font-semibold text-inverted-foreground transition-opacity hover:opacity-85 ${last ? "lock-in-cta" : ""}`}
           >
-            No goal
+            {last ? MODE_INFO[mode].start : "Next"}
           </button>
-          ) : null}
-          {GOALS.map((preset) => (
-            <button
-              key={preset}
-              type="button"
-              aria-pressed={goal === preset && !custom}
-              onClick={() => {
-                setGoal(preset);
-                setCustom("");
-              }}
-              className={`press rounded-full border px-4 py-2 text-sm transition-colors ${goal === preset && !custom ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"}`}
-            >
-              {preset}m
-            </button>
-          ))}
         </div>
-        ) : null}
-        {timed ? (
-        <label className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
-          Custom
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={720}
-            value={custom}
-            onChange={(event) => {
-              setCustom(event.target.value);
-              setGoal(event.target.value ? clampMinutes(Number(event.target.value)) : mode === "countdown" ? 25 : 0);
-            }}
-            placeholder="minutes"
-            className={`${field} w-28`}
-          />
-        </label>
-        ) : null}
       </div>
-
-      <div className="space-y-8">
-        <section>
-          <h2 className="text-lg font-semibold tracking-tight">What are you getting done?</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Type or talk. You can add more items any time during the session.</p>
-          <div className="mt-3 flex gap-2">
-            <label className="sr-only" htmlFor="lock-in-item">Checklist item</label>
-            <input
-              id="lock-in-item"
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  addCustom();
-                }
-              }}
-              placeholder="Add a checklist item and press Enter"
-              className={field}
-            />
-            <MicButton dictation={dictation} active={activeTarget === "item"} onClick={() => toggleFor("item")} />
-            <button type="button" onClick={addCustom} className="press shrink-0 rounded-md border border-border px-4 text-sm font-medium transition-colors hover:bg-muted">
-              Add
-            </button>
-          </div>
-          <DictationHint dictation={dictation} className="mt-2" />
-          {items.length > 0 ? (
-            <ul className="mt-4 space-y-2">
-              {items.map((item) => (
-                <li key={item.id} className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3 text-sm">
-                  <span className="min-w-0">
-                    {item.kind !== "custom" ? <span className="mr-2 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">{item.kind === "todo" ? "to-do" : item.kind}</span> : null}
-                    {item.text}
-                  </span>
-                  <button type="button" aria-label={`Remove ${item.text}`} onClick={() => setItems((current) => current.filter((entry) => entry.id !== item.id))} className="press -mr-1 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
-                    <Icon name="close" className="size-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </section>
-
-        <section>
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold tracking-tight">Pull in from your lists</h2>
-            {options ? null : (
-              <button type="button" onClick={loadOptions} disabled={loading} className="press rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted disabled:opacity-50">
-                {loading ? "Loading…" : "Choose"}
-              </button>
-            )}
-          </div>
-          {options?.error ? <p role="alert" className="mt-3 text-sm font-medium">{options.error}</p> : null}
-          {options && !options.error ? (
-            <div className="mt-4 space-y-5">
-              <PickList title="To-do list" empty="Nothing on your to-do list." rows={todos.map((todo) => ({ id: todo.id, label: todo.text, sub: null }))} selected={selected} onToggle={(row) => toggleRef("todo", row.id, row.label)} />
-              <PickList title="Tasks" empty="No open tasks." rows={options.tasks.map((task) => ({ id: task.id, label: task.title, sub: task.client }))} selected={selected} onToggle={(row) => toggleRef("task", row.id, row.label)} />
-              <PickList title="Projects" empty="No active projects." rows={options.projects.map((project) => ({ id: project.id, label: project.name, sub: project.client }))} selected={selected} onToggle={(row) => toggleRef("project", row.id, row.label)} />
-            </div>
-          ) : null}
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold tracking-tight">Notes</h2>
-          <label className="sr-only" htmlFor="lock-in-notes">Notes</label>
-          <div className="relative mt-3">
-            <textarea id="lock-in-notes" value={notes} onChange={(event) => setNotes(event.target.value)} rows={4} placeholder="Anything you want in front of you while you work." className={`${field} resize-y pr-14 leading-6`} />
-            <MicButton dictation={dictation} active={activeTarget === "notes"} onClick={() => toggleFor("notes")} className="absolute right-3 top-3" />
-          </div>
-        </section>
-
-        <div className="sticky bottom-0 z-10 -mx-5 bg-background/90 px-5 py-3 backdrop-blur sm:static sm:mx-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
-        <button type="button" onClick={start} className="lock-in-cta press w-full rounded-xl bg-inverted px-6 py-4 text-base font-semibold text-inverted-foreground transition-opacity hover:opacity-85 sm:w-auto sm:min-w-56">
-          {MODE_INFO[mode].start}
-        </button>
-        </div>
-
-        <PastSessions />
-      </div>
-    </div>
     </div>
   );
 }
@@ -684,7 +697,6 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
   const now = useNow();
   const sync = useSyncState();
   const elapsed = elapsedMs(session, now);
-  const frac = progress(session, now);
   const done = session.status === "done";
   const summary = checklistSummary(session.items);
   const reached = goalReached(session, now);
@@ -764,97 +776,120 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
     setSaving(false);
   };
 
-  const status = done
-    ? "Finished."
-    : session.status === "paused"
-      ? "Paused."
-      : session.mode === "countdown"
-        ? reached
-          ? "Time is up. Add time, or finish when you are ready."
-          : `Counting down from ${Math.round(session.goalMs / 60_000)} minutes`
-        : session.mode === "stopwatch"
-          ? reached
-            ? `Goal of ${Math.round(session.goalMs / 60_000)} minutes reached. Keep going or finish when you are ready.`
-            : session.goalMs > 0
-              ? `Goal: ${Math.round(session.goalMs / 60_000)} minutes`
-              : "Running"
-          : session.mode === "checklist"
-            ? allDone
-              ? "Everything is ticked. Finish when you are ready."
-              : "Tick things off as you go."
-            : "No timer. Finish when you are done.";
   const tabs: [Tab, string][] = [
     ["checklist", summary.total > 0 ? `Checklist ${summary.done}/${summary.total}` : "Checklist"],
     ["todo", "To-do list"],
     ["notes", "Notes"],
   ];
 
+  const secondFraction = (elapsed % 60_000) / 60_000;
+  const arc =
+    session.mode === "countdown" && session.goalMs > 0
+      ? Math.max(0, 1 - elapsed / session.goalMs)
+      : session.mode === "stopwatch" && session.goalMs > 0
+        ? Math.min(1, elapsed / session.goalMs)
+        : session.mode === "checklist"
+          ? (summary.total > 0 ? summary.done / summary.total : 0)
+          : null;
+  const longClock = (clockText ?? "").length > 5;
+  const clockClass = longClock
+    ? "text-[clamp(1.75rem,min(9vw,5dvh),3.5rem)] landscape:text-[clamp(2.5rem,8dvh,5rem)]"
+    : "text-[clamp(2.25rem,min(12vw,6.5dvh),4.75rem)] landscape:text-[clamp(3rem,10dvh,6.5rem)]";
+  const caption = done
+    ? "finished"
+    : session.status === "paused"
+      ? "paused"
+      : session.mode === "countdown"
+        ? reached
+          ? "time is up"
+          : "left"
+        : session.goalMs > 0
+          ? reached
+            ? "goal reached"
+            : `goal ${Math.round(session.goalMs / 60_000)} min`
+          : "elapsed";
+  const ringSize = "size-[min(68vw,34dvh)] landscape:size-[min(62dvh,34rem)] shrink-0";
+
   return (
-    <div className="lock-in-enter mx-auto grid min-h-full w-full max-w-[1600px] gap-6 px-4 pb-6 sm:px-8 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_minmax(380px,34rem)] lg:gap-12">
-      <div className="relative flex flex-col items-center gap-4 py-2 text-center [justify-content:safe_center] lg:min-h-0 lg:overflow-y-auto">
+    <div className="lock-in-enter relative mx-auto grid h-full w-full max-w-[1600px] grid-rows-[auto_minmax(0,1fr)] gap-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-8 landscape:grid-cols-[minmax(0,1fr)_minmax(380px,34rem)] landscape:grid-rows-1 landscape:gap-10">
+      <div className="relative flex flex-col items-center gap-3 text-center [justify-content:safe_center] landscape:min-h-0">
         <span key={session.id} aria-hidden className="lock-in-launch" />
         <LiveBadge mode={session.mode} status={session.status} />
         {timed ? (
-          <>
-            <Hourglass progress={frac} running={session.status === "running"} celebrate={reached && !done} className={`w-auto shrink-0 transition-[height] duration-300 ${editingTimer ? "h-[min(20dvh,12rem)]" : "h-[min(36dvh,26rem)] lg:h-[min(46dvh,34rem)]"}`} />
-            <BigClock text={clockText ?? "00:00"} running={session.status === "running"} paused={session.status === "paused"} alert={reached && !done} />
-          </>
+          <TimerRing fraction={arc} seconds={session.status === "running" || session.status === "paused" ? secondFraction : null} className={ringSize}>
+            <BigClock text={clockText ?? "00:00"} running={false} paused={session.status === "paused"} alert={reached && !done} className={clockClass} />
+            <span className="mt-1.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">{caption}</span>
+          </TimerRing>
         ) : session.mode === "checklist" ? (
-          <>
-            <ProgressRing done={summary.done} total={summary.total} className="size-[min(44dvh,22rem)]" />
-            <p className="text-sm text-muted-foreground">{done ? `Took ${clock(elapsed)}.` : `Time on it: ${clock(elapsed)}`}</p>
-          </>
+          <TimerRing fraction={arc} seconds={null} className={ringSize}>
+            <span className={`font-semibold leading-none tabular-nums tracking-tight ${clockClass}`}>
+              {summary.done}
+              <span className="text-muted-foreground">/{summary.total}</span>
+            </span>
+            <span className="mt-1.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">{allDone ? "all done" : done ? clock(elapsed) : "done"}</span>
+            {allDone ? <Burst key={`${summary.total}`} size={3.2} /> : null}
+          </TimerRing>
         ) : (
-          <>
-            <FocusOrb running={session.status === "running"} className="size-[min(44dvh,24rem)]" />
-            <p className="text-[clamp(2.5rem,8vw,5rem)] font-semibold leading-none tracking-tight">{done ? "Done." : "Locked in."}</p>
-            {done ? <p className="text-sm text-muted-foreground">You were locked in for {clock(elapsed)}.</p> : null}
-          </>
+          <BreathRing running={session.status === "running"} className={ringSize}>
+            <span className="text-[clamp(1.5rem,5dvh,3rem)] font-semibold leading-tight tracking-tight">{done ? "Done" : "Locked in"}</span>
+            <span className="mt-1.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">{done ? `for ${clock(elapsed)}` : "no timer"}</span>
+          </BreathRing>
         )}
-        {session.goalMs > 0 ? (
-          <div className="h-1.5 w-full max-w-md overflow-hidden rounded-full bg-muted" aria-hidden>
-            <div className={`h-full bg-foreground transition-[width] duration-500`} style={{ width: `${Math.min(100, (elapsed / session.goalMs) * 100)}%` }} />
-          </div>
-        ) : null}
-        <p className="max-w-md text-sm text-muted-foreground">{status}</p>
-        <div className="flex flex-wrap justify-center gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-2.5">
           {timed && session.status === "running" ? (
-            <button type="button" onClick={() => writeSession(pause(session, Date.now()))} className="press rounded-full border-[1.5px] border-foreground px-7 py-3 text-base font-medium transition-colors hover:bg-muted">
+            <button type="button" onClick={() => writeSession(pause(session, Date.now()))} className="press rounded-full border-[1.5px] border-foreground px-6 py-2.5 text-base font-medium transition-colors hover:bg-muted">
               Pause
             </button>
           ) : null}
           {timed && session.status === "paused" ? (
-            <button type="button" onClick={() => writeSession(resume(session, Date.now()))} className="press rounded-full bg-inverted px-7 py-3 text-base font-medium text-inverted-foreground">
+            <button type="button" onClick={() => writeSession(resume(session, Date.now()))} className="press rounded-full bg-inverted px-6 py-2.5 text-base font-medium text-inverted-foreground">
               Resume
             </button>
           ) : null}
           {session.mode === "countdown" && !done && reached ? (
             <>
-              <button type="button" onClick={() => writeSession(extendGoal(session, 5))} className="lock-in-cta press rounded-full bg-inverted px-6 py-3 text-base font-medium text-inverted-foreground">
+              <button type="button" onClick={() => writeSession(extendGoal(session, 5))} className="lock-in-cta press rounded-full bg-inverted px-5 py-2.5 text-base font-medium text-inverted-foreground">
                 +5 min
               </button>
-              <button type="button" onClick={() => writeSession(extendGoal(session, 15))} className="press rounded-full border-[1.5px] border-foreground px-6 py-3 text-base font-medium transition-colors hover:bg-muted">
+              <button type="button" onClick={() => writeSession(extendGoal(session, 15))} className="press rounded-full border-[1.5px] border-foreground px-5 py-2.5 text-base font-medium transition-colors hover:bg-muted">
                 +15 min
               </button>
             </>
           ) : null}
           {!done ? (
-            <button type="button" onClick={finishNow} className={`press rounded-full border px-7 py-3 text-base transition-colors hover:bg-muted ${allDone && !(session.mode === "countdown" && reached) ? "lock-in-cta border-foreground font-medium" : "border-border"}`}>
+            <button type="button" onClick={finishNow} className={`press rounded-full border px-6 py-2.5 text-base transition-colors hover:bg-muted ${allDone && !(session.mode === "countdown" && reached) ? "lock-in-cta border-foreground font-medium" : "border-border"}`}>
               Finish
             </button>
           ) : (
             <>
-              <button type="button" onClick={keepGoing} className="press rounded-full border-[1.5px] border-foreground px-7 py-3 text-base font-medium transition-colors hover:bg-muted">
+              <button type="button" onClick={keepGoing} className="press rounded-full border-[1.5px] border-foreground px-6 py-2.5 text-base font-medium transition-colors hover:bg-muted">
                 Keep going
               </button>
-              <button type="button" onClick={startNew} className="press rounded-full bg-inverted px-7 py-3 text-base font-medium text-inverted-foreground">
+              <button type="button" onClick={startNew} className="press rounded-full bg-inverted px-6 py-2.5 text-base font-medium text-inverted-foreground">
                 New session
               </button>
             </>
           )}
         </div>
-        {!done ? (
-          editingTimer ? (
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          {!done ? (
+            <button type="button" onClick={() => setEditingTimer(true)} className="press underline underline-offset-4 hover:text-foreground">
+              Edit timer
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => (confirmDiscard ? discard() : setConfirmDiscard(true))}
+              onBlur={() => setConfirmDiscard(false)}
+              className="press underline underline-offset-4 hover:text-foreground"
+            >
+              {confirmDiscard ? "Tap again to discard" : "Discard session"}
+            </button>
+          )}
+          <span role="status">{syncLabel(sync)}</span>
+        </div>
+        {editingTimer ? (
+          <div className="lock-in-enter absolute inset-0 z-20 grid place-items-center bg-background/85 backdrop-blur-sm">
             <TimerEditor
               session={session}
               now={now}
@@ -864,27 +899,12 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
                 setEditingTimer(false);
               }}
             />
-          ) : (
-            <button type="button" onClick={() => setEditingTimer(true)} className="press text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground">
-              Edit timer
-            </button>
-          )
-        ) : null}
-        <p role="status" className="text-xs text-muted-foreground">{syncLabel(sync)}</p>
-        {done ? (
-          <button
-            type="button"
-            onClick={() => (confirmDiscard ? discard() : setConfirmDiscard(true))}
-            onBlur={() => setConfirmDiscard(false)}
-            className="press text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
-          >
-            {confirmDiscard ? "Tap again to discard this session" : "Discard session"}
-          </button>
+          </div>
         ) : null}
       </div>
 
-      <div className="flex min-h-0 flex-col rounded-2xl border-[1.5px] border-foreground/20 p-4 sm:p-5 lg:max-h-full">
-        <div role="tablist" aria-label="Session panels" className="mb-4 flex gap-1 rounded-full bg-muted p-1 text-sm">
+      <div className="flex min-h-0 flex-col rounded-2xl border-[1.5px] border-foreground/20 p-3 sm:p-5">
+        <div role="tablist" aria-label="Session panels" className="mb-3 flex shrink-0 gap-1 rounded-full bg-muted p-1 text-sm">
           {tabs.map(([key, label]) => (
             <button
               key={key}
@@ -899,7 +919,7 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
           ))}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+        <div className="lock-in-no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {tab === "checklist" ? (
             <section>
               {summary.total > 0 ? (
@@ -1001,7 +1021,7 @@ function TimerEditor({ session, now, onApply, onCancel }: { session: LockInSessi
     ["checklist", "To-do list"],
   ];
   return (
-    <div className="lock-in-enter w-full max-w-sm rounded-2xl border-[1.5px] border-foreground/25 p-4 text-left">
+    <div className="w-[min(92%,22rem)] rounded-2xl border-[1.5px] border-foreground/25 bg-background p-4 text-left shadow-xl">
       <p className="text-sm font-semibold tracking-tight">Edit timer</p>
       <div role="radiogroup" aria-label="Timer type" className="mt-3 grid grid-cols-2 gap-2">
         {options.map(([key, text]) => (

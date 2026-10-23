@@ -1663,3 +1663,45 @@ html[data-splash="seen"] .app-splash { display: none; }
   .lock-in-launch { display: none; }
   .lock-in-mode-card:hover { transform: none; }
 }
+
+/* Lock In stage: a barely-there glow behind the ring, and rings that drift outward very slowly. */
+@keyframes lock-in-glow { 0%, 100% { opacity: 0.55; transform: scale(0.97); } 50% { opacity: 1; transform: scale(1.03); } }
+.lock-in-glow {
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--color-foreground) 7%, transparent), transparent 72%);
+  animation: lock-in-glow 9s ease-in-out infinite;
+}
+@keyframes lock-in-breath { 0% { opacity: 0.35; transform: scale(1); } 100% { opacity: 0; transform: scale(1.22); } }
+.lock-in-breath { animation: lock-in-breath 7.2s ease-out infinite; }
+.lock-in-no-scrollbar { scrollbar-width: none; }
+.lock-in-no-scrollbar::-webkit-scrollbar { display: none; }
+@media (prefers-reduced-motion: reduce) { .lock-in-glow, .lock-in-breath { animation: none; } }
+
+/* Whiteboard chrome: quiet pills, equal-width toolbar buttons, a soft rise for popovers. */
+.wb-btn {
+  display: grid; place-items: center; height: 2.9rem; min-width: 0; border-radius: 9999px;
+  color: var(--color-foreground); transition: background-color 0.18s, transform 0.18s var(--ease-out), color 0.18s;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.wb-btn:hover { background: var(--color-muted); }
+.wb-btn:active { transform: scale(0.92); }
+.wb-btn-on { background: var(--color-foreground); color: var(--color-background); }
+.wb-btn-on:hover { background: var(--color-foreground); }
+.wb-pill { border: 1px solid var(--color-border); background: color-mix(in srgb, var(--color-background) 92%, transparent); backdrop-filter: blur(8px); box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+.wb-pill:hover { background: var(--color-background); }
+.wb-menu {
+  position: absolute; z-index: 30; min-width: 14rem; border-radius: 1rem; border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-background) 97%, transparent); backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px -12px rgba(0,0,0,0.25); padding: 0.375rem; animation: wb-rise 0.22s var(--ease-out) both;
+}
+.wb-menu-item { display: block; width: 100%; border-radius: 0.65rem; padding: 0.7rem 0.85rem; text-align: left; font-size: 0.875rem; transition: background-color 0.15s; }
+.wb-menu-item:hover:not(:disabled) { background: var(--color-muted); }
+.wb-menu-item:disabled { opacity: 0.4; }
+@keyframes wb-rise { 0% { opacity: 0; transform: translateY(8px) scale(0.98); } 100% { opacity: 1; transform: none; } }
+.wb-rise { animation: wb-rise 0.24s var(--ease-out) both; }
+.wb-frame { display: flex; align-items: center; height: 2rem; border-radius: 9999px; color: var(--color-muted-foreground); transition: background-color 0.2s, color 0.2s; }
+.wb-frame:hover { background: var(--color-muted); }
+.wb-frame-on { background: var(--color-foreground); color: var(--color-background); }
+.wb-frame-on:hover { background: var(--color-foreground); }
+.wb-frame-label { max-width: 0; overflow: hidden; white-space: nowrap; font-size: 0.8125rem; font-weight: 500; transition: max-width 0.35s var(--ease-out), padding 0.35s var(--ease-out); }
+.wb-frame-on .wb-frame-label { max-width: 9.5rem; padding-right: 0.8rem; }
+@media (prefers-reduced-motion: reduce) { .wb-rise, .wb-menu { animation: none; } .wb-frame-label { transition: none; } }
