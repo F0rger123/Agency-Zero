@@ -25,13 +25,17 @@
   <a href="#01--what-it-does">What it does</a> ·
   <a href="#02--inside-the-app">Inside the app</a> ·
   <a href="#03--how-it-works">How it works</a> ·
-  <a href="#04--the-sales-pipeline">The sales pipeline</a> ·
-  <a href="#05--code-composition">Code composition</a> ·
+  <a href="#04--from-quote-to-paid">From quote to paid</a> ·
+  <a href="#05--what-its-written-in">What it's written in</a> ·
   <a href="#field-manual">Field manual</a> ·
   <a href="#license">License</a>
 </p>
 
 <p align="center"><img src=".github/assets/divider.svg" width="100%" alt=""></p>
+
+
+> [!TIP]
+> **🤖 Pasted this link into Claude or ChatGPT?** AI assistants: read [`docs/AI_GUIDE.md`](https://raw.githubusercontent.com/F0rger123/Agency-Zero/main/docs/AI_GUIDE.md) first. It explains what this is in plain words, which questions to ask, and how to set it up step by step. Plain-text index: [`llms.txt`](https://raw.githubusercontent.com/F0rger123/Agency-Zero/main/llms.txt).
 
 ## 01 · What it does
 
@@ -65,49 +69,30 @@ Agency Zero is a private CRM and operating system for a solo operator selling so
 ## 03 · How it works
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'primaryColor':'#0a0a0a','primaryTextColor':'#f4f4f2','primaryBorderColor':'#737373','lineColor':'#8a8a8a','secondaryColor':'#1f1f1f','tertiaryColor':'#141414','clusterBkg':'transparent','clusterBorder':'#737373','noteBkgColor':'#1f1f1f','noteTextColor':'#f4f4f2','actorBkg':'#0a0a0a','actorTextColor':'#f4f4f2','actorBorder':'#737373','signalColor':'#8a8a8a','signalTextColor':'#8a8a8a','labelBoxBkgColor':'#0a0a0a','fontFamily':'inherit'}}}%%
 flowchart LR
-    subgraph Edge["Cloudflare Workers"]
-        Site["Public site<br/>/"]
-        CRM["CRM app<br/>/app/**"]
-        Links["Customer links<br/>/q/token · /c/token"]
-        Proxy["proxy.ts<br/>session + route guard"]
-    end
-    subgraph Data["Supabase"]
-        Auth["Auth + Passkeys"]
-        PG[("Postgres<br/>RLS on every table")]
-        RPC["Security-definer RPCs"]
-        Store["Storage"]
-    end
-    Owner(["Owner"]) --> Proxy --> CRM
-    Client(["Customer"]) --> Links
-    CRM --> Auth
-    CRM --> PG
-    CRM --> Store
-    Links --> RPC --> PG
+    Owner(["You"]) -->|sign in| App["Agency Zero app"]
+    Client(["Your customer"]) -->|opens a link you sent| Link["Quote or contract page"]
+    App --> Data[("Your business data<br/>clients, projects, money")]
+    Link --> Data
+    Data -.->|only you can see it| Lock["Locked to your account"]
 ```
 
-## 04 · The sales pipeline
+## 04 · From quote to paid
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'primaryColor':'#0a0a0a','primaryTextColor':'#f4f4f2','primaryBorderColor':'#737373','lineColor':'#8a8a8a','secondaryColor':'#1f1f1f','tertiaryColor':'#141414','clusterBkg':'transparent','clusterBorder':'#737373','noteBkgColor':'#1f1f1f','noteTextColor':'#f4f4f2','actorBkg':'#0a0a0a','actorTextColor':'#f4f4f2','actorBorder':'#737373','signalColor':'#8a8a8a','signalTextColor':'#8a8a8a','labelBoxBkgColor':'#0a0a0a','fontFamily':'inherit'}}}%%
-stateDiagram-v2
-    direction LR
-    [*] --> Quote: build packages
-    Quote --> Accepted: customer accepts link
-    Accepted --> Contract: snapshot frozen
-    Contract --> Signed: e-sign
-    Signed --> Invoice
-    Invoice --> Paid: record payment
-    Paid --> [*]
-    note right of Signed: immutable after signing
+flowchart LR
+    A["You build a quote"] --> B["Customer accepts it online"]
+    B --> C["Contract is created<br/>and signed"]
+    C --> D["Invoice goes out"]
+    D --> E["Payment recorded"]
+    C -.-> F["Signed contracts<br/>can't be changed"]
 ```
 
-## 05 · Code composition
+## 05 · What it's written in
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'pie1':'#f4f4f2','pie2':'#737373','pie3':'#64748b','pie4':'#94a3b8','pie5':'#475569','pie6':'#cbd5e1','pie7':'#334155','pieStrokeColor':'#0d1117','pieOuterStrokeColor':'#0d1117','pieTitleTextColor':'#8b949e','pieLegendTextColor':'#8b949e','pieSectionTextColor':'#0d1117'}}}%%
-pie title Code composition (% of bytes, via GitHub linguist)
+pie title Share of the code, by language
     "TypeScript" : 59.9
     "PLpgSQL" : 25.8
     "HTML" : 7.5

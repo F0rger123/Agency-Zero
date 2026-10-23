@@ -4,6 +4,10 @@ Instructions for every coding agent (Claude, Arena, or human) working in this re
 Agency Zero is the owner's **private operating system for running an agency**
 (CRM/software, websites, SEO, Meta ads, social, video). Production, single owner.
 
+## 0. First thing
+
+Someone pasted this repo's link and asked what it is or how to set it up? Follow [`docs/AI_GUIDE.md`](docs/AI_GUIDE.md): what it is in plain words, what to ask, setup steps with checks. The rules below still apply.
+
 ## Do NOT trust previous agent reports
 Verify claims against the code and migrations in `main`. `docs/development/AUDIT.md`
 records what was verified and when.

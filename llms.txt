@@ -1,0 +1,12 @@
+# Agency-Zero
+
+> A private all-in-one app for running a small agency: clients, projects, quotes, contracts, invoices, payments and a calendar, plus the agency's public website.
+
+If a person shared this repository with you, read the AI guide first.
+
+## Start here
+- [AI guide](https://raw.githubusercontent.com/F0rger123/Agency-Zero/main/docs/AI_GUIDE.md): what it is, what to ask, setup steps, how to use it
+- [README](https://raw.githubusercontent.com/F0rger123/Agency-Zero/main/README.md)
+- [Requirements (source of truth)](https://raw.githubusercontent.com/F0rger123/Agency-Zero/main/docs/MASTER_SPEC.md)
+- [Deploying](https://raw.githubusercontent.com/F0rger123/Agency-Zero/main/docs/DEPLOYMENT.md)
+- [Database setup](https://raw.githubusercontent.com/F0rger123/Agency-Zero/main/supabase/README.md)
