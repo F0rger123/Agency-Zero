@@ -5,11 +5,11 @@
  *  - Never touches: non-GET requests (saves, server actions), /api, /auth, /login.
  *  - "clear" message (sent on sign-out) deletes everything cached, so nothing lingers on a shared device.
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC = `az-static-${VERSION}`;
 const PAGES = `az-pages-${VERSION}`;
 const OFFLINE = "/offline.html";
-const NETWORK_TIMEOUT_MS = 4000;
+const NETWORK_TIMEOUT_MS = 8000;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(STATIC).then((cache) => cache.addAll([OFFLINE, "/icons/icon-192.png"])).then(() => self.skipWaiting()));
@@ -46,22 +46,26 @@ const isPrefetch = (request) => request.headers.get("Next-Router-Prefetch") || r
 async function networkFirst(request) {
   const key = pageKey(request);
   const cache = await caches.open(PAGES);
-  try {
-    const response = await Promise.race([
-      fetch(request),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), NETWORK_TIMEOUT_MS)),
-    ]);
+  const saved = await cache.match(key);
+  const network = fetch(request).then((response) => {
     // Keep only real pages: a redirect (for example to /login) must never replace a saved copy.
     if (response.ok && !response.redirected && response.type === "basic") cache.put(key, response.clone());
     return response;
+  });
+  network.catch(() => {}); // a late failure after we already answered from the saved copy is not an error
+  try {
+    // With nothing saved there is nothing to fall back on, so wait as long as the network needs: a slow server is not an
+    // offline device. With a saved copy, a very slow network gets the saved page after a while.
+    if (!saved) return await network;
+    return await Promise.race([network, new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), NETWORK_TIMEOUT_MS))]);
   } catch {
-    const saved = await cache.match(key);
     if (saved) return saved;
     if (request.mode === "navigate") {
       const offline = await caches.match(OFFLINE);
       if (offline) return offline;
     }
-    return new Response("Offline", { status: 503, statusText: "Offline" });
+    // A genuine network failure: let the browser see it as one (never invent a fake page response).
+    return Response.error();
   }
 }
 
