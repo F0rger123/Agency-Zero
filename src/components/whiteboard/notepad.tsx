@@ -6,9 +6,22 @@ import { MicButton } from "@/components/mic-button";
 import { applyDictation } from "@/lib/dictation-text";
 import { useDictation } from "@/lib/use-dictation";
 import { saveMeetingNotesAction, startBoardMeetingAction } from "@/app/app/meetings/actions";
+import { recoverIfStale } from "@/lib/stale-build";
 import { WbIcon } from "./wb-icons";
 
 export type NotepadMeeting = { id: string; title: string; notes: string };
+
+/** Notes typed just before an app update are kept here across the reload, then saved. */
+const rescueKey = (id: string) => `az-notepad-${id}`;
+
+function rescued(meeting: NotepadMeeting | null): string | null {
+  if (!meeting || typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(rescueKey(meeting.id));
+  } catch {
+    return null;
+  }
+}
 
 /**
  * The owner's private notepad beside the board. It writes into the meeting's notes (never into the board,
@@ -26,7 +39,7 @@ export function Notepad({
   onMeeting: (meeting: NotepadMeeting) => void;
 }) {
   const [meeting, setMeeting] = useState(initialMeeting);
-  const [notes, setNotes] = useState(initialMeeting?.notes ?? "");
+  const [notes, setNotes] = useState(() => rescued(initialMeeting) ?? initialMeeting?.notes ?? "");
   const [status, setStatus] = useState<"saved" | "saving" | "error">("saved");
   const [problem, setProblem] = useState("");
   const [starting, setStarting] = useState(false);
@@ -52,8 +65,21 @@ export function Notepad({
         return;
       }
       onMeeting({ ...target, notes: value });
+      try {
+        window.localStorage.removeItem(rescueKey(target.id));
+      } catch {
+        // Nothing was stashed, or storage is blocked.
+      }
       setStatus(latest.current === value ? "saved" : "saving");
-    } catch {
+    } catch (error) {
+      const stash = () => {
+        try {
+          window.localStorage.setItem(rescueKey(target.id), value);
+        } catch {
+          // Storage blocked: the reload below may lose the last few words.
+        }
+      };
+      if (recoverIfStale(error, stash)) return;
       setStatus("error");
       setProblem("No connection. Your notes are still here; they save when you type again.");
     }
@@ -66,6 +92,14 @@ export function Notepad({
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(save, 800);
   };
+
+  // Notes rescued from before an update: send them now.
+  useEffect(() => {
+    if (!initialMeeting || rescued(initialMeeting) === null) return;
+    const timer = window.setTimeout(() => void save(), 300);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const dictation = useDictation((phrase) => change(applyDictation(latest.current, phrase)));
 
@@ -84,7 +118,10 @@ export function Notepad({
   const start = async () => {
     setStarting(true);
     setProblem("");
-    const result = await startBoardMeetingAction(boardId).catch(() => ({ ok: false as const, error: "No connection.", meeting: undefined }));
+    const result = await startBoardMeetingAction(boardId).catch((error: unknown) => {
+      recoverIfStale(error);
+      return { ok: false as const, error: "No connection.", meeting: undefined };
+    });
     setStarting(false);
     if (!result.ok || !result.meeting) {
       setProblem(result.error ?? "Could not start the meeting.");

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { appPath } from "@/lib/routes";
-import { reloadFresh, useRecoverFromStaleBuild } from "@/lib/stale-build";
+import { isStaleBuildError, reloadFresh, useRecoverFromStaleBuild } from "@/lib/stale-build";
 
 export default function AppError({
   error,
@@ -12,6 +12,19 @@ export default function AppError({
   reset: () => void;
 }) {
   useRecoverFromStaleBuild(error);
+  if (isStaleBuildError(error)) {
+    return (
+      <div className="border-t border-border pt-10">
+        <h1 className="text-xl font-semibold tracking-tight">The app was just updated</h1>
+        <p className="mt-2 max-w-prose text-sm leading-6 text-muted-foreground">
+          This screen was opened before the update, so it is loading the new version. Then try again; nothing is wrong with your data.
+        </p>
+        <button type="button" onClick={reloadFresh} className="mt-6 rounded-md bg-inverted px-4 py-2 text-sm font-medium text-inverted-foreground transition-colors hover:bg-neutral-700">
+          Load the new version
+        </button>
+      </div>
+    );
+  }
   return (
     <div className="border-t border-border pt-10">
       <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">

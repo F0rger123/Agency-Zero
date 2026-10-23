@@ -1,5 +1,9 @@
 # Handoff log (newest first)
 
+## 2026-10-23 — Claude — fix "Server Action … was not found" after a deploy
+
+**No migration.** Cause: a CRM tab opened before a deploy still holds the previous build's server-action ids; Next 16 reports that as `UnrecognizedActionError: Server Action "…" was not found on the server`, which the stale-build detector (`src/lib/stale-build.ts`) did not recognise (it only knew the older "Failed to find Server Action" wording), so the error screen showed instead of reloading. Now: the new wording is recognised (tested), the app error screen says "The app was just updated" and reloads itself (at most once per 30 s, so a real bug cannot loop), and autosaves called from code recover too: meeting notes (device draft), the whiteboard notepad and the whiteboard itself stash unsaved work on the device, reload, and save it from the new version. Browser-checked by forcing an unknown action id on "New meeting".
+
 ## 2026-10-23 — Claude — meetings anywhere, whiteboard notepad, hide money
 
 **Migration to apply: `0033_meeting_workspace.sql`** (paste-ready `supabase/scripts/apply-0033.sql`; probed on `/app/system` and in `check-applied.sql`). Needs 0027 and 0032 first. Until it is applied: meetings still work with a customer, questions are hidden, boards have no meeting link (the notepad's "Start meeting notes" and general meetings without a customer show a "needs 0033" message), uploads save without the meeting tag.

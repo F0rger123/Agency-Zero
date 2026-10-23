@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Engine, type Mode, type RemoteCursor, type Style, type Tool } from "@/lib/whiteboard/engine";
 import { newId } from "@/lib/whiteboard/ids";
-import { mergeBoards } from "@/lib/whiteboard/ops";
+import { mergeBoards, parseBoard } from "@/lib/whiteboard/ops";
 import { buildPdf, dataUrlToBytes } from "@/lib/whiteboard/pdf";
 import { renderFrameCanvas } from "@/lib/whiteboard/render";
 import { defaultBoard } from "@/lib/whiteboard/template";
@@ -15,6 +15,7 @@ import { regenerateWhiteboardLinkAction, renameWhiteboardAction, saveWhiteboardA
 import { saveBoardFileAction } from "@/app/app/meetings/actions";
 import { Notepad, type NotepadMeeting } from "./notepad";
 import { WbIcon, type WbIconName } from "./wb-icons";
+import { recoverIfStale } from "@/lib/stale-build";
 import { HapticsListener } from "@/components/haptics-listener";
 
 type Role = "owner" | "guest";
@@ -140,7 +141,30 @@ export function BoardEditor({
     const current = engineRef.current;
     if (role !== "owner" || !boardId || !current) return;
     setSaveState("saving");
-    const result = await saveWhiteboardAction(boardId, JSON.stringify(current.getData()));
+    const json = JSON.stringify(current.getData());
+    let result: Awaited<ReturnType<typeof saveWhiteboardAction>>;
+    try {
+      result = await saveWhiteboardAction(boardId, json);
+    } catch (error) {
+      // The app was updated while the board was open: keep the drawing on this device, reload, and save it from there.
+      const stash = () => {
+        try {
+          window.localStorage.setItem(`az-wb-rescue-${boardId}`, json);
+        } catch {
+          // Storage full or blocked.
+        }
+      };
+      if (!recoverIfStale(error, stash)) showToast("Not saved: no connection. It retries on your next change.");
+      setSaveState("error");
+      return;
+    }
+    if (result.ok) {
+      try {
+        window.localStorage.removeItem(`az-wb-rescue-${boardId}`);
+      } catch {
+        // Nothing stashed.
+      }
+    }
     setSaveState(result.ok ? "saved" : "error");
     if (!result.ok && result.error) showToast(result.error);
   }, [role, boardId, showToast]);
@@ -245,6 +269,27 @@ export function BoardEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [data],
   );
+
+  // A drawing kept on this device when an app update interrupted a save: merge it back in and save it.
+  useEffect(() => {
+    if (!engine || role !== "owner" || !boardId) return;
+    let stashed: string | null = null;
+    try {
+      stashed = window.localStorage.getItem(`az-wb-rescue-${boardId}`);
+    } catch {
+      return;
+    }
+    if (!stashed) return;
+    let board: BoardData | null = null;
+    try {
+      board = parseBoard(JSON.parse(stashed));
+    } catch {
+      board = null;
+    }
+    if (board && mergeBoards(engine.getData(), board)) engine.requestRender();
+    const timer = window.setTimeout(() => void saveNow(), 300);
+    return () => window.clearTimeout(timer);
+  }, [engine, role, boardId, saveNow]);
 
   const goFrame = useCallback(
     (index: number, manual = true) => {

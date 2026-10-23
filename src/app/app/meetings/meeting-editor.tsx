@@ -10,6 +10,7 @@ import { useDictation } from "@/lib/use-dictation";
 import { applyDictation } from "@/lib/dictation-text";
 import { DictationHint, MicButton } from "@/components/mic-button";
 import type { ActionState } from "@/lib/forms";
+import { recoverIfStale } from "@/lib/stale-build";
 import { deleteMeetingAction, meetingTasksAction, saveMeetingAction, setMeetingStatusAction } from "./actions";
 
 const initialState: ActionState = {};
@@ -82,8 +83,9 @@ export function MeetingEditor({ meeting, afterDelete }: { meeting: Meeting; /** 
         setStatus("error");
         setMessage(result.error ?? "Could not save.");
       }
-    } catch {
-      setStatus("device");
+    } catch (error) {
+      // An update was deployed while this page was open: the draft is kept on the device and sent after the reload.
+      if (!recoverIfStale(error)) setStatus("device");
     }
   };
 
