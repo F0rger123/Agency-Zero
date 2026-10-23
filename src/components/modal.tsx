@@ -121,3 +121,33 @@ export function AddDialog({
     </>
   );
 }
+
+/** Same as AddDialog but the trigger is a quiet text button, for row actions like "Quick edit". */
+export function LinkDialog({
+  label,
+  title,
+  description,
+  children,
+  className = "text-xs text-muted-foreground hover:text-foreground",
+}: {
+  label: string;
+  title: string;
+  description?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} className={`press underline-offset-4 transition-colors hover:underline ${className}`}>
+        {label}
+      </button>
+      <ModalContext.Provider value={{ close }}>
+        <Modal open={open} onClose={close} title={title} description={description}>
+          {children}
+        </Modal>
+      </ModalContext.Provider>
+    </>
+  );
+}

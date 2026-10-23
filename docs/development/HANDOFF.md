@@ -1,5 +1,12 @@
 # Handoff log (newest first)
 
+## 2026-10-23 — Claude — clients page cleanup; lead delete tools
+
+**No migration.** 
+- **Clients page** (`/app/clients`, not Home): removed Outstanding, Waiting, Services and Projects (columns, summary tiles, billing/service filters). "MRR" is now **Total revenue** = sum of `paid_cents` on non-void invoices per client (read in `page.tsx`, no RPC change). Each row has **Quick edit** (dialog with `EditClientForm`; website/notes are loaded so saving does not blank them) and **Delete** (confirmation dialog; reuses `archiveClientAction`, i.e. soft delete — invoices/history kept). New `LinkDialog` in `src/components/modal.tsx`.
+- **Leads**: per-lead Delete (confirm), "Delete all dismissed (n)" (confirm; skips converted), and a "Looks like a test" badge from `src/lib/leads.ts` (heuristic only, never auto-deletes). No leads are seeded by any migration; any fake ones are test/spam submissions in the live DB, which this session cannot see.
+- Unverified: not exercised against real Supabase. The dashboard still links `/app/clients?billing=recurring`; the param is now ignored.
+
 ## 2026-10-23 — Claude — Lock In is a stopwatch that saves itself; add-customer wizard
 
 **Migration to apply: `0029_lock_in_sessions.sql`** (additive; Lock In works without it from the browser alone, and `/app/system` has a probe).

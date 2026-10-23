@@ -7,7 +7,10 @@ import { dateTimeLabel } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { LimitNotice, MigrationsRequired, SetupRequired } from "@/components/states";
 import { LIST_LIMIT } from "@/lib/limits";
+import { looksLikeTestLead } from "@/lib/leads";
+import { ConfirmDelete } from "@/components/confirm-delete";
 import { ConvertLeadForm, LeadStatusForm } from "./lead-forms";
+import { deleteDismissedLeadsAction, deleteLeadAction } from "./actions";
 
 export const metadata: Metadata = { title: "Leads" };
 
@@ -65,6 +68,19 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
       />
       <LimitNotice shown={leads.length} limit={LIST_LIMIT} hint="Older leads are hidden." />
 
+      {count("dismissed") > 0 ? (
+        <div className="mb-4 flex justify-end">
+          <ConfirmDelete
+            action={deleteDismissedLeadsAction}
+            fields={{}}
+            label={`Delete all dismissed (${count("dismissed")})`}
+            title="Delete all dismissed leads?"
+            message="This permanently removes every dismissed lead. Leads you already turned into clients are not touched. This cannot be undone."
+            confirmLabel="Delete dismissed"
+          />
+        </div>
+      ) : null}
+
       <nav aria-label="Lead status" className="flex flex-wrap gap-x-6 gap-y-2 border-b border-border pb-3 text-sm">
         {tabs.map((tab) => (
           <Link
@@ -111,6 +127,11 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                 <p className="mt-3 text-xs text-faint-foreground">
                   {dateTimeLabel(lead.created_at)} · <span className="uppercase tracking-widest">{lead.status}</span>
                 </p>
+                {looksLikeTestLead(lead) ? (
+                  <p className="mt-2 inline-block rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+                    Looks like a test
+                  </p>
+                ) : null}
               </div>
 
               <div className="md:col-span-5">
@@ -122,6 +143,13 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
               </div>
 
               <div className="space-y-3 md:col-span-3">
+                <ConfirmDelete
+                  action={deleteLeadAction}
+                  fields={{ id: lead.id }}
+                  title="Delete this lead?"
+                  message={`This permanently removes ${lead.name}'s inquiry. This cannot be undone.`}
+                  className="text-xs text-red-600 hover:text-red-700"
+                />
                 {lead.client_id ? (
                   <Link href={`/app/clients/${lead.client_id}`} className="text-sm underline decoration-border underline-offset-4">
                     Open client →

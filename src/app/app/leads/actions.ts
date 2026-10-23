@@ -41,3 +41,33 @@ export async function convertLeadAction(_previous: ActionState, formData: FormDa
   if (typeof data === "string") redirect(`/app/clients/${data}`);
   return { success: "Converted to a client. Open it from Clients." };
 }
+
+/** Permanently remove one inquiry (test/spam). Leads are not financial records. */
+export async function deleteLeadAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const id = field(formData, "id");
+  if (!id) return { error: "Lead ID is missing." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error, count } = await auth.supabase.from("leads").delete({ count: "exact" }).eq("id", id);
+  if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Lead");
+  if (missing) return missing;
+  revalidatePath("/app/leads");
+  revalidatePath("/app");
+  return { success: "Lead deleted." };
+}
+
+/** Clear out everything already dismissed in one go (never touches converted leads). */
+export async function deleteDismissedLeadsAction(): Promise<ActionState> {
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error, count } = await auth.supabase
+    .from("leads")
+    .delete({ count: "exact" })
+    .eq("status", "dismissed")
+    .is("client_id", null);
+  if (error) return { error: readableError(error.message) };
+  revalidatePath("/app/leads");
+  revalidatePath("/app");
+  return { success: `Deleted ${count ?? 0} dismissed ${count === 1 ? "lead" : "leads"}.` };
+}
