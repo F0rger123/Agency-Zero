@@ -17,7 +17,7 @@ const initialState: ActionState = {};
 const field = "w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-foreground";
 const newId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
-type Draft = { notes: string; decisions: string; attendees: string; agenda: string; actionItems: ActionItem[]; questions: MeetingQuestion[]; dirty: boolean };
+type Draft = { notes: string; decisions: string; attendees: string; agenda: string; actionItems: ActionItem[]; questions: MeetingQuestion[]; scratchpad: string; dirty: boolean };
 const draftKey = (id: string) => `az-meeting-${id}`;
 
 function readDraft(meeting: Meeting): Draft {
@@ -28,12 +28,13 @@ function readDraft(meeting: Meeting): Draft {
     agenda: meeting.agenda ?? "",
     actionItems: meeting.action_items ?? [],
     questions: meeting.questions ?? [],
+    scratchpad: meeting.scratchpad ?? "",
     dirty: false,
   };
   try {
     // Notes typed with no signal are kept on this device until they have been saved.
     const stored = JSON.parse(window.localStorage.getItem(draftKey(meeting.id)) ?? "null") as Draft | null;
-    if (stored && stored.dirty) return { ...stored, questions: stored.questions ?? fromServer.questions };
+    if (stored && stored.dirty) return { ...stored, questions: stored.questions ?? fromServer.questions, scratchpad: stored.scratchpad ?? fromServer.scratchpad };
   } catch {
     // Storage blocked or damaged: use the server copy.
   }
@@ -41,9 +42,63 @@ function readDraft(meeting: Meeting): Draft {
 }
 
 /** Live notes: everything autosaves, and survives a dropped connection (kept on the device, sent when back online). */
+/**
+ * A plain pad next to the meeting notes for anything pasted or jotted during the meeting (links, prices, text from an
+ * email). Kept separate so the notes stay a clean record. Paste/Copy buttons for phones, where long-press is fiddly.
+ */
+export function Scratchpad({ id, value, onChange, rows = 6 }: { id: string; value: string; onChange: (value: string) => void; rows?: number }) {
+  const [hint, setHint] = useState("");
+  const flash = (text: string) => {
+    setHint(text);
+    window.setTimeout(() => setHint(""), 1800);
+  };
+  const paste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text) return flash("Clipboard is empty");
+      onChange(value ? `${value.replace(/\s+$/, "")}\n${text}` : text);
+      flash("Pasted");
+    } catch {
+      flash("Press and hold in the box, then Paste");
+    }
+  };
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      flash("Copied");
+    } catch {
+      flash("Select the text and copy it");
+    }
+  };
+  return (
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <label htmlFor={`pad-${id}`} className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+          Notepad
+        </label>
+        <span className="flex items-center gap-1.5">
+          {hint ? <span role="status" className="mr-1 text-xs text-muted-foreground">{hint}</span> : null}
+          <button type="button" onClick={paste} className="press rounded-full border border-border px-3 py-1 text-xs font-medium transition-colors hover:bg-muted">Paste</button>
+          <button type="button" onClick={copy} disabled={!value} className="press rounded-full border border-border px-3 py-1 text-xs font-medium transition-colors hover:bg-muted disabled:opacity-40">Copy</button>
+        </span>
+      </div>
+      <textarea
+        id={`pad-${id}`}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        rows={rows}
+        placeholder="Paste links, numbers or text here. Separate from the meeting notes."
+        className={`${field} mt-2 resize-y font-mono text-[13px] leading-6`}
+      />
+    </div>
+  );
+}
+
 export function MeetingEditor({ meeting, afterDelete }: { meeting: Meeting; /** "list" when the editor is the meeting page itself */ afterDelete?: "list" }) {
   // Before migration 0033 the meeting has no questions column: hide that section rather than lose what is typed.
   const hasQuestions = Array.isArray(meeting.questions);
+  // Same for the copy/paste notepad (0034).
+  const hasScratchpad = typeof meeting.scratchpad === "string";
   const online = useOnline();
   const [draft, setDraft] = useState<Draft>(() => readDraft(meeting));
   const [status, setStatus] = useState<"saved" | "saving" | "device" | "error">("saved");
@@ -73,7 +128,7 @@ export function MeetingEditor({ meeting, afterDelete }: { meeting: Meeting; /** 
     }
     setStatus("saving");
     try {
-      const result = await saveMeetingAction({ id: meeting.id, notes: value.notes, decisions: value.decisions, attendees: value.attendees, agenda: value.agenda, actionItems: value.actionItems, ...(hasQuestions ? { questions: value.questions } : {}) });
+      const result = await saveMeetingAction({ id: meeting.id, notes: value.notes, decisions: value.decisions, attendees: value.attendees, agenda: value.agenda, actionItems: value.actionItems, ...(hasQuestions ? { questions: value.questions } : {}), ...(hasScratchpad ? { scratchpad: value.scratchpad } : {}) });
       if (result.ok) {
         // Only clear the "unsaved" mark if nothing changed while the save was in flight.
         if (latest.current === value) persist({ ...value, dirty: false });
@@ -144,7 +199,7 @@ export function MeetingEditor({ meeting, afterDelete }: { meeting: Meeting; /** 
 
       <div>
         <div className="flex items-center justify-between gap-3">
-          <label htmlFor={`notes-${meeting.id}`} className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Notes</label>
+          <label htmlFor={`notes-${meeting.id}`} className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Meeting notes</label>
           <span role="status" aria-live="polite" className="text-xs text-muted-foreground">
             {status === "saving" ? "Saving…" : status === "device" ? "Saved on this device. Will send when you are online." : status === "error" ? message : "All changes saved"}
           </span>
@@ -162,6 +217,8 @@ export function MeetingEditor({ meeting, afterDelete }: { meeting: Meeting; /** 
         </div>
         <DictationHint dictation={dictation} className="mt-2" />
       </div>
+
+      {hasScratchpad ? <Scratchpad id={meeting.id} value={draft.scratchpad} onChange={(scratchpad) => change({ scratchpad })} /> : null}
 
       {hasQuestions ? (
         <div>

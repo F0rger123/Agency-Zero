@@ -361,3 +361,4 @@ available for a scheduled/back-office sweep.
 | 0031 | General to-do list: `todos` (text, done, done_at; owner-only RLS) |
 | 0032 | Call whiteboards: `whiteboards` (owner-only RLS, board json, share token hash + mode) and anonymous `get_public_whiteboard()` |
 | 0033 | Meeting workspace: `meetings.client_id` optional, `meetings.questions`, `whiteboards.meeting_id`, `client_files.meeting_id` |
+| 0034 | Meeting notepad: `meetings.scratchpad` (copy/paste text, separate from the meeting notes) |

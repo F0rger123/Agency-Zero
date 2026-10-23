@@ -58,6 +58,11 @@ const probes: Probe[] = [
     run: (s) => s.from("whiteboards").select("meeting_id", { count: "exact", head: true }),
   },
   {
+    name: "meeting notepad (meetings.scratchpad)",
+    migration: "0034",
+    run: (s) => s.from("meetings").select("scratchpad", { count: "exact", head: true }),
+  },
+  {
     name: "function get_public_whiteboard()",
     migration: "0032",
     run: (s) => s.rpc("get_public_whiteboard", { p_token_hash: "probe" }),

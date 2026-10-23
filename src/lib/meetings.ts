@@ -20,12 +20,31 @@ export type Meeting = {
   action_items: ActionItem[];
   /** Missing until migration 0033 is applied. */
   questions?: MeetingQuestion[];
+  /** Copy/paste notepad, separate from `notes` (migration 0034; missing before it). */
+  scratchpad?: string;
   status: "scheduled" | "in_progress" | "done";
   ended_at: string | null;
 };
 
 /** Columns every meeting query reads; `questions` (0033) is added separately so a database that is behind still loads. */
 export const MEETING_COLUMNS = "id, client_id, project_id, title, meeting_at, location, attendees, agenda, notes, decisions, action_items, status, ended_at";
+
+/**
+ * Column lists from newest to oldest database: a read tries each in turn while the error names a column that a later
+ * migration adds, so a production database that is behind still loads every meeting.
+ */
+export const MEETING_COLUMN_TIERS = [`${MEETING_COLUMNS}, questions, scratchpad`, `${MEETING_COLUMNS}, questions`, MEETING_COLUMNS];
+
+export const isMissingMeetingColumn = (message: string) => /questions|scratchpad/i.test(message);
+
+export async function readMeetings<R extends { error: { message: string } | null }>(run: (columns: string) => PromiseLike<R>): Promise<R> {
+  let result = await run(MEETING_COLUMN_TIERS[0]);
+  for (const columns of MEETING_COLUMN_TIERS.slice(1)) {
+    if (!result.error || !isMissingMeetingColumn(result.error.message)) break;
+    result = await run(columns);
+  }
+  return result;
+}
 
 export const MEETINGS_MIGRATION_MESSAGE = "Meeting notes need database update 0027. Apply it in the Supabase SQL editor, then reload.";
 
@@ -71,9 +90,9 @@ export function cleanQuestions(raw: unknown): MeetingQuestion[] {
 }
 
 /** True when the database has not had migration 0033 yet (no questions / meeting_id columns, client still required). */
-export const needsMeetingWorkspaceMigration = (message: string) => /questions|meeting_id|client_id/i.test(message);
+export const needsMeetingWorkspaceMigration = (message: string) => /questions|scratchpad|meeting_id|client_id/i.test(message);
 
-export const MEETING_WORKSPACE_MIGRATION_MESSAGE = "This needs database update 0033 (meeting workspace). Apply it in the Supabase SQL editor, then reload.";
+export const MEETING_WORKSPACE_MIGRATION_MESSAGE = "This needs database updates 0033 and 0034 (meeting workspace and notepad). Apply them in the Supabase SQL editor, then reload.";
 
 export function openItemsToConvert(items: ActionItem[]): ActionItem[] {
   return items.filter((item) => !item.done && !item.task);

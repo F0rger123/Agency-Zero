@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanActionItems, cleanQuestions, meetingDuration, needsMeetingWorkspaceMigration, openItemsToConvert } from "./meetings";
+import { MEETING_COLUMNS, readMeetings, cleanActionItems, cleanQuestions, meetingDuration, needsMeetingWorkspaceMigration, openItemsToConvert } from "./meetings";
 
 describe("meeting helpers", () => {
   it("cleans action items from the browser", () => {
@@ -39,5 +39,27 @@ describe("meeting helpers", () => {
     expect(needsMeetingWorkspaceMigration('column "questions" of relation "meetings" does not exist')).toBe(true);
     expect(needsMeetingWorkspaceMigration('null value in column "client_id" of relation "meetings" violates not-null constraint')).toBe(true);
     expect(needsMeetingWorkspaceMigration("permission denied")).toBe(false);
+  });
+
+  it("reads meetings on a database that is behind, dropping only the missing columns", async () => {
+    const asked: string[] = [];
+    const run = async (columns: string) => {
+      asked.push(columns);
+      if (columns.includes("scratchpad")) return { data: null, error: { message: 'column meetings.scratchpad does not exist' } };
+      return { data: [{ id: "m" }], error: null };
+    };
+    const result = await readMeetings(run);
+    expect(result.error).toBeNull();
+    expect(asked).toEqual([`${MEETING_COLUMNS}, questions, scratchpad`, `${MEETING_COLUMNS}, questions`]);
+  });
+
+  it("does not hide unrelated errors behind the fallback", async () => {
+    let calls = 0;
+    const result = await readMeetings(async () => {
+      calls += 1;
+      return { data: null, error: { message: "permission denied" } };
+    });
+    expect(calls).toBe(1);
+    expect(result.error?.message).toBe("permission denied");
   });
 });

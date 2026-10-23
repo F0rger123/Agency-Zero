@@ -56,5 +56,8 @@ select * from (
   select '0033', 'meeting workspace (meetings.questions, whiteboards.meeting_id)',
          exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'meetings' and column_name = 'questions')
          and exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'whiteboards' and column_name = 'meeting_id')
+  union all
+  select '0034', 'meeting notepad (meetings.scratchpad)',
+         exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'meetings' and column_name = 'scratchpad')
 ) checks
 order by migration, what;

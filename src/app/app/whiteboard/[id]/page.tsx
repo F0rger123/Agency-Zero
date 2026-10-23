@@ -5,6 +5,7 @@ import { DataFailure, MigrationsRequired, SetupRequired } from "@/components/sta
 import { isMissingTable } from "@/lib/forms";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
+import { MEETING_COLUMNS, readMeetings } from "@/lib/meetings";
 import { parseBoard } from "@/lib/whiteboard/ops";
 
 export const metadata: Metadata = { title: "Whiteboard" };
@@ -24,10 +25,13 @@ export default async function WhiteboardPage({ params }: { params: Promise<{ id:
   if (error) return isMissingTable(error.message) ? <MigrationsRequired detail="Whiteboards need database update 0032." /> : <DataFailure title="Whiteboard" message={error.message} />;
   if (!data) notFound();
   const row = data as { id: string; title: string; data: unknown; public_token: string; share_mode: "edit" | "view" | "off"; client_id: string | null; meeting_id?: string | null };
-  let meeting: { id: string; title: string; notes: string; client_id: string | null } | null = null;
+  type BoardMeeting = { id: string; title: string; notes: string; client_id: string | null; scratchpad?: string };
+  let meeting: BoardMeeting | null = null;
   if (row.meeting_id) {
-    const found = await supabase.from("meetings").select("id, title, notes, client_id").eq("id", row.meeting_id).maybeSingle();
-    meeting = found.data ?? null;
+    const meetingId = row.meeting_id;
+    // The notepad tab needs 0034 (scratchpad); without it the panel shows the notes only.
+    const found = await readMeetings((columns) => supabase.from("meetings").select(columns.replace(MEETING_COLUMNS, "id, title, notes, client_id")).eq("id", meetingId).maybeSingle());
+    meeting = (found.data as unknown as BoardMeeting | null) ?? null;
   }
   return (
     <BoardEditor
@@ -38,7 +42,7 @@ export default async function WhiteboardPage({ params }: { params: Promise<{ id:
       shareMode={row.share_mode}
       title={row.title}
       backHref={meeting ? `/app/meetings/${meeting.id}` : "/app/whiteboard"}
-      meeting={meeting ? { id: meeting.id, title: meeting.title, notes: meeting.notes ?? "" } : null}
+      meeting={meeting ? { id: meeting.id, title: meeting.title, notes: meeting.notes ?? "", ...(typeof meeting.scratchpad === "string" ? { scratchpad: meeting.scratchpad } : {}) } : null}
       canFile={Boolean(row.client_id || meeting?.client_id)}
     />
   );

@@ -635,3 +635,19 @@ set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';   -- strange
 do $$ begin assert (select count(*) from public.meetings where title = 'Coffee with a prospect') = 0, 'stranger cannot read client-less meetings'; end $$;
 reset role;
 
+-- ── meeting notepad (0034) ─────────────────────────────────────────────────
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';   -- owner
+update public.meetings set scratchpad = 'pasted: https://example.test' where title = 'Coffee with a prospect';
+do $$ begin
+  assert (select scratchpad from public.meetings where title = 'Coffee with a prospect') = 'pasted: https://example.test', 'owner writes the notepad';
+  assert (select notes from public.meetings where title = 'Coffee with a prospect') = 'Wants a new site', 'the notepad is separate from the notes';
+end $$;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';   -- stranger
+update public.meetings set scratchpad = 'hacked' where title = 'Coffee with a prospect';
+reset role;
+do $$ begin assert (select scratchpad from public.meetings where title = 'Coffee with a prospect') = 'pasted: https://example.test', 'stranger cannot write the notepad'; end $$;
+set role anon;
+do $$ begin assert (select count(*) from public.meetings where scratchpad <> '') = 0, 'anon cannot read the notepad'; end $$;
+reset role;
+

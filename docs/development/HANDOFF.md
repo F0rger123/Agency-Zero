@@ -1,5 +1,12 @@
 # Handoff log (newest first)
 
+## 2026-10-23 — Claude — separate copy/paste notepad for meetings
+
+**Migration to apply: `0034_meeting_scratchpad.sql`** (`meetings.scratchpad`; paste-ready `supabase/scripts/apply-0034.sql`; probed on `/app/system` and in `check-applied.sql`). Order: 0032 → 0033 → 0034. Before it, the notepad is simply hidden (reads fall back through `readMeetings()` in `src/lib/meetings.ts`, saves drop the missing column and retry).
+- Meeting page / client Meetings tab: "Meeting notes" (typed or dictated, the record) and a separate "Notepad" box below it for pasted text, with Paste and Copy buttons (`Scratchpad` in `meetings/meeting-editor.tsx`).
+- Whiteboard panel: tabs "Notes" (voice) and "Notepad" (Paste/Copy); each saves to its own column (`saveMeetingNotesAction(id, text, field)`).
+- Browser-checked on a PC and a 390px phone against the mock: both boxes save to their own fields from the meeting page and from the whiteboard.
+
 ## 2026-10-23 — Claude — fix "Server Action … was not found" after a deploy
 
 **No migration.** Cause: a CRM tab opened before a deploy still holds the previous build's server-action ids; Next 16 reports that as `UnrecognizedActionError: Server Action "…" was not found on the server`, which the stale-build detector (`src/lib/stale-build.ts`) did not recognise (it only knew the older "Failed to find Server Action" wording), so the error screen showed instead of reloading. Now: the new wording is recognised (tested), the app error screen says "The app was just updated" and reloads itself (at most once per 30 s, so a real bug cannot loop), and autosaves called from code recover too: meeting notes (device draft), the whiteboard notepad and the whiteboard itself stash unsaved work on the device, reload, and save it from the new version. Browser-checked by forcing an unknown action id on "New meeting".

@@ -197,19 +197,21 @@ export async function saveBoardFileAction(formData: FormData): Promise<{ ok: boo
   return { ok: true };
 }
 
-/** The whiteboard notepad's autosave: only the meeting's notes. */
-export async function saveMeetingNotesAction(id: string, notes: string): Promise<{ ok: boolean; error?: string }> {
+/** The whiteboard notepad's autosave: the meeting's notes, or its separate copy/paste notepad (`scratchpad`, 0034). */
+export async function saveMeetingNotesAction(id: string, notes: string, field: "notes" | "scratchpad" = "notes"): Promise<{ ok: boolean; error?: string }> {
   if (!UUID.test(id)) return { ok: false, error: "Meeting is missing." };
   const auth = await getUserClient();
   if ("error" in auth) return { ok: false, error: auth.error };
-  const { error, count } = await auth.supabase.from("meetings").update({ notes: String(notes ?? "").slice(0, 50_000) }, { count: "exact" }).eq("id", id);
+  const column = field === "scratchpad" ? "scratchpad" : "notes";
+  const value = String(notes ?? "").slice(0, column === "scratchpad" ? 100_000 : 50_000);
+  const { error, count } = await auth.supabase.from("meetings").update({ [column]: value }, { count: "exact" }).eq("id", id);
   if (error) return { ok: false, error: fail(error.message) };
   if (!count) return { ok: false, error: "Meeting not found." };
   return { ok: true };
 }
 
 /** A board with no meeting yet: start one (same customer, same name) and link the board, so the notepad has a home. */
-export async function startBoardMeetingAction(boardId: string): Promise<{ ok: boolean; meeting?: { id: string; title: string; notes: string }; error?: string }> {
+export async function startBoardMeetingAction(boardId: string): Promise<{ ok: boolean; meeting?: { id: string; title: string; notes: string; scratchpad?: string }; error?: string }> {
   if (!UUID.test(boardId)) return { ok: false, error: "Board not found." };
   const auth = await getUserClient();
   if ("error" in auth) return { ok: false, error: auth.error };
@@ -229,7 +231,9 @@ export async function startBoardMeetingAction(boardId: string): Promise<{ ok: bo
     return { ok: false, error: fail(linked.error.message) };
   }
   revalidateClient(board.data.client_id, created.data.id);
-  return { ok: true, meeting: { id: created.data.id, title, notes: "" } };
+  // The notepad tab only exists once 0034 is applied.
+  const pad = await auth.supabase.from("meetings").select("scratchpad").eq("id", created.data.id).maybeSingle();
+  return { ok: true, meeting: { id: created.data.id, title, notes: "", ...(pad.error ? {} : { scratchpad: "" }) } };
 }
 
 export type SaveMeetingInput = {
@@ -242,6 +246,8 @@ export type SaveMeetingInput = {
   actionItems: ActionItem[];
   /** Left out when the database has no questions column yet (before 0033). */
   questions?: MeetingQuestion[];
+  /** Copy/paste notepad; left out before 0034. */
+  scratchpad?: string;
 };
 
 /** Autosave from the live editor. Called directly (not through a form) after every pause in typing. */
@@ -258,10 +264,12 @@ export async function saveMeetingAction(input: SaveMeetingInput): Promise<{ ok: 
   };
   if (typeof input.title === "string" && input.title.trim()) patch.title = input.title.trim().slice(0, 160);
   if (Array.isArray(input.questions)) patch.questions = cleanQuestions(input.questions);
+  if (typeof input.scratchpad === "string") patch.scratchpad = input.scratchpad.slice(0, 100_000);
   let { error, count } = await auth.supabase.from("meetings").update(patch, { count: "exact" }).eq("id", input.id);
-  if (error && "questions" in patch && /questions/i.test(error.message)) {
-    // Database is behind (no 0033): keep the notes, drop the questions.
-    delete patch.questions;
+  // Database behind 0033/0034: keep the notes, drop whichever newer column it does not have, and try again.
+  for (const column of ["scratchpad", "questions"]) {
+    if (!error || !(column in patch) || !new RegExp(column, "i").test(error.message)) continue;
+    delete patch[column];
     ({ error, count } = await auth.supabase.from("meetings").update(patch, { count: "exact" }).eq("id", input.id));
   }
   if (error) return { ok: false, error: fail(error.message) };

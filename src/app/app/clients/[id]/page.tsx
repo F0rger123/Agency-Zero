@@ -6,7 +6,7 @@ import { isMissingTable } from "@/lib/forms";
 import { PageHeader } from "@/components/page-header";
 import { DataFailure, MigrationsRequired, SetupRequired } from "@/components/states";
 import { ClientWorkspace, type ClientWorkspaceData } from "../client-workspace";
-import { MEETING_COLUMNS, type Meeting } from "@/lib/meetings";
+import { readMeetings, type Meeting } from "@/lib/meetings";
 import type { ClientPortal } from "../client-tabs/portal-tab";
 import type { ShootsOverview } from "../../shoots/shoots-view";
 import { todayIso } from "@/lib/format";
@@ -41,14 +41,11 @@ export default async function ClientDetailPage({
     supabase.from("project_templates").select("id, name").eq("active", true).order("name").limit(100),
     supabase.from("reminders").select("id, message, due_at").eq("subject_type", "client").eq("subject_id", id).eq("done", false).order("due_at").limit(100),
     // Meeting notes and the client portal (0027): each degrades to a "needs 0027" hint on a database that is behind.
-    supabase.from("meetings").select(`${MEETING_COLUMNS}, questions`).eq("client_id", id).order("meeting_at", { ascending: false }).limit(50),
+    readMeetings((columns) => supabase.from("meetings").select(columns).eq("client_id", id).order("meeting_at", { ascending: false }).limit(50)),
     supabase.from("clients").select("portal_token, portal_enabled").eq("id", id).maybeSingle(),
   ]);
-  // Questions arrive with 0033; a database without it still lists the meetings (and the editor hides questions).
-  const meetingsResult = meetingsResponse.error && /questions/i.test(meetingsResponse.error.message)
-    ? await supabase.from("meetings").select(MEETING_COLUMNS).eq("client_id", id).order("meeting_at", { ascending: false }).limit(50)
-    : meetingsResponse;
-  const meetings = meetingsResult.error ? null : ((meetingsResult.data ?? []) as unknown as Meeting[]);
+  // readMeetings falls back when 0033/0034 are missing; the editor then hides questions / the notepad.
+  const meetings = meetingsResponse.error ? null : ((meetingsResponse.data ?? []) as unknown as Meeting[]);
   const portal: ClientPortal | null =
     portalResponse.error || !portalResponse.data
       ? null

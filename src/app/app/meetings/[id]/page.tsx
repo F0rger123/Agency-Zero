@@ -6,7 +6,7 @@ import { DataFailure, MigrationsRequired, SetupRequired } from "@/components/sta
 import { dateTimeLabel } from "@/lib/format";
 import { isMissingTable } from "@/lib/forms";
 import { PICKER_LIMIT } from "@/lib/limits";
-import { MEETING_COLUMNS, MEETING_WORKSPACE_MIGRATION_MESSAGE, meetingDuration, type Meeting } from "@/lib/meetings";
+import { MEETING_WORKSPACE_MIGRATION_MESSAGE, meetingDuration, readMeetings, type Meeting } from "@/lib/meetings";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { MeetingEditor } from "../meeting-editor";
@@ -30,10 +30,8 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const supabase = await createClient();
 
-  let found = await supabase.from("meetings").select(`${MEETING_COLUMNS}, questions, clients(id, name)`).eq("id", id).maybeSingle();
-  // Database without 0033: no questions column. Load the rest and let the editor hide questions.
-  const behind = Boolean(found.error && /questions/i.test(found.error.message));
-  if (behind) found = (await supabase.from("meetings").select(`${MEETING_COLUMNS}, clients(id, name)`).eq("id", id).maybeSingle()) as typeof found;
+  // A database behind 0033/0034 lacks questions/scratchpad: load the rest and let the editor hide those sections.
+  const found = await readMeetings((columns) => supabase.from("meetings").select(`${columns}, clients(id, name)`).eq("id", id).maybeSingle());
   if (found.error) {
     return isMissingTable(found.error.message) ? <MigrationsRequired detail="Meeting notes need database update 0027." /> : <DataFailure title="Meeting" message={found.error.message} />;
   }
@@ -75,7 +73,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
         </p>
       </header>
 
-      {behind || linkMissing ? <p className="rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">{MEETING_WORKSPACE_MIGRATION_MESSAGE}</p> : null}
+      {!Array.isArray(meeting.questions) || typeof meeting.scratchpad !== "string" || linkMissing ? <p className="rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">{MEETING_WORKSPACE_MIGRATION_MESSAGE}</p> : null}
 
       {client ? null : (
         <Section title="Not saved to a customer yet" description="Pick who this was with. The notes, whiteboards and uploads then show in their file.">
