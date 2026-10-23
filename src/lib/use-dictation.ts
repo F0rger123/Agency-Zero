@@ -74,9 +74,21 @@ export function useDictation(onText: (phrase: string) => void) {
   const quiet = useRef<number | undefined>(undefined);
   const retry = useRef<number | undefined>(undefined);
   const beginRef = useRef<() => void>(() => {});
+  const interimRef = useRef("");
+  const lastFinal = useRef({ text: "", at: 0 });
   useEffect(() => {
     handler.current = onText;
   });
+
+  /** Hands over a finished phrase, ignoring an exact repeat that arrives straight after (some phones send phrases twice). */
+  const commit = useCallback((phrase: string) => {
+    const text = phrase.trim();
+    if (!text) return;
+    const now = Date.now();
+    if (text === lastFinal.current.text && now - lastFinal.current.at < 1200) return;
+    lastFinal.current = { text, at: now };
+    handler.current(text);
+  }, []);
 
   const setLang = useCallback((code: string) => {
     langRef.current = code;
@@ -100,14 +112,19 @@ export function useDictation(onText: (phrase: string) => void) {
     wanted.current = false;
     window.clearTimeout(retry.current);
     window.clearTimeout(quiet.current);
+    // Fast talkers: whatever was still being worked out when you pressed stop is kept, not lost.
+    const leftover = interimRef.current;
+    interimRef.current = "";
+    if (leftover.trim()) commit(leftover);
     const current = instance.current;
     instance.current = null;
+    if (current && leftover.trim()) current.onresult = null; // already kept above; do not add it twice
     current?.stop();
     setListening(false);
     setSpeaking(false);
     setInterim("");
     setError(message);
-  }, []);
+  }, [commit]);
 
   const begin = useCallback(() => {
     const Recognizer = ctor();
@@ -122,12 +139,12 @@ export function useDictation(onText: (phrase: string) => void) {
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
         const result = event.results[i];
         if (result.isFinal) {
-          const phrase = result[0].transcript.trim();
-          if (phrase) handler.current(phrase);
+          commit(result[0].transcript);
         } else {
           heard += result[0].transcript;
         }
       }
+      interimRef.current = heard;
       setInterim(heard.trim());
       setSpeaking(true);
       window.clearTimeout(quiet.current);
@@ -139,6 +156,8 @@ export function useDictation(onText: (phrase: string) => void) {
     };
     rec.onend = () => {
       if (instance.current !== rec) return;
+      if (interimRef.current.trim()) commit(interimRef.current);
+      interimRef.current = "";
       setInterim("");
       if (!wanted.current || restarts.current >= 30) return halt();
       // The browser ended the session on its own (silence, time limit): carry on.
@@ -151,7 +170,7 @@ export function useDictation(onText: (phrase: string) => void) {
     } catch {
       halt("Voice typing could not start. Tap the mic to try again.");
     }
-  }, [halt]);
+  }, [halt, commit]);
   useEffect(() => {
     beginRef.current = begin;
   });

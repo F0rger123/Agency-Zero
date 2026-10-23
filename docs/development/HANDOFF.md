@@ -1,5 +1,13 @@
 # Handoff log (newest first)
 
+## 2026-10-23 — Claude — Lock In modes, Quick note voice, menu animation
+
+**No migration.** (Applies on top of 0030/0031 from the previous entries.)
+- **Lock In modes** (`src/lib/lock-in.ts`, `src/app/app/lock-in/*`): pressing Lock In with no session shows four cards: **Count up** (stopwatch, optional goal), **Countdown** (pick a length; counts down, then shows `+mm:ss` overtime with +5/+15 min buttons), **To-do list** (progress ring, no clock) and **Just lock in** (no timer on screen at all, calm breathing orb). Time is still recorded quietly in every mode so history shows how long it lasted. `LockInSession.mode` is stored locally only (older sessions parse as stopwatch); the database table has no mode column, so saved history does not say which mode it was. Consistent feedback: pulsing live badge/dot, blinking colon, fading clock when paused, pulsing clock and buttons when time is up or the list is complete, launch ripple on start, entrance animations, pulsing mini timer; all off under reduced motion. Setup has a sticky start button on phones and the screen scroll resets between setup and session.
+- **Quick note**: big 80px mic with live state ("Tap to talk / Listening… / Hearing you…"), Paste, Copy and **Tidy up** buttons next to the box (typing and pasting unchanged). Local text cleanup, no API: filler sounds (um, uh, er, hmm) and stumbles ("the the", "I I") are removed while dictating and by Tidy up (`cleanSpeech`/`tidyText`). For fast talkers the hook keeps whatever was still being recognised when you press stop, and drops an exact phrase repeated straight after (some phones send phrases twice).
+- **Menu**: the bars turn into a cross, a ring ripples from the button, and the section tiles (2 per row on phones, 3 on larger) pop in one after another.
+- Tests: vitest for modes and the cleanup. Browser-smoked on a 390px phone viewport and desktop against the mock backend. Not tested: real speech.
+
 ## 2026-10-23 — Claude — Lock In full screen + new look, to-do list, better voice typing
 
 **Migration to apply: `0031_todos.sql`** (one new owner-only table `todos`; paste-ready copy in `supabase/scripts/apply-0031.sql`; probed on `/app/system` and in `check-applied.sql`). Without it the To-do page and Lock In's to-do tab show "needs database update 0031"; nothing else breaks. (0030 from the previous entry is still optional.)

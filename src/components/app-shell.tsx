@@ -47,6 +47,7 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
   const pathname = usePathname();
   const isHome = pathname === "/app";
   const [menuOpen, setMenuOpen] = useState(false);
+  const [presses, setPresses] = useState(0);
   usePrefetchSections();
 
   return (
@@ -69,10 +70,15 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
             <QuickNote />
             <button
               type="button"
-              onClick={() => setMenuOpen(true)}
+              onClick={() => {
+                setPresses((value) => value + 1);
+                setMenuOpen(true);
+              }}
               aria-label="All sections"
-              className="press group inline-flex items-center gap-2 rounded-full border border-border px-3.5 py-2 text-sm font-medium transition-[background-color,border-color] hover:border-foreground hover:bg-muted"
+              data-open={menuOpen}
+              className="press group relative inline-flex items-center gap-2 rounded-full border border-border px-3.5 py-2 text-sm font-medium transition-[background-color,border-color] hover:border-foreground hover:bg-muted"
             >
+              {presses > 0 ? <span key={presses} aria-hidden className="menu-ripple" /> : null}
               <span aria-hidden className="menu-bars relative block h-3 w-4">
                 <span className="menu-bar menu-bar-1" />
                 <span className="menu-bar menu-bar-2" />
@@ -86,22 +92,22 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
 
       <Modal open={menuOpen} onClose={() => setMenuOpen(false)} title="All sections" description={email ? `Signed in as ${email}` : undefined}>
         <nav aria-label="All sections">
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {[...homeWidgets.map((item) => ({ label: item.label, href: item.href, icon: item.icon as IconName })), ...navItems.filter((item) => item.label === "Settings").map((item) => ({ label: item.label, href: item.href, icon: item.icon as IconName }))].map((item) => (
-              <li key={item.href}>
+          <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            {[...homeWidgets.map((item) => ({ label: item.label, href: item.href, icon: item.icon as IconName })), ...navItems.filter((item) => item.label === "Settings").map((item) => ({ label: item.label, href: item.href, icon: item.icon as IconName }))].map((item, index) => (
+              <li key={item.href} className="menu-tile" style={{ "--i": index } as React.CSSProperties}>
                 <Link
                   href={item.href}
                   prefetch
                   onClick={() => setMenuOpen(false)}
-                  className="press flex items-center gap-3 rounded-lg border border-border px-4 py-3 text-sm transition-colors hover:bg-muted"
+                  className="press group flex min-h-20 flex-col justify-between gap-3 rounded-xl border border-border px-4 py-3.5 text-sm font-medium transition-[background-color,border-color,transform] hover:-translate-y-0.5 hover:border-foreground hover:bg-muted"
                 >
-                  <Icon name={item.icon} className="size-4 shrink-0" />
+                  <Icon name={item.icon} className="menu-tile-icon size-5 shrink-0" />
                   {item.label}
                 </Link>
               </li>
             ))}
           </ul>
-          <form action={signOut} onSubmit={clearOfflineData} className="mt-6 border-t border-border pt-5">
+          <form action={signOut} onSubmit={clearOfflineData} className="menu-tile mt-6 border-t border-border pt-5" style={{ "--i": 16 } as React.CSSProperties}>
             <button type="submit" className="press rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted">
               Sign out
             </button>

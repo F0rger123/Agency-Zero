@@ -4,6 +4,38 @@
  * becoming "I", and sensible spacing. Pure, so it is easy to test.
  */
 
+const FILLERS = /\b(?:u+m+|u+h+m*|e+r+m*|h+m+|m+h+m+)\b[,.]?\s*/gi;
+/** Words people stumble on when talking fast ("the the", "I I", "to to"): a straight repeat is dropped. */
+const STUTTER = new Set(["a", "an", "the", "i", "to", "and", "but", "of", "in", "on", "it", "is", "we", "you", "so", "that", "for", "with", "my", "our", "was", "at", "if", "or", "this", "they", "he", "she", "be", "do"]);
+
+/**
+ * Takes the "um"s and "uh"s out and collapses stumbles like "the the". Safe to run on anything: it only removes filler
+ * sounds and immediate repeats of small common words, never anything else.
+ */
+export function cleanSpeech(text: string): string {
+  const withoutFillers = text.replace(FILLERS, " ");
+  const words = withoutFillers.split(/\s+/).filter(Boolean);
+  const out: string[] = [];
+  for (const word of words) {
+    const previous = out[out.length - 1];
+    const bare = word.toLowerCase().replace(/[^a-z']/g, "");
+    if (previous && bare && STUTTER.has(bare) && previous.toLowerCase().replace(/[^a-z']/g, "") === bare && !/[.!?,;:]$/.test(previous)) continue;
+    out.push(word);
+  }
+  return out.join(" ");
+}
+
+/** "Tidy up" for text that is already in a box: spoken-style cleanup, spacing, capitals, and a full stop at the end. */
+export function tidyText(text: string): string {
+  const lines = text.split("\n").map((line) => {
+    const cleaned = cleanSpeech(line).replace(/\s+([,.!?;:])/g, "$1").replace(/\s{2,}/g, " ").trim();
+    if (!cleaned) return "";
+    const capitalised = cleaned.replace(/(^|[.!?]\s+)([a-z])/g, (_, lead: string, letter: string) => lead + letter.toUpperCase()).replace(/\bi\b/g, "I");
+    return /[.!?:)"”]$/.test(capitalised) || capitalised.length < 4 ? capitalised : `${capitalised}.`;
+  });
+  return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 type Token = { kind: "word"; text: string } | { kind: "mark"; text: string } | { kind: "break"; text: string } | { kind: "undo" };
 
 const MARKS: [RegExp, string][] = [
@@ -22,7 +54,7 @@ const UNDO = /^(scratch that|delete that|undo that)\b/;
 
 function tokenize(phrase: string): Token[] {
   const tokens: Token[] = [];
-  let rest = phrase.trim();
+  let rest = cleanSpeech(phrase).trim();
   while (rest) {
     const lower = rest.toLowerCase();
     let matched = false;

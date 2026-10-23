@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { reopen, addItem, checklistSummary, clampMinutes, clock, elapsedMs, finish, goalReached, parseSession, pause, progress, resume, startSession, toRecord } from "./lock-in";
+import { displayClock, extendGoal, hasClock, remainingMs, reopen, addItem, checklistSummary, clampMinutes, clock, elapsedMs, finish, goalReached, parseSession, pause, progress, resume, startSession, toRecord } from "./lock-in";
 
 const T0 = 1_000_000;
 
@@ -103,5 +103,37 @@ describe("lock in checklist and storage", () => {
     const s = startSession(10, [], "n", T0, "id-2");
     const record = toRecord(s, T0 + 120_000);
     expect(record).toMatchObject({ id: "id-2", elapsedMs: 120_000, goalMs: 10 * 60_000, status: "running", notes: "n" });
+  });
+});
+
+describe("lock in modes", () => {
+  it("a countdown shows time left, then overtime, and can be extended", () => {
+    const s = startSession(25, [], "", T0, "id", "countdown");
+    expect(s.goalMs).toBe(25 * 60_000);
+    expect(displayClock(s, T0)).toBe("25:00");
+    expect(displayClock(s, T0 + 5 * 60_000)).toBe("20:00");
+    expect(remainingMs(s, T0 + 30 * 60_000)).toBe(0);
+    expect(displayClock(s, T0 + 27 * 60_000)).toBe("+02:00");
+    const longer = extendGoal(s, 5);
+    expect(displayClock(longer, T0 + 27 * 60_000)).toBe("03:00");
+    expect(extendGoal(startSession(0, [], "", T0, "x"), 5).goalMs).toBe(0);
+  });
+  it("a countdown without a length defaults to 25 minutes; other modes never get a goal", () => {
+    expect(startSession(0, [], "", T0, "a", "countdown").goalMs).toBe(25 * 60_000);
+    expect(startSession(45, [], "", T0, "b", "free").goalMs).toBe(0);
+    expect(startSession(45, [], "", T0, "c", "checklist").goalMs).toBe(0);
+    expect(startSession(45, [], "", T0, "d", "stopwatch").goalMs).toBe(45 * 60_000);
+  });
+  it("checklist and free modes show no clock but still record time", () => {
+    const free = startSession(0, [], "", T0, "id", "free");
+    expect(displayClock(free, T0 + 60_000)).toBeNull();
+    expect(hasClock(free.mode)).toBe(false);
+    expect(toRecord(finish(free, T0 + 90_000), T0 + 90_000).elapsedMs).toBe(90_000);
+  });
+  it("sessions saved before modes existed are stopwatches", () => {
+    const old = JSON.stringify({ id: "old", status: "running", goalMs: 0, accumulatedMs: 0, runningSince: T0, startedAt: T0, endedAt: null, items: [], notes: "" });
+    expect(parseSession(old)?.mode).toBe("stopwatch");
+    const stored = parseSession(JSON.stringify(startSession(0, [], "", T0, "z", "free")));
+    expect(stored?.mode).toBe("free");
   });
 });

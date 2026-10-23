@@ -10,6 +10,7 @@ export function MicButton({
   className = "",
   active,
   onClick,
+  size = "md",
 }: {
   dictation: Dictation;
   label?: string;
@@ -17,6 +18,8 @@ export function MicButton({
   /** Override for several fields sharing one microphone. */
   active?: boolean;
   onClick?: () => void;
+  /** "lg" is a big, easy target (Quick note). */
+  size?: "md" | "lg";
 }) {
   if (!dictation.supported) return null;
   const listening = active ?? dictation.listening;
@@ -27,12 +30,12 @@ export function MicButton({
       onClick={onClick ?? dictation.toggle}
       aria-pressed={listening}
       aria-label={listening ? `Stop ${label}` : `Start ${label}`}
-      className={`press ${className.includes("absolute") ? "" : "relative"} flex size-10 shrink-0 items-center justify-center rounded-full border transition-colors ${
+      className={`press ${className.includes("absolute") ? "" : "relative"} flex ${size === "lg" ? "size-20" : "size-10"} shrink-0 items-center justify-center rounded-full border transition-colors ${
         listening ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"
       } ${className}`}
     >
       {listening ? <span aria-hidden className={`voice-ring ${speaking ? "voice-ring-fast" : ""}`} /> : null}
-      <Icon name="mic" className="relative size-5" />
+      <Icon name="mic" className={`relative ${size === "lg" ? "size-9" : "size-5"}`} />
     </button>
   );
 }

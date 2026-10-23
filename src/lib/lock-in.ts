@@ -1,5 +1,10 @@
 /**
- * Lock In: a focus session with a running timer (it counts up, like a stopwatch) and a checklist.
+ * Lock In: a focus session with a checklist and, depending on the mode, a timer.
+ *  - stopwatch: counts up, optional goal (the original mode)
+ *  - countdown: counts down from a chosen length, then shows overtime
+ *  - checklist: no clock on screen; the point is ticking things off
+ *  - free: no timer at all, just a calm "locked in" screen
+ * (Time is still recorded quietly in every mode, so past sessions show how long they lasted.)
  * Pure logic here; the browser store (localStorage) and the UI live in src/app/app/lock-in.
  *
  * Time is always derived from wall-clock timestamps, never counted tick by tick, so a throttled background tab
@@ -16,7 +21,14 @@ export type LockInItem = {
   refId?: string;
 };
 
+export type LockInMode = "stopwatch" | "countdown" | "checklist" | "free";
+export const LOCK_IN_MODES: LockInMode[] = ["stopwatch", "countdown", "checklist", "free"];
+/** Modes that show a clock. */
+export const hasClock = (mode: LockInMode) => mode === "stopwatch" || mode === "countdown";
+
 export type LockInSession = {
+  /** Older saved sessions have no mode; they are stopwatches. */
+  mode: LockInMode;
   /** Client-generated id; also the row id when the session is saved to the database. */
   id: string;
   status: "running" | "paused" | "done";
@@ -49,11 +61,21 @@ export function newSessionId(): string {
 }
 
 /** `goalMinutes` of 0 (or less) means "no goal". */
-export function startSession(goalMinutes: number, items: LockInItem[], notes: string, now: number, id: string = newSessionId()): LockInSession {
+export function startSession(
+  goalMinutes: number,
+  items: LockInItem[],
+  notes: string,
+  now: number,
+  id: string = newSessionId(),
+  mode: LockInMode = "stopwatch",
+): LockInSession {
+  // A countdown needs a length; checklist and free sessions never have a goal.
+  const minutes = mode === "countdown" ? clampMinutes(goalMinutes > 0 ? goalMinutes : 25) : mode === "stopwatch" ? goalMinutes : 0;
   return {
     id,
+    mode,
     status: "running",
-    goalMs: goalMinutes > 0 ? clampMinutes(goalMinutes) * 60_000 : 0,
+    goalMs: minutes > 0 ? clampMinutes(minutes) * 60_000 : 0,
     accumulatedMs: 0,
     runningSince: now,
     startedAt: now,
@@ -66,6 +88,31 @@ export function startSession(goalMinutes: number, items: LockInItem[], notes: st
 export function elapsedMs(session: LockInSession, now: number): number {
   const live = session.status === "running" && session.runningSince !== null ? Math.max(0, now - session.runningSince) : 0;
   return Math.max(0, session.accumulatedMs) + live;
+}
+
+/** Time left in a countdown (never negative). */
+export function remainingMs(session: LockInSession, now: number): number {
+  return Math.max(0, session.goalMs - elapsedMs(session, now));
+}
+
+/** Time past the end of a countdown. */
+export function overtimeMs(session: LockInSession, now: number): number {
+  return Math.max(0, elapsedMs(session, now) - session.goalMs);
+}
+
+/** What the big clock shows, or null for modes with no clock. A countdown past zero shows +mm:ss. */
+export function displayClock(session: LockInSession, now: number): string | null {
+  if (session.mode === "stopwatch") return clock(elapsedMs(session, now));
+  if (session.mode === "countdown") {
+    return elapsedMs(session, now) >= session.goalMs && session.goalMs > 0 ? `+${clock(overtimeMs(session, now))}` : clock(remainingMs(session, now));
+  }
+  return null;
+}
+
+/** "Add 5 minutes" on a countdown that ran out (or is about to). */
+export function extendGoal(session: LockInSession, minutes: number): LockInSession {
+  if (session.mode !== "countdown") return session;
+  return { ...session, goalMs: Math.min(MAX_MINUTES * 60_000, session.goalMs + Math.max(1, minutes) * 60_000) };
 }
 
 export function goalReached(session: LockInSession, now: number): boolean {
@@ -147,6 +194,7 @@ export function parseSession(raw: string | null): LockInSession | null {
     const startedAt = typeof value.startedAt === "number" ? value.startedAt : null;
     if (startedAt === null) return null;
     const base = {
+      mode: (LOCK_IN_MODES as string[]).includes(String(value.mode)) ? (value.mode as LockInMode) : ("stopwatch" as LockInMode),
       status,
       startedAt,
       items: cleanItems(value.items),
@@ -184,6 +232,7 @@ export function parseSession(raw: string | null): LockInSession | null {
 /** A finished or in-flight session as stored in history and sent to the database. */
 export type LockInRecord = {
   id: string;
+  mode?: LockInMode;
   startedAt: number;
   endedAt: number | null;
   elapsedMs: number;
@@ -196,6 +245,7 @@ export type LockInRecord = {
 export function toRecord(session: LockInSession, now: number): LockInRecord {
   return {
     id: session.id,
+    mode: session.mode,
     startedAt: session.startedAt,
     endedAt: session.endedAt,
     elapsedMs: elapsedMs(session, now),

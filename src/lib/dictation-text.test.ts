@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyDictation, removeLastPhrase } from "./dictation-text";
+import { applyDictation, cleanSpeech, removeLastPhrase, tidyText } from "./dictation-text";
 
 describe("applyDictation", () => {
   it("starts with a capital and joins with spaces", () => {
@@ -28,5 +28,20 @@ describe("removeLastPhrase", () => {
     expect(removeLastPhrase("One. Two. Three.")).toBe("One. Two. ");
     expect(removeLastPhrase("line one\nline two")).toBe("line one\n");
     expect(removeLastPhrase("")).toBe("");
+  });
+});
+
+describe("cleanup", () => {
+  it("drops filler sounds and stumbles", () => {
+    expect(cleanSpeech("um so the the invoice uh is is ready")).toBe("so the invoice is ready");
+    expect(cleanSpeech("I I think we we should")).toBe("I think we should");
+    expect(cleanSpeech("had had a very very good day")).toBe("had had a very very good day");
+  });
+  it("cleans while dictating", () => {
+    expect(applyDictation("", "um call the the bakery")).toBe("Call the bakery");
+  });
+  it("tidies a whole box of text", () => {
+    expect(tidyText("um send the the quote  \n call dana , ok")).toBe("Send the quote.\nCall dana, ok.");
+    expect(tidyText("")).toBe("");
   });
 });

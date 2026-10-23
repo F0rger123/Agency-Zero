@@ -5,7 +5,7 @@ import { Icon } from "@/components/icons";
 import { DictationHint, MicButton } from "@/components/mic-button";
 import { Modal } from "@/components/modal";
 import { useOnline } from "@/components/offline";
-import { applyDictation } from "@/lib/dictation-text";
+import { applyDictation, tidyText } from "@/lib/dictation-text";
 import { useDictation } from "@/lib/use-dictation";
 import type { NoteContext, ProposedAction } from "@/lib/quick-note";
 import { applyNoteActionsAction, organizeNoteAction, type ApplyState, type OrganizeState } from "./actions";
@@ -175,6 +175,25 @@ function NoteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [savedNotice, setSavedNotice] = useState("");
 
   const stop = dictation.stop;
+  const [clipboardNote, setClipboardNote] = useState("");
+  const pasteText = async () => {
+    try {
+      const clip = await navigator.clipboard.readText();
+      if (!clip.trim()) return setClipboardNote("The clipboard is empty.");
+      setText((current) => (current && !/\s$/.test(current) ? `${current} ${clip}` : `${current}${clip}`));
+      setClipboardNote("");
+    } catch {
+      setClipboardNote("Your browser did not allow pasting from a button. Tap in the box and paste with the keyboard instead.");
+    }
+  };
+  const copyText = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setClipboardNote("Copied.");
+    } catch {
+      setClipboardNote("Could not copy. Select the text and copy it with the keyboard.");
+    }
+  };
 
   const showReview = reviewing && state.actions && state.context;
 
@@ -219,9 +238,28 @@ function NoteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
               onChange={(event) => setText(event.target.value)}
               rows={7}
               placeholder={`“Acme Bakery paid me $400 for the website. Started the logo task, I'm 50% done, they want a warmer red.”`}
-              className={`${field} resize-y pr-14 leading-6`}
+              className={`${field} resize-y text-base leading-6`}
             />
-            <MicButton dictation={dictation} className="absolute right-3 top-3" />
+          </div>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-2xl border border-border p-3 sm:p-4">
+            {dictation.supported ? (
+              <>
+            <MicButton dictation={dictation} size="lg" label="talking" />
+            <div className="min-w-0 flex-1 basis-40">
+              <p className="text-base font-semibold tracking-tight">{dictation.listening ? (dictation.speaking ? "Hearing you…" : "Listening…") : "Tap to talk"}</p>
+              <p className="text-xs text-muted-foreground">
+                {dictation.listening ? "Talk as fast as you like. Tap again when you are done." : "Or type, or paste text into the box."}
+              </p>
+            </div>
+              </>
+            ) : (
+              <p className="min-w-0 flex-1 basis-40 text-xs text-muted-foreground">Type, or paste text into the box.</p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={pasteText} className="press rounded-full border border-border px-3.5 py-2 text-sm transition-colors hover:bg-muted">Paste</button>
+              <button type="button" onClick={copyText} disabled={!text} className="press rounded-full border border-border px-3.5 py-2 text-sm transition-colors hover:bg-muted disabled:opacity-40">Copy</button>
+              <button type="button" onClick={() => setText((current) => tidyText(current))} disabled={!text.trim()} className="press rounded-full border border-border px-3.5 py-2 text-sm transition-colors hover:bg-muted disabled:opacity-40">Tidy up</button>
+            </div>
           </div>
           {drafts.length > 0 && online ? (
             <div className="rounded-lg border border-border p-3">
@@ -248,6 +286,7 @@ function NoteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
             </div>
           ) : null}
           {savedNotice ? <p role="status" className="text-sm font-medium">{savedNotice}</p> : null}
+          {clipboardNote ? <p role="status" className="text-xs text-muted-foreground">{clipboardNote}</p> : null}
           <DictationHint dictation={dictation} />
           {state.error && !pending ? <p role="alert" className="text-sm font-medium">{state.error}</p> : null}
           <div className="flex flex-wrap items-center gap-3">
