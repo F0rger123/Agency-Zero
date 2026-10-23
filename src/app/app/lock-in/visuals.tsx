@@ -54,7 +54,7 @@ export function LiveBadge({ mode, status }: { mode: LockInMode; status: "running
 export function BigClock({ text, running, paused, alert }: { text: string; running: boolean; paused: boolean; alert: boolean }) {
   const parts = text.split(":");
   return (
-    <p aria-live="off" aria-label={text} className={`text-[clamp(3.75rem,13vw,9rem)] font-semibold leading-none tabular-nums tracking-tight ${paused ? "lock-in-paused" : ""} ${alert ? "lock-in-alert" : ""}`}>
+    <p aria-live="off" aria-label={text} className={`shrink-0 text-[clamp(3.75rem,13vw,9rem)] font-semibold leading-none tabular-nums tracking-tight ${paused ? "lock-in-paused" : ""} ${alert ? "lock-in-alert" : ""}`}>
       {parts.map((part, index) => (
         <span key={index}>
           {index > 0 ? <span className={running ? "lock-in-colon" : ""}>:</span> : null}

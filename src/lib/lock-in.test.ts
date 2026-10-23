@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayClock, extendGoal, hasClock, remainingMs, reopen, addItem, checklistSummary, clampMinutes, clock, elapsedMs, finish, goalReached, parseSession, pause, progress, resume, startSession, toRecord } from "./lock-in";
+import { changeMode, displayClock, extendGoal, hasClock, remainingMs, reopen, addItem, checklistSummary, clampMinutes, clock, elapsedMs, finish, goalReached, parseSession, pause, progress, resume, startSession, toRecord } from "./lock-in";
 
 const T0 = 1_000_000;
 
@@ -113,7 +113,8 @@ describe("lock in modes", () => {
     expect(displayClock(s, T0)).toBe("25:00");
     expect(displayClock(s, T0 + 5 * 60_000)).toBe("20:00");
     expect(remainingMs(s, T0 + 30 * 60_000)).toBe(0);
-    expect(displayClock(s, T0 + 27 * 60_000)).toBe("+02:00");
+    expect(displayClock(s, T0 + 27 * 60_000)).toBe("00:00");
+    expect(displayClock(s, T0 + 99 * 60_000)).toBe("00:00");
     const longer = extendGoal(s, 5);
     expect(displayClock(longer, T0 + 27 * 60_000)).toBe("03:00");
     expect(extendGoal(startSession(0, [], "", T0, "x"), 5).goalMs).toBe(0);
@@ -135,5 +136,27 @@ describe("lock in modes", () => {
     expect(parseSession(old)?.mode).toBe("stopwatch");
     const stored = parseSession(JSON.stringify(startSession(0, [], "", T0, "z", "free")));
     expect(stored?.mode).toBe("free");
+  });
+});
+
+describe("editing the timer mid-session", () => {
+  it("switches between modes without losing time worked", () => {
+    const running = startSession(0, [], "", T0, "id", "stopwatch");
+    const at = T0 + 10 * 60_000;
+    const down = changeMode(running, "countdown", 25, at);
+    expect(down.mode).toBe("countdown");
+    expect(elapsedMs(down, at)).toBe(10 * 60_000);
+    expect(displayClock(down, at)).toBe("25:00");
+    expect(displayClock(down, at + 5 * 60_000)).toBe("20:00");
+    const locked = changeMode(down, "free", 0, at + 60_000);
+    expect(displayClock(locked, at + 60_000)).toBeNull();
+    expect(elapsedMs(locked, at + 60_000)).toBe(11 * 60_000);
+    const up = changeMode(locked, "stopwatch", 0, at + 60_000);
+    expect(up.goalMs).toBe(0);
+    expect(displayClock(up, at + 60_000)).toBe("11:00");
+  });
+  it("does not edit a finished session", () => {
+    const done = finish(startSession(0, [], "", T0, "id"), T0 + 1000);
+    expect(changeMode(done, "countdown", 10, T0 + 2000)).toBe(done);
   });
 });

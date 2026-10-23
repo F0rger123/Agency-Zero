@@ -9,6 +9,7 @@ import { applyDictation } from "@/lib/dictation-text";
 import { useDictationTarget } from "@/lib/use-dictation";
 import {
   addItem,
+  changeMode,
   checklistSummary,
   clampMinutes,
   clock,
@@ -695,6 +696,7 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
   const [result, setResult] = useState<{ error?: string; success?: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [editingTimer, setEditingTimer] = useState(false);
   const { dictation, toggleFor, activeTarget } = useDictationTarget<"item" | "notes">((target, phrase) => {
     const current = getSession();
     if (!current) return;
@@ -789,12 +791,12 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
 
   return (
     <div className="lock-in-enter mx-auto grid min-h-full w-full max-w-[1600px] gap-6 px-4 pb-6 sm:px-8 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_minmax(380px,34rem)] lg:gap-12">
-      <div className="relative flex flex-col items-center justify-center gap-4 py-2 text-center lg:min-h-0">
+      <div className="relative flex flex-col items-center gap-4 py-2 text-center [justify-content:safe_center] lg:min-h-0 lg:overflow-y-auto">
         <span key={session.id} aria-hidden className="lock-in-launch" />
         <LiveBadge mode={session.mode} status={session.status} />
         {timed ? (
           <>
-            <Hourglass progress={frac} running={session.status === "running"} celebrate={reached && !done} className="h-[min(36dvh,26rem)] w-auto lg:h-[min(46dvh,34rem)]" />
+            <Hourglass progress={frac} running={session.status === "running"} celebrate={reached && !done} className={`w-auto shrink-0 transition-[height] duration-300 ${editingTimer ? "h-[min(20dvh,12rem)]" : "h-[min(36dvh,26rem)] lg:h-[min(46dvh,34rem)]"}`} />
             <BigClock text={clockText ?? "00:00"} running={session.status === "running"} paused={session.status === "paused"} alert={reached && !done} />
           </>
         ) : session.mode === "checklist" ? (
@@ -811,7 +813,7 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
         )}
         {session.goalMs > 0 ? (
           <div className="h-1.5 w-full max-w-md overflow-hidden rounded-full bg-muted" aria-hidden>
-            <div className={`h-full bg-foreground transition-[width] duration-500 ${reached && !done ? "lock-in-paused" : ""}`} style={{ width: `${Math.min(100, (elapsed / session.goalMs) * 100)}%` }} />
+            <div className={`h-full bg-foreground transition-[width] duration-500`} style={{ width: `${Math.min(100, (elapsed / session.goalMs) * 100)}%` }} />
           </div>
         ) : null}
         <p className="max-w-md text-sm text-muted-foreground">{status}</p>
@@ -851,6 +853,23 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
             </>
           )}
         </div>
+        {!done ? (
+          editingTimer ? (
+            <TimerEditor
+              session={session}
+              now={now}
+              onCancel={() => setEditingTimer(false)}
+              onApply={(mode, minutes) => {
+                writeSession(changeMode(session, mode, minutes, Date.now()));
+                setEditingTimer(false);
+              }}
+            />
+          ) : (
+            <button type="button" onClick={() => setEditingTimer(true)} className="press text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground">
+              Edit timer
+            </button>
+          )
+        ) : null}
         <p role="status" className="text-xs text-muted-foreground">{syncLabel(sync)}</p>
         {done ? (
           <button
@@ -965,6 +984,52 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
             </section>
           ) : null}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** Change the timer while you work: count down, count up, or no timer at all. The time already worked is kept. */
+function TimerEditor({ session, now, onApply, onCancel }: { session: LockInSession; now: number; onApply: (mode: LockInMode, minutes: number) => void; onCancel: () => void }) {
+  const [mode, setMode] = useState<LockInMode>(session.mode);
+  const left = Math.max(1, Math.round((session.goalMs - elapsedMs(session, now)) / 60_000));
+  const [minutes, setMinutes] = useState(session.mode === "countdown" ? String(left) : session.mode === "stopwatch" && session.goalMs > 0 ? String(Math.round(session.goalMs / 60_000)) : "");
+  const options: [LockInMode, string][] = [
+    ["countdown", "Count down"],
+    ["stopwatch", "Count up"],
+    ["free", "Locked, no timer"],
+    ["checklist", "To-do list"],
+  ];
+  return (
+    <div className="lock-in-enter w-full max-w-sm rounded-2xl border-[1.5px] border-foreground/25 p-4 text-left">
+      <p className="text-sm font-semibold tracking-tight">Edit timer</p>
+      <div role="radiogroup" aria-label="Timer type" className="mt-3 grid grid-cols-2 gap-2">
+        {options.map(([key, text]) => (
+          <button
+            key={key}
+            type="button"
+            role="radio"
+            aria-checked={mode === key}
+            onClick={() => {
+              setMode(key);
+              if (key === "countdown" && !minutes) setMinutes("25");
+            }}
+            className={`press rounded-xl border px-3 py-2 text-sm transition-colors ${mode === key ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"}`}
+          >
+            {text}
+          </button>
+        ))}
+      </div>
+      {mode === "countdown" || mode === "stopwatch" ? (
+        <label className="mt-3 block text-xs font-medium text-muted-foreground">
+          {mode === "countdown" ? "Minutes left, from now" : "Goal in total minutes (optional)"}
+          <input type="number" inputMode="numeric" min={mode === "countdown" ? 1 : 0} max={720} value={minutes} onChange={(event) => setMinutes(event.target.value)} placeholder={mode === "countdown" ? "25" : "No goal"} className={`${field} mt-1`} />
+        </label>
+      ) : null}
+      <p className="mt-3 text-xs text-muted-foreground">Time already worked is kept.</p>
+      <div className="mt-3 flex gap-2">
+        <button type="button" onClick={() => onApply(mode, Number(minutes) || 0)} className="press rounded-full bg-inverted px-5 py-2 text-sm font-medium text-inverted-foreground">Apply</button>
+        <button type="button" onClick={onCancel} className="press rounded-full border border-border px-5 py-2 text-sm hover:bg-muted">Cancel</button>
       </div>
     </div>
   );

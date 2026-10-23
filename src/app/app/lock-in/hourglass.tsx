@@ -45,11 +45,6 @@ export function Hourglass({
       {flowing ? (
         <>
           <line x1="60" y1="98" x2="60" y2={mound + 2} strokeWidth="1.6" strokeLinecap="round" className="lock-in-stream stroke-foreground" />
-          <g className="fill-foreground">
-            <circle cx="60" cy="104" r="1.1" className="lock-in-grain" style={{ ["--fall" as string]: `${Math.max(mound - 104, 8)}px` }} />
-            <circle cx="59" cy="104" r="0.9" className="lock-in-grain lock-in-grain-2" style={{ ["--fall" as string]: `${Math.max(mound - 104, 8)}px` }} />
-            <circle cx="61" cy="104" r="0.8" className="lock-in-grain lock-in-grain-3" style={{ ["--fall" as string]: `${Math.max(mound - 104, 8)}px` }} />
-          </g>
         </>
       ) : null}
       {/* A soft highlight along the left of each bulb, and the outline. */}

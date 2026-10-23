@@ -1,5 +1,13 @@
 # Handoff log (newest first)
 
+## 2026-10-23 — Claude — Lock In: countdown no longer "counts up", editable timer, calmer animation
+
+**No migration.**
+- Cause of "countdown switches to counting up": at zero the countdown showed overtime as `+mm:ss`, which looked like counting up. A countdown now stops at 00:00 and stays there ("Time is up", +5/+15 min buttons); time past zero is still recorded in the session length.
+- **Edit timer** (while a session is live): switch between Count down, Count up, Locked/no timer (and To-do list) without losing the time worked. Countdown takes "minutes left from now"; count up takes an optional total goal (`changeMode` in `src/lib/lock-in.ts`, tested).
+- Animation: removed the flashing/blinking effects (blinking colon, pulsing dot with ring, falling grains, dashed stream, fast pulses). Now a slow soft fade on the live dot and colon, a steady faint stream line, a very gentle halo on the main button when attention is useful, and a dimmed clock when paused. Reduced motion still turns it all off.
+- Browser-smoked: countdown → count up → locked on desktop.
+
 ## 2026-10-23 — Claude — Create contract wizard + template library
 
 **No migration** (uses the existing `contracts`, `contract_versions` and public signing page `/c/<token>` from 0006/0008).

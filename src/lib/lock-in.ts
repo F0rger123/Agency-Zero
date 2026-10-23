@@ -100,13 +100,32 @@ export function overtimeMs(session: LockInSession, now: number): number {
   return Math.max(0, elapsedMs(session, now) - session.goalMs);
 }
 
-/** What the big clock shows, or null for modes with no clock. A countdown past zero shows +mm:ss. */
+/**
+ * What the big clock shows, or null for modes with no clock. A countdown stops at 00:00 and stays there: it never turns
+ * into a count-up. (Time past zero is still recorded; use `overtimeMs` if you want to mention it.)
+ */
 export function displayClock(session: LockInSession, now: number): string | null {
   if (session.mode === "stopwatch") return clock(elapsedMs(session, now));
-  if (session.mode === "countdown") {
-    return elapsedMs(session, now) >= session.goalMs && session.goalMs > 0 ? `+${clock(overtimeMs(session, now))}` : clock(remainingMs(session, now));
-  }
+  if (session.mode === "countdown") return clock(remainingMs(session, now));
   return null;
+}
+
+/**
+ * Edit a running or paused session's timer without losing the time already worked.
+ *  - countdown: `minutes` is the time LEFT from now (so "set 25 minutes" means 25 more minutes)
+ *  - stopwatch: `minutes` is an optional total goal (0 = none)
+ *  - checklist / free: no clock and no goal
+ */
+export function changeMode(session: LockInSession, mode: LockInMode, minutes: number, now: number): LockInSession {
+  if (session.status === "done") return session;
+  const worked = elapsedMs(session, now);
+  const goalMs =
+    mode === "countdown"
+      ? worked + clampMinutes(minutes > 0 ? minutes : 25) * 60_000
+      : mode === "stopwatch" && minutes > 0
+        ? clampMinutes(minutes) * 60_000
+        : 0;
+  return { ...session, mode, goalMs };
 }
 
 /** "Add 5 minutes" on a countdown that ran out (or is about to). */
