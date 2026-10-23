@@ -102,18 +102,159 @@ function ClientFields({ client }: { client?: Client }) {
   );
 }
 
+const SOURCES = ["Referral", "Instagram", "Website form", "Cold outreach", "Google", "Other"] as const;
+const STATUSES = [
+  { value: "lead", label: "A lead", note: "Still talking" },
+  { value: "active", label: "Active", note: "We are working together" },
+  { value: "past", label: "Past", note: "Finished work with them" },
+] as const;
+const bigInput = "mt-2 block w-full rounded-lg border border-border bg-background px-4 py-4 text-lg outline-none transition-colors placeholder:text-faint-foreground focus:border-foreground";
+const choice = (active: boolean) =>
+  `press rounded-full border px-5 py-3 text-sm font-medium transition-colors ${active ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"}`;
+
+/**
+ * Adding a customer, one question at a time. Every answer is optional except the name, and the wizard
+ * submits the same fields the old long form did, so nothing else about customers changes.
+ */
 export function NewClientForm() {
   const [state, action] = useActionState(createClientAction, initialState);
+  const [name, setName] = useState("");
+  const [source, setSource] = useState("");
+  const [otherSource, setOtherSource] = useState("");
+  const [status, setStatus] = useState<(typeof STATUSES)[number]["value"]>("lead");
+  const [website, setWebsite] = useState("");
+  const first = name.trim().split(/\s+/)[0] || "them";
+  const savedSource = source === "Other" ? otherSource.trim() : source;
+
   return (
-    <FormShell title="Add client">
-      <form action={action} className="space-y-5">
-        <ClientFields />
-        <div className="flex flex-wrap items-center gap-4">
-          <SubmitButton>Create client</SubmitButton>
-          <FormMessage {...state} />
-        </div>
-      </form>
-    </FormShell>
+    <form action={action} noValidate={false}>
+      <input type="hidden" name="source" value={savedSource} />
+      <input type="hidden" name="status" value={status} />
+      <Wizard
+        compact
+        finish={
+          <>
+            <SubmitButton>Add {first === "them" ? "customer" : first}</SubmitButton>
+            <FormMessage {...state} />
+          </>
+        }
+        steps={[
+          {
+            title: "Name",
+            hint: "Who are you adding? A person or a business name both work.",
+            content: (
+              <div>
+                <label htmlFor="nc-name" className="text-sm font-medium">Their name</label>
+                <input id="nc-name" name="name" required value={name} onChange={(event) => setName(event.target.value)} maxLength={160} autoComplete="off" placeholder="Jane Smith" className={bigInput} />
+              </div>
+            ),
+          },
+          {
+            title: "Business",
+            hint: `What is ${first}'s business called? Skip it if it is just a person.`,
+            content: (
+              <div>
+                <label htmlFor="nc-company" className="text-sm font-medium">Business name</label>
+                <input id="nc-company" name="company" maxLength={160} autoComplete="off" placeholder="Smith Plumbing" className={bigInput} />
+              </div>
+            ),
+          },
+          {
+            title: "Contact",
+            hint: `How can you reach ${first}? Add one or both.`,
+            content: (
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="nc-email" className="text-sm font-medium">Email</label>
+                  <input id="nc-email" name="email" type="email" inputMode="email" autoCapitalize="none" maxLength={254} placeholder="jane@smithplumbing.com" className={bigInput} />
+                </div>
+                <div>
+                  <label htmlFor="nc-phone" className="text-sm font-medium">Phone</label>
+                  <input id="nc-phone" name="phone" type="tel" inputMode="tel" maxLength={40} placeholder="(555) 123-4567" className={bigInput} />
+                </div>
+              </div>
+            ),
+          },
+          {
+            title: "Website",
+            hint: `Does ${first} have a website? Paste it, or skip.`,
+            content: (
+              <div>
+                <label htmlFor="nc-website" className="text-sm font-medium">Website</label>
+                <input
+                  id="nc-website"
+                  name="website"
+                  inputMode="url"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  maxLength={300}
+                  value={website}
+                  onChange={(event) => setWebsite(event.target.value)}
+                  onBlur={() => setWebsite((current) => (current.trim() && !/^https?:\/\//i.test(current.trim()) ? `https://${current.trim()}` : current.trim()))}
+                  placeholder="smithplumbing.com"
+                  className={bigInput}
+                />
+              </div>
+            ),
+          },
+          {
+            title: "Source",
+            hint: `How did ${first} find you?`,
+            content: (
+              <div>
+                <div className="flex flex-wrap gap-2.5" role="radiogroup" aria-label="How they found you">
+                  {SOURCES.map((option) => (
+                    <button key={option} type="button" role="radio" aria-checked={source === option} onClick={() => setSource(source === option ? "" : option)} className={choice(source === option)}>
+                      {option}
+                    </button>
+                  ))}
+                </div>
+                {source === "Other" ? (
+                  <div className="mt-4">
+                    <label htmlFor="nc-source" className="sr-only">Where from</label>
+                    <input id="nc-source" value={otherSource} onChange={(event) => setOtherSource(event.target.value)} maxLength={120} placeholder="Where from?" className={bigInput} />
+                  </div>
+                ) : null}
+              </div>
+            ),
+          },
+          {
+            title: "Stage",
+            hint: `Where are you with ${first} right now?`,
+            content: (
+              <div className="space-y-3" role="radiogroup" aria-label="Customer stage">
+                {STATUSES.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={status === option.value}
+                    onClick={() => setStatus(option.value)}
+                    className={`press flex w-full items-center justify-between rounded-xl border-[1.5px] p-4 text-left transition-colors ${status === option.value ? "border-foreground bg-muted" : "border-border hover:bg-muted/60"}`}
+                  >
+                    <span>
+                      <span className="block text-base font-medium">{option.label}</span>
+                      <span className="mt-0.5 block text-sm text-muted-foreground">{option.note}</span>
+                    </span>
+                    <span aria-hidden className={status === option.value ? "" : "opacity-0"}>✓</span>
+                  </button>
+                ))}
+              </div>
+            ),
+          },
+          {
+            title: "Notes",
+            hint: `Anything worth remembering about ${first}? Optional. You can add more any time.`,
+            content: (
+              <div>
+                <label htmlFor="nc-notes" className="sr-only">Notes</label>
+                <textarea id="nc-notes" name="notes_summary" rows={5} maxLength={2000} placeholder="What they need, who referred them, best time to call…" className={`${bigInput} resize-y text-base`} />
+              </div>
+            ),
+          },
+        ]}
+      />
+    </form>
   );
 }
 

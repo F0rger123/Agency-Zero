@@ -527,3 +527,27 @@ do $$ begin
   assert (select count(*) from public.clients where phone = '(717) 555-0142' and source = 'website') = 1, 'client keeps the phone';
 end $$;
 reset role;
+
+-- ── lock in sessions (0029) ────────────────────────────────────────────────
+reset role;
+reset request.jwt.claim.sub;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';   -- owner
+insert into public.lock_in_sessions (id, started_at, elapsed_seconds, goal_seconds, items, notes)
+  values ('60000000-0000-0000-0000-000000000001', now(), 60, 1500, '[{"id":"a","text":"Send invoice","done":false}]', 'focus');
+insert into public.lock_in_sessions (id, started_at, elapsed_seconds) values ('60000000-0000-0000-0000-000000000001', now(), 120)
+  on conflict (id) do update set elapsed_seconds = excluded.elapsed_seconds, status = 'done', ended_at = now();
+do $$ begin
+  assert (select count(*) from public.lock_in_sessions) = 1, 'saving the same session twice updates it';
+  assert (select elapsed_seconds from public.lock_in_sessions) = 120, 'the upsert kept the newer time';
+  assert (select status from public.lock_in_sessions) = 'done', 'status updated';
+end $$;
+select pg_temp.expect_error($q$insert into public.lock_in_sessions (id, started_at, elapsed_seconds) values ('60000000-0000-0000-0000-000000000002', now(), -1)$q$, 'check');
+select pg_temp.expect_error($q$insert into public.lock_in_sessions (id, started_at, status) values ('60000000-0000-0000-0000-000000000003', now(), 'weird')$q$, 'check');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';   -- stranger
+do $$ begin assert (select count(*) from public.lock_in_sessions) = 0, 'stranger cannot read lock in sessions'; end $$;
+select pg_temp.expect_error($q$insert into public.lock_in_sessions (id, started_at) values ('60000000-0000-0000-0000-000000000004', now())$q$, 'row-level security');
+reset role;
+set role anon;
+do $$ begin assert (select count(*) from public.lock_in_sessions) = 0, 'anon cannot read lock in sessions'; end $$;
+reset role;

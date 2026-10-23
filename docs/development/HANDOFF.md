@@ -1,5 +1,13 @@
 # Handoff log (newest first)
 
+## 2026-10-23 — Claude — Lock In is a stopwatch that saves itself; add-customer wizard
+
+**Migration to apply: `0029_lock_in_sessions.sql`** (additive; Lock In works without it from the browser alone, and `/app/system` has a probe).
+- **Lock In** (`src/lib/lock-in.ts`, `src/app/app/lock-in/*`): now a normal timer that **counts up** and never ends by itself. An optional goal (No goal / 25 / 45 / 60 / 90 / 120 / custom) only drives the hourglass and shows "goal reached". Items can be **added (and removed) during a session**. Sessions that stopped or vanished: nothing auto-finishes any more; Finish is undoable ("Keep going"); the destructive action is a separate two-tap "Discard"; the session is saved to localStorage on every change, finished sessions are kept in a local history, and every change / 30 s heartbeat / tab-hide / reconnect saves it to `lock_in_sessions` (upsert by browser-made id). The screen shows Saved / Saving / "Saved on this device". Past sessions are listed on the setup screen. An in-progress session from the old countdown version is converted on load.
+- **Add customer**: `NewClientForm` is a one-question-at-a-time wizard (name, business, contact, website, where from, stage, notes) with a progress bar, using the same `createClientAction` fields. `Wizard` gained a `compact` mode.
+- Tests: vitest for the stopwatch logic (pause/resume, undo finish, goal, legacy conversion), SQL cases for 0029.
+- Unverified: real-device behaviour of background tabs and the database sync against real Supabase.
+
 ## 2026-10-21 — Claude — contact form: reach by phone, email or both
 
 **Migration to apply: `0028_leads_phone_or_email.sql`** (additive). Until it is applied the website still works: a phone-only inquiry is refused with "Please add an email address too…" and email or both keep working exactly as before.

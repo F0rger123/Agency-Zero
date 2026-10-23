@@ -4,28 +4,35 @@ import { createContext, useCallback, useContext, useEffect, useState, useSyncExt
 import { createPortal } from "react-dom";
 import { Icon } from "@/components/icons";
 import {
+  addItem,
   checklistSummary,
   clampMinutes,
   clock,
+  elapsedMs,
   finish,
+  goalReached,
+  newSessionId,
   parseSession,
   pause,
   progress,
-  remainingMs,
+  reopen,
   resume,
   startSession,
-  tick,
+  toRecord,
   type LockInItem,
+  type LockInRecord,
   type LockInSession,
 } from "@/lib/lock-in";
-import { completeLockInTasksAction, getLockInOptionsAction, type LockInOptions } from "./actions";
+import { completeLockInTasksAction, getLockInOptionsAction, listLockInSessionsAction, saveLockInSessionAction, type LockInOptions, type SavedSession } from "./actions";
 import { Hourglass } from "./hourglass";
 
 /* ── Session store: localStorage, so a session survives navigation and reloads ───────────────── */
 
 const KEY = "az-lock-in";
+const HISTORY_KEY = "az-lock-in-history";
 const listeners = new Set<() => void>();
 let memoryRaw: string | null = null;
+let memoryHistory: LockInRecord[] = [];
 let cachedRaw: string | null | undefined;
 let cachedSession: LockInSession | null = null;
 
@@ -66,6 +73,62 @@ function getSession(): LockInSession | null {
   return cachedSession;
 }
 
+/** Finished sessions are also kept on this device (newest first), so nothing is lost even if the database is unreachable. */
+function readHistory(): LockInRecord[] {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(HISTORY_KEY) ?? "null");
+    if (Array.isArray(value)) return value.filter((row): row is LockInRecord => !!row && typeof row.id === "string");
+  } catch {
+    // Fall through to the in-memory copy.
+  }
+  return memoryHistory;
+}
+
+function rememberSession(record: LockInRecord) {
+  const next = [record, ...readHistory().filter((row) => row.id !== record.id)].slice(0, 50);
+  memoryHistory = next;
+  try {
+    window.localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+  } catch {
+    // Storage blocked: memory copy only.
+  }
+}
+
+/* ── Database sync: every change, every 30 s while running, and when it ends ─────────────────── */
+
+type Sync = "saved" | "saving" | "device";
+let syncState: Sync = "saved";
+let tableMissing = false;
+let syncSeq = 0;
+const syncListeners = new Set<() => void>();
+const setSync = (next: Sync) => {
+  syncState = next;
+  syncListeners.forEach((listener) => listener());
+};
+const useSyncState = () =>
+  useSyncExternalStore(
+    (callback) => {
+      syncListeners.add(callback);
+      return () => syncListeners.delete(callback);
+    },
+    () => syncState,
+    () => "saved" as Sync,
+  );
+
+async function syncSession(session: LockInSession) {
+  const seq = ++syncSeq;
+  if (!navigator.onLine) return setSync("device");
+  setSync("saving");
+  try {
+    const result = await saveLockInSessionAction(toRecord(session, Date.now()));
+    if (seq !== syncSeq) return; // a newer save is already on its way
+    tableMissing = Boolean(result.missing);
+    setSync(result.ok ? "saved" : "device");
+  } catch {
+    if (seq === syncSeq) setSync("device");
+  }
+}
+
 /* ── Clock store: one shared ticker, only runs while something is subscribed ───────────────── */
 
 const clockListeners = new Set<() => void>();
@@ -98,32 +161,13 @@ function getNow() {
 const useNow = () => useSyncExternalStore(subscribeClock, getNow, () => 0);
 const useStoredSession = () => useSyncExternalStore(subscribeSession, getSession, () => null);
 
-function chime() {
-  try {
-    const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (Ctx) {
-      const audio = new Ctx();
-      [0, 0.25, 0.5].forEach((offset, index) => {
-        const osc = audio.createOscillator();
-        const gain = audio.createGain();
-        osc.frequency.value = 660 + index * 110;
-        gain.gain.setValueAtTime(0.0001, audio.currentTime + offset);
-        gain.gain.exponentialRampToValueAtTime(0.25, audio.currentTime + offset + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + offset + 0.22);
-        osc.connect(gain).connect(audio.destination);
-        osc.start(audio.currentTime + offset);
-        osc.stop(audio.currentTime + offset + 0.25);
-      });
-    }
-    navigator.vibrate?.([200, 100, 200]);
-  } catch {
-    // Sound is a nicety; the screen already shows the result.
-  }
+function syncLabel(state: Sync): string {
+  if (state === "saving") return "Saving…";
+  if (state === "device") return tableMissing ? "Saved on this device (database update 0029 not applied yet)" : "Saved on this device. Will sync when online.";
+  return "Saved";
 }
 
-const newId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
-
-/* ── Provider: keeps the session ticking everywhere in the CRM ──────────────────────────────── */
+/* ── Provider: keeps the session saved everywhere in the CRM ────────────────────────────────── */
 
 const LockInContext = createContext<{ open: () => void; active: boolean } | null>(null);
 
@@ -138,19 +182,33 @@ export function LockInProvider({ children }: { children: ReactNode }) {
   const close = useCallback(() => setIsOpen(false), []);
   const status = session?.status;
 
-  // Finish the session when the time runs out, whichever page the owner is on.
+  // Save shortly after every change (checklist, notes, pause, finish).
   useEffect(() => {
-    if (status !== "running") return;
-    const timer = window.setInterval(() => {
+    if (!session) return;
+    const timer = window.setTimeout(() => void syncSession(session), 1200);
+    return () => window.clearTimeout(timer);
+  }, [session]);
+
+  // While it runs: refresh the saved time every 30 s, and save the moment the tab is hidden or the connection returns.
+  useEffect(() => {
+    if (!status) return;
+    const save = () => {
       const current = getSession();
-      if (!current) return;
-      const next = tick(current, Date.now());
-      if (next !== current) {
-        writeSession(next);
-        chime();
-      }
-    }, 500);
-    return () => window.clearInterval(timer);
+      if (current) void syncSession(current);
+    };
+    const beat = status === "running" ? window.setInterval(save, 30_000) : undefined;
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") save();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("online", save);
+    window.addEventListener("pagehide", save);
+    return () => {
+      if (beat !== undefined) window.clearInterval(beat);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("online", save);
+      window.removeEventListener("pagehide", save);
+    };
   }, [status]);
 
   return (
@@ -180,34 +238,8 @@ export function LockInButton() {
   );
 }
 
-/** The home-screen card. */
-export function LockInWidget() {
-  const ctx = useLockIn();
-  const session = useStoredSession();
-  const live = session && session.status !== "done";
-  return (
-    <button
-      type="button"
-      onClick={ctx?.open}
-      className="press group flex h-full min-h-40 w-full flex-col justify-between rounded-2xl border-[1.5px] border-foreground/30 bg-background p-6 text-left transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-foreground hover:shadow-lg"
-    >
-      <span className="flex items-start justify-between">
-        <span className="flex size-12 items-center justify-center rounded-full border border-border transition-transform duration-300 group-hover:rotate-180">
-          <Hourglass progress={0.5} running={false} className="size-6" />
-        </span>
-        {live ? <span className="rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background">{session.status === "running" ? "Running" : "Paused"}</span> : null}
-      </span>
-      <span>
-        <span className="block text-xl font-semibold tracking-tight">Lock In</span>
-        <span className="mt-1 block text-sm text-muted-foreground">{live ? "Back to your session." : "Set a timer and a checklist. Get it done."}</span>
-      </span>
-    </button>
-  );
-}
-
 function MiniTimer({ session, onOpen }: { session: LockInSession; onOpen: () => void }) {
   const now = useNow();
-  const left = remainingMs(session, now);
   const done = session.status === "done";
   const summary = checklistSummary(session.items);
   return (
@@ -219,7 +251,7 @@ function MiniTimer({ session, onOpen }: { session: LockInSession; onOpen: () => 
     >
       <Hourglass progress={progress(session, now)} running={session.status === "running"} className="size-6" />
       <span className="text-left leading-tight">
-        <span className="block text-base font-semibold tabular-nums">{done ? "Time's up" : clock(left)}</span>
+        <span className="block text-base font-semibold tabular-nums">{clock(elapsedMs(session, now))}{session.status === "paused" ? " · paused" : done ? " · done" : ""}</span>
         {summary.total > 0 ? <span className="block text-[11px] text-muted-foreground">{summary.done}/{summary.total} done</span> : null}
       </span>
     </button>
@@ -228,7 +260,7 @@ function MiniTimer({ session, onOpen }: { session: LockInSession; onOpen: () => 
 
 /* ── Full-screen setup / session / summary ──────────────────────────────────────────────────── */
 
-const PRESETS = [15, 25, 45, 60, 90, 120];
+const GOALS = [25, 45, 60, 90, 120];
 const field = "w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-foreground";
 
 function LockInScreen({ session, onClose }: { session: LockInSession | null; onClose: () => void }) {
@@ -245,6 +277,7 @@ function LockInScreen({ session, onClose }: { session: LockInSession | null; onC
     };
   }, [onClose]);
 
+  const live = session && session.status !== "done";
   return (
     <div role="dialog" aria-modal="true" aria-label="Lock In" className="modal-backdrop fixed inset-0 z-[60] overflow-y-auto bg-background">
       <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-5 pb-10 pt-4 sm:px-8">
@@ -253,10 +286,10 @@ function LockInScreen({ session, onClose }: { session: LockInSession | null; onC
           <button
             type="button"
             onClick={onClose}
-            aria-label={session && session.status !== "done" ? "Minimize, keep running" : "Close"}
+            aria-label={live ? "Minimize, keep running" : "Close"}
             className="press flex items-center gap-2 rounded-full border border-border px-3.5 py-2 text-sm transition-colors hover:bg-muted"
           >
-            {session && session.status !== "done" ? "Minimize" : "Close"}
+            {live ? "Minimize" : "Close"}
             <Icon name="close" className="size-4" />
           </button>
         </div>
@@ -267,7 +300,7 @@ function LockInScreen({ session, onClose }: { session: LockInSession | null; onC
 }
 
 function Setup() {
-  const [minutes, setMinutes] = useState(25);
+  const [goal, setGoal] = useState(0);
   const [custom, setCustom] = useState("");
   const [items, setItems] = useState<LockInItem[]>([]);
   const [draft, setDraft] = useState("");
@@ -278,14 +311,14 @@ function Setup() {
   const addCustom = () => {
     const text = draft.trim();
     if (!text) return;
-    setItems((current) => [...current, { id: newId(), text: text.slice(0, 300), done: false, kind: "custom" }]);
+    setItems((current) => [...current, { id: newSessionId(), text: text.slice(0, 300), done: false, kind: "custom" }]);
     setDraft("");
   };
   const toggleRef = (kind: "task" | "project", refId: string, text: string) =>
     setItems((current) =>
       current.some((item) => item.refId === refId)
         ? current.filter((item) => item.refId !== refId)
-        : [...current, { id: newId(), text, done: false, kind, refId }],
+        : [...current, { id: newSessionId(), text, done: false, kind, refId }],
     );
   const loadOptions = async () => {
     setLoading(true);
@@ -295,27 +328,41 @@ function Setup() {
   const selected = (refId: string) => items.some((item) => item.refId === refId);
   const start = () => {
     const pending = draft.trim();
-    const all = pending ? [...items, { id: newId(), text: pending.slice(0, 300), done: false, kind: "custom" as const }] : items;
-    writeSession(startSession(minutes, all, notes, Date.now()));
+    const all = pending ? [...items, { id: newSessionId(), text: pending.slice(0, 300), done: false, kind: "custom" as const }] : items;
+    const session = startSession(goal, all, notes, Date.now());
+    writeSession(session);
+    void syncSession(session);
   };
 
   return (
     <div className="grid flex-1 gap-8 py-6 lg:grid-cols-[minmax(0,320px)_1fr] lg:gap-12">
       <div className="flex flex-col items-center text-center">
         <Hourglass progress={0} running={false} className="h-48 w-auto sm:h-64" />
-        <p className="mt-4 text-5xl font-semibold tabular-nums tracking-tight sm:text-6xl">{clock(minutes * 60_000)}</p>
-        <p className="mt-1 text-sm text-muted-foreground">How long are you locking in for?</p>
-        <div className="mt-5 flex flex-wrap justify-center gap-2" role="group" aria-label="Duration">
-          {PRESETS.map((preset) => (
+        <p className="mt-4 text-5xl font-semibold tabular-nums tracking-tight sm:text-6xl">00:00</p>
+        <p className="mt-1 text-sm text-muted-foreground">A timer that counts up. It only stops when you do.</p>
+        <p className="mt-6 text-xs font-medium uppercase tracking-widest text-muted-foreground">Goal (optional)</p>
+        <div className="mt-3 flex flex-wrap justify-center gap-2" role="group" aria-label="Goal">
+          <button
+            type="button"
+            aria-pressed={goal === 0 && !custom}
+            onClick={() => {
+              setGoal(0);
+              setCustom("");
+            }}
+            className={`press rounded-full border px-4 py-2 text-sm transition-colors ${goal === 0 && !custom ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"}`}
+          >
+            No goal
+          </button>
+          {GOALS.map((preset) => (
             <button
               key={preset}
               type="button"
-              aria-pressed={minutes === preset && !custom}
+              aria-pressed={goal === preset && !custom}
               onClick={() => {
-                setMinutes(preset);
+                setGoal(preset);
                 setCustom("");
               }}
-              className={`press rounded-full border px-4 py-2 text-sm transition-colors ${minutes === preset && !custom ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"}`}
+              className={`press rounded-full border px-4 py-2 text-sm transition-colors ${goal === preset && !custom ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"}`}
             >
               {preset}m
             </button>
@@ -327,11 +374,11 @@ function Setup() {
             type="number"
             inputMode="numeric"
             min={1}
-            max={480}
+            max={720}
             value={custom}
             onChange={(event) => {
               setCustom(event.target.value);
-              if (event.target.value) setMinutes(clampMinutes(Number(event.target.value)));
+              setGoal(event.target.value ? clampMinutes(Number(event.target.value)) : 0);
             }}
             placeholder="minutes"
             className={`${field} w-28`}
@@ -342,6 +389,7 @@ function Setup() {
       <div className="space-y-8">
         <section>
           <h2 className="text-lg font-semibold tracking-tight">What are you getting done?</h2>
+          <p className="mt-1 text-sm text-muted-foreground">You can add more items any time during the session.</p>
           <div className="mt-3 flex gap-2">
             <label className="sr-only" htmlFor="lock-in-item">Checklist item</label>
             <input
@@ -390,20 +438,8 @@ function Setup() {
           {options?.error ? <p role="alert" className="mt-3 text-sm font-medium">{options.error}</p> : null}
           {options && !options.error ? (
             <div className="mt-4 space-y-5">
-              <PickList
-                title="Tasks"
-                empty="No open tasks."
-                rows={options.tasks.map((task) => ({ id: task.id, label: task.title, sub: task.client }))}
-                selected={selected}
-                onToggle={(row) => toggleRef("task", row.id, row.label)}
-              />
-              <PickList
-                title="Projects"
-                empty="No active projects."
-                rows={options.projects.map((project) => ({ id: project.id, label: project.name, sub: project.client }))}
-                selected={selected}
-                onToggle={(row) => toggleRef("project", row.id, row.label)}
-              />
+              <PickList title="Tasks" empty="No open tasks." rows={options.tasks.map((task) => ({ id: task.id, label: task.title, sub: task.client }))} selected={selected} onToggle={(row) => toggleRef("task", row.id, row.label)} />
+              <PickList title="Projects" empty="No active projects." rows={options.projects.map((project) => ({ id: project.id, label: project.name, sub: project.client }))} selected={selected} onToggle={(row) => toggleRef("project", row.id, row.label)} />
             </div>
           ) : null}
         </section>
@@ -415,10 +451,55 @@ function Setup() {
         </section>
 
         <button type="button" onClick={start} className="press w-full rounded-xl bg-inverted px-6 py-4 text-base font-semibold text-inverted-foreground transition-opacity hover:opacity-85 sm:w-auto sm:min-w-56">
-          Start {clock(minutes * 60_000)}
+          Start timer
         </button>
+
+        <PastSessions />
       </div>
     </div>
+  );
+}
+
+/** Recent sessions: from the database when it is available, otherwise from this device. */
+function PastSessions() {
+  const [saved, setSaved] = useState<SavedSession[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    listLockInSessionsAction().then((rows) => {
+      if (live) setSaved(rows);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  const local = readHistory().map<SavedSession>((row) => ({
+    id: row.id,
+    startedAt: row.startedAt,
+    endedAt: row.endedAt,
+    elapsedMs: row.elapsedMs,
+    goalMs: row.goalMs,
+    status: row.status,
+    done: row.items.filter((item) => item.done).length,
+    total: row.items.length,
+  }));
+  const rows = (saved && saved.length > 0 ? saved : local).slice(0, 6);
+  if (rows.length === 0) return null;
+  return (
+    <section>
+      <h2 className="text-lg font-semibold tracking-tight">Past sessions</h2>
+      <ul className="mt-3 divide-y divide-border border-y border-border text-sm">
+        {rows.map((row) => (
+          <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+            <span>{new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(row.startedAt))}</span>
+            <span className="text-muted-foreground">
+              {clock(row.elapsedMs)}
+              {row.total > 0 ? ` · ${row.done}/${row.total} done` : ""}
+              {row.status !== "done" ? " · not finished" : ""}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -461,20 +542,24 @@ function PickList({
 
 function SessionView({ session, onExit }: { session: LockInSession; onExit: () => void }) {
   const now = useNow();
-  const left = remainingMs(session, now);
+  const sync = useSyncState();
+  const elapsed = elapsedMs(session, now);
   const frac = progress(session, now);
   const done = session.status === "done";
   const summary = checklistSummary(session.items);
+  const reached = goalReached(session, now);
+  const [draft, setDraft] = useState("");
   const [result, setResult] = useState<{ error?: string; success?: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   // Keep the tab title useful while you work in another window.
   useEffect(() => {
-    if (session.status === "done") return;
+    if (session.status !== "running") return;
     const title = document.title;
     const timer = window.setInterval(() => {
       const current = getSession();
-      if (current) document.title = `${clock(remainingMs(current, Date.now()))} · Lock In`;
+      if (current) document.title = `${clock(elapsedMs(current, Date.now()))} · Lock In`;
     }, 1000);
     return () => {
       window.clearInterval(timer);
@@ -484,16 +569,32 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
 
   const update = (patch: Partial<LockInSession>) => writeSession({ ...session, ...patch });
   const toggleItem = (id: string) => update({ items: session.items.map((item) => (item.id === id ? { ...item, done: !item.done } : item)) });
+  const removeItem = (id: string) => update({ items: session.items.filter((item) => item.id !== id) });
+  const submitItem = () => {
+    if (!draft.trim()) return;
+    writeSession(addItem(session, draft));
+    setDraft("");
+  };
   const doneTaskIds = session.items.filter((item) => item.done && item.kind === "task" && item.refId).map((item) => item.refId as string);
 
+  const finishNow = () => {
+    const finished = finish(session, Date.now());
+    writeSession(finished);
+    rememberSession(toRecord(finished, Date.now()));
+    void syncSession(finished);
+  };
+  const keepGoing = () => writeSession(reopen(session, Date.now()));
+  const discard = () => {
+    writeSession(null);
+    onExit();
+  };
+  const startNew = () => {
+    writeSession(null);
+  };
   const completeTasks = async () => {
     setSaving(true);
     setResult(await completeLockInTasksAction(doneTaskIds));
     setSaving(false);
-  };
-  const end = () => {
-    writeSession(null);
-    onExit();
   };
 
   return (
@@ -501,10 +602,18 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
       <div className="flex flex-col items-center text-center">
         <Hourglass progress={frac} running={session.status === "running"} className="h-56 w-auto sm:h-72" />
         <p aria-live="off" className="mt-4 text-6xl font-semibold tabular-nums tracking-tight sm:text-7xl">
-          {done ? "00:00" : clock(left)}
+          {clock(elapsed)}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          {done ? "Time's up." : session.status === "paused" ? "Paused." : `${Math.round(frac * 100)}% of ${Math.round(session.durationMs / 60_000)} minutes used`}
+          {done
+            ? "Finished."
+            : session.status === "paused"
+              ? "Paused."
+              : reached
+                ? `Goal of ${Math.round(session.goalMs / 60_000)} minutes reached. Keep going or finish when you are ready.`
+                : session.goalMs > 0
+                  ? `Goal: ${Math.round(session.goalMs / 60_000)} minutes`
+                  : "Running"}
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           {session.status === "running" ? (
@@ -518,14 +627,31 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
             </button>
           ) : null}
           {!done ? (
-            <button type="button" onClick={() => writeSession(finish(session))} className="press rounded-full border border-border px-5 py-2.5 text-sm transition-colors hover:bg-muted">
-              Finish now
+            <button type="button" onClick={finishNow} className="press rounded-full border border-border px-5 py-2.5 text-sm transition-colors hover:bg-muted">
+              Finish
             </button>
-          ) : null}
-          <button type="button" onClick={end} className="press rounded-full border border-border px-5 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-            {done ? "Start over" : "End session"}
-          </button>
+          ) : (
+            <>
+              <button type="button" onClick={keepGoing} className="press rounded-full border-[1.5px] border-foreground px-5 py-2.5 text-sm font-medium transition-colors hover:bg-muted">
+                Keep going
+              </button>
+              <button type="button" onClick={startNew} className="press rounded-full bg-inverted px-5 py-2.5 text-sm font-medium text-inverted-foreground">
+                New session
+              </button>
+            </>
+          )}
         </div>
+        <p role="status" className="mt-4 text-xs text-muted-foreground">{syncLabel(sync)}</p>
+        {done ? (
+          <button
+            type="button"
+            onClick={() => (confirmDiscard ? discard() : setConfirmDiscard(true))}
+            onBlur={() => setConfirmDiscard(false)}
+            className="press mt-2 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+          >
+            {confirmDiscard ? "Tap again to discard this session" : "Discard session"}
+          </button>
+        ) : null}
       </div>
 
       <div className="space-y-8">
@@ -539,23 +665,50 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
               <div className="h-full bg-foreground transition-[width] duration-500" style={{ width: `${(summary.done / summary.total) * 100}%` }} />
             </div>
           ) : null}
-          {summary.total === 0 ? (
-            <p className="mt-3 text-sm text-muted-foreground">No checklist for this session.</p>
-          ) : (
+          {summary.total > 0 ? (
             <ul className="mt-4 space-y-2">
               {session.items.map((item) => (
-                <li key={item.id}>
-                  <label className={`flex cursor-pointer items-start gap-3 rounded-xl border-[1.5px] px-4 py-3.5 text-base transition-colors ${item.done ? "border-border bg-muted/60 text-muted-foreground" : "border-foreground/30 hover:border-foreground"}`}>
+                <li key={item.id} className={`flex items-start gap-1 rounded-xl border-[1.5px] pr-2 transition-colors ${item.done ? "border-border bg-muted/60 text-muted-foreground" : "border-foreground/30 hover:border-foreground"}`}>
+                  <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-3 px-4 py-3.5 text-base">
                     <input type="checkbox" checked={item.done} onChange={() => toggleItem(item.id)} className="mt-1 size-5 accent-foreground" />
                     <span className={`min-w-0 ${item.done ? "line-through" : ""}`}>
                       {item.kind !== "custom" ? <span className="mr-2 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">{item.kind}</span> : null}
                       {item.text}
                     </span>
                   </label>
+                  {!done ? (
+                    <button type="button" aria-label={`Remove ${item.text}`} onClick={() => removeItem(item.id)} className="press mt-2.5 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+                      <Icon name="close" className="size-4" />
+                    </button>
+                  ) : null}
                 </li>
               ))}
             </ul>
+          ) : (
+            <p className="mt-3 text-sm text-muted-foreground">Nothing on the list yet.</p>
           )}
+          {!done ? (
+            <div className="mt-3 flex gap-2">
+              <label className="sr-only" htmlFor="lock-in-session-item">Add a checklist item</label>
+              <input
+                id="lock-in-session-item"
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    submitItem();
+                  }
+                }}
+                maxLength={300}
+                placeholder="Add an item and press Enter"
+                className={field}
+              />
+              <button type="button" onClick={submitItem} className="press shrink-0 rounded-md border border-border px-4 text-sm font-medium transition-colors hover:bg-muted">
+                Add
+              </button>
+            </div>
+          ) : null}
           {done && doneTaskIds.length > 0 ? (
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <button type="button" onClick={completeTasks} disabled={saving || Boolean(result?.success)} className="press rounded-md bg-inverted px-4 py-2 text-sm font-medium text-inverted-foreground transition-opacity hover:opacity-80 disabled:opacity-50">

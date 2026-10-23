@@ -9,7 +9,7 @@ export type WizardStep = { title: string; hint?: string; content: ReactNode };
  * submit carries all the fields; "Next" validates the visible step before moving on.
  * The finish control (submit button + message) is passed in and only shown on the last step.
  */
-export function Wizard({ steps, finish }: { steps: WizardStep[]; finish: ReactNode }) {
+export function Wizard({ steps, finish, compact = false }: { steps: WizardStep[]; finish: ReactNode; compact?: boolean }) {
   const [index, setIndex] = useState(0);
   const panelRefs = useRef<(HTMLDivElement | null)[]>([]);
   const last = index === steps.length - 1;
@@ -34,6 +34,16 @@ export function Wizard({ steps, finish }: { steps: WizardStep[]; finish: ReactNo
         }
       }}
     >
+      {compact ? (
+        <div className="mb-6">
+          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground" aria-live="polite">
+            Step {index + 1} of {steps.length}
+          </p>
+          <div className="mt-2 h-1 overflow-hidden rounded-full bg-muted" aria-hidden>
+            <div className="h-full bg-foreground transition-[width] duration-300" style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
+          </div>
+        </div>
+      ) : (
       <ol className="mb-6 flex items-center gap-2" aria-label="Steps">
         {steps.map((step, position) => (
           <li key={step.title} className="flex flex-1 items-center gap-2" aria-current={position === index ? "step" : undefined}>
@@ -51,6 +61,7 @@ export function Wizard({ steps, finish }: { steps: WizardStep[]; finish: ReactNo
           </li>
         ))}
       </ol>
+      )}
 
       {steps.map((step, position) => (
         <div key={step.title} ref={(node) => { panelRefs.current[position] = node; }} hidden={position !== index} className="widget-in">

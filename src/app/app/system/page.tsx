@@ -49,6 +49,7 @@ const probes: Probe[] = [
   table("project_templates", "0025"),
   table("passkeys", "0026"),
   table("meetings", "0027"),
+  table("lock_in_sessions", "0029"),
   {
     name: "estimates + client portal columns (quotes.kind, clients.portal_*)",
     migration: "0027",
