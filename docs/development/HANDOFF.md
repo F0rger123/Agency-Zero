@@ -1,5 +1,13 @@
 # Handoff log (newest first)
 
+## 2026-10-23 — Claude — new quote is a step-by-step wizard
+
+**No migration.**
+- `NewQuoteForm` (`src/app/app/quotes/quote-forms.tsx`, used by Quotes page and client Quotes tab dialogs) is now a 5-step compact `Wizard`: who/type/name → dates → line items → discount/tax/note → review & create. **Issued on defaults to today** (local date), valid-until +30 days, number auto-suggested (`Q-YYYYMMDD-HHMM`, editable; it is unique in the DB). Status is draft, currency USD (hidden).
+- Line items are cards: "What is it?", "How many?", "$ Price each" (visible `$`), and a bold line total with running "Items so far"; advanced inclusion/details/option group sit under "More options". Inputs are now controlled, which also fixes picking a catalogue service not updating the shown price. The edit form on the quote page uses the same line editor but stays one page.
+- `src/lib/quote-math.ts` (+ tests): on-screen totals, local-date helpers. DB still recomputes on save.
+- Unverified in a real browser (lint, tsc, vitest, build pass).
+
 ## 2026-10-23 — Claude — clients page cleanup; lead delete tools
 
 **No migration.** 

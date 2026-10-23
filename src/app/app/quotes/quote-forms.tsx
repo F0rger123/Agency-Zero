@@ -5,6 +5,9 @@ import type { ReactNode } from "react";
 import type { ActionState } from "@/lib/forms";
 import { createQuoteAction, deleteQuoteAction, updateQuoteAction, convertQuoteAction, regenerateQuoteTokenAction } from "./actions";
 import { FieldLabel, FormMessage, SelectInput, SubmitButton, TextArea, TextInput } from "@/components/form-controls";
+import { Wizard } from "@/components/wizard";
+import { moneyNode } from "@/components/money-node";
+import { lineTotalCents, localDateIso, quoteTotals, suggestQuoteNumber } from "@/lib/quote-math";
 
 const initialState: ActionState = {};
 type Option = { id: string; label: string };
@@ -77,22 +80,51 @@ const periodForKey: Record<string, string> = {
   yearly: "year",
 };
 
+const plain =
+  "block w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-faint-foreground focus:border-foreground";
+
+/** Number input with a visible "$" so it is obvious the field is dollars. */
+function DollarInput({ id, value, onChange, label }: { id: string; value: number; onChange: (value: number) => void; label: string }) {
+  return (
+    <div>
+      <label htmlFor={id} className="text-xs font-medium text-muted-foreground">{label}</label>
+      <div className="relative mt-1">
+        <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+        <input
+          id={id}
+          type="number"
+          inputMode="decimal"
+          min={0}
+          step={0.01}
+          value={Number.isFinite(value) ? value : ""}
+          onChange={(event) => onChange(event.target.value === "" ? 0 : Number(event.target.value))}
+          className={`${plain} pl-7`}
+        />
+      </div>
+    </div>
+  );
+}
+
 function LineItemsEditor({
   initial = [],
   services = [],
+  onChange,
 }: {
   initial?: Line[];
   services?: ServiceOption[];
+  onChange?: (lines: Line[]) => void;
 }) {
   const [lines, setLines] = useState<Line[]>(initial.length ? initial : [blankLine()]);
+  const commit = (next: Line[]) => {
+    setLines(next);
+    onChange?.(next);
+  };
   const update = (index: number, patch: Partial<Line>) =>
-    setLines((current) => current.map((line, i) => (i === index ? { ...line, ...patch } : line)));
+    commit(lines.map((line, i) => (i === index ? { ...line, ...patch } : line)));
 
   /**
    * Picking a catalogue service prefills the line from its defaults: price,
-   * one-off vs recurring, and the billing interval (monthly / quarterly /
-   * yearly → month / quarter / year). Everything stays editable, and the line
-   * keeps the service link so a quote can be traced back to the catalogue.
+   * one-off vs recurring, and the billing interval. Everything stays editable.
    */
   const applyService = (index: number, serviceId: string) => {
     const service = services.find((item) => item.id === serviceId);
@@ -113,171 +145,168 @@ function LineItemsEditor({
     });
   };
 
+  const totals = quoteTotals(lines, 0, 0);
+
   return (
     <div>
-      <div className="flex items-baseline justify-between gap-4">
-        <FieldLabel label="Line items" htmlFor="quote-line-0" required />
-        <button
-          type="button"
-          onClick={() => setLines((current) => [...current, blankLine()])}
-          className="text-xs font-medium underline decoration-border underline-offset-4"
-        >
-          Add line
-        </button>
-      </div>
       <input type="hidden" name="line_items" value={JSON.stringify(lines)} readOnly />
-      <div className="mt-3 space-y-6">
+      <div className="space-y-4">
         {lines.map((line, index) => (
-          <div key={index} className="space-y-3 border-b border-border pb-6">
+          <div key={index} className="space-y-4 rounded-xl border border-border p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Item {index + 1}</p>
+              {lines.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={() => commit(lines.filter((_, i) => i !== index))}
+                  className="text-xs text-red-600 underline-offset-4 hover:underline"
+                >
+                  Remove
+                </button>
+              ) : null}
+            </div>
             {services.length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-[1fr_240px]">
-                <div>
-                  <label htmlFor={`quote-service-${index}`} className="sr-only">
-                    Catalogue service
-                  </label>
-                  <SelectInput
-                    id={`quote-service-${index}`}
-                    name={`line_service_${index}`}
-                    defaultValue={line.service_id}
-                    onChange={(event) => applyService(index, event.target.value)}
-                  >
-                    <option value="">Custom line (no catalogue service)</option>
-                    {services.map((service) => (
-                      <option key={service.id} value={service.id}>
-                        {service.name}
-                        {service.default_price_cents != null
-                          ? ` · ${(service.default_price_cents / 100).toFixed(2)}`
-                          : ""}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </div>
-                <p className="self-center text-xs text-muted-foreground">
-                  Picking a service fills the description, price, and billing
-                  interval — you can still change any of them.
-                </p>
+              <div>
+                <label htmlFor={`quote-service-${index}`} className="text-xs font-medium text-muted-foreground">
+                  Start from a saved service (optional)
+                </label>
+                <select
+                  id={`quote-service-${index}`}
+                  value={line.service_id}
+                  onChange={(event) => applyService(index, event.target.value)}
+                  className={`${plain} mt-1`}
+                >
+                  <option value="">Type my own</option>
+                  {services.map((service) => (
+                    <option key={service.id} value={service.id}>
+                      {service.name}
+                      {service.default_price_cents != null ? ` · $${(service.default_price_cents / 100).toFixed(2)}` : ""}
+                    </option>
+                  ))}
+                </select>
               </div>
             ) : null}
-            <div className="grid gap-3 sm:grid-cols-[1fr_70px_90px_120px_auto]">
+            <div>
+              <label htmlFor={`quote-line-${index}`} className="text-xs font-medium text-muted-foreground">What is it?</label>
+              <input
+                id={`quote-line-${index}`}
+                value={line.description}
+                onChange={(event) => update(index, { description: event.target.value })}
+                placeholder="Website build"
+                required
+                className={`${plain} mt-1`}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor={`quote-line-${index}`} className="sr-only">Description</label>
-                <TextInput
-                  id={`quote-line-${index}`}
-                  name={`line_description_${index}`}
-                  defaultValue={line.description}
-                  onChange={(event) => update(index, { description: event.target.value })}
-                  placeholder="Website build"
-                />
-              </div>
-              <div>
-                <label htmlFor={`quote-qty-${index}`} className="sr-only">Quantity</label>
-                <TextInput
+                <label htmlFor={`quote-qty-${index}`} className="text-xs font-medium text-muted-foreground">How many?</label>
+                <input
                   id={`quote-qty-${index}`}
-                  name={`line_qty_${index}`}
                   type="number"
+                  inputMode="decimal"
                   min={0.01}
                   step={0.01}
-                  defaultValue={line.qty}
+                  value={Number.isFinite(line.qty) ? line.qty : ""}
                   onChange={(event) => update(index, { qty: Number(event.target.value) })}
+                  className={`${plain} mt-1`}
                 />
               </div>
-              <div>
-                <label htmlFor={`quote-price-${index}`} className="sr-only">Unit price</label>
-                <TextInput
-                  id={`quote-price-${index}`}
-                  name={`line_price_${index}`}
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  defaultValue={line.unit_amount}
-                  onChange={(event) => update(index, { unit_amount: Number(event.target.value) })}
-                />
-              </div>
-              <div>
-                <label htmlFor={`quote-selection-${index}`} className="sr-only">Inclusion</label>
-                <SelectInput
-                  id={`quote-selection-${index}`}
-                  name={`line_selection_${index}`}
-                  defaultValue={line.selection}
-                  onChange={(event) => update(index, { selection: event.target.value })}
-                >
-                  <option value="fixed">Included</option>
-                  <option value="optional">Optional add-on</option>
-                  <option value="choice">Package choice</option>
-                </SelectInput>
-              </div>
-              <div className="flex items-center justify-end gap-3">
-                <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={line.is_recurring}
-                    onChange={(event) => update(index, { is_recurring: event.target.checked })}
-                    className="size-4 accent-black"
-                  />
-                  Recurring
-                </label>
-                {lines.length > 1 ? (
-                  <button
-                    type="button"
-                    onClick={() => setLines((current) => current.filter((_, i) => i !== index))}
-                    className="text-xs text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground"
-                  >
-                    Remove
-                  </button>
-                ) : null}
-              </div>
+              <DollarInput
+                id={`quote-price-${index}`}
+                label="Price each"
+                value={line.unit_amount}
+                onChange={(value) => update(index, { unit_amount: value })}
+              />
             </div>
-            <div className="grid gap-3 sm:grid-cols-[1fr_240px]">
-              <div>
-                <label htmlFor={`quote-details-${index}`} className="sr-only">Details</label>
-                <TextInput
-                  id={`quote-details-${index}`}
-                  name={`line_details_${index}`}
-                  defaultValue={line.details}
-                  onChange={(event) => update(index, { details: event.target.value })}
-                  placeholder="Details shown under this item on the proposal (optional)"
-                />
-              </div>
-              <div className="flex items-start gap-3">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={line.is_recurring}
+                onChange={(event) => update(index, { is_recurring: event.target.checked })}
+                className="size-4 accent-black"
+              />
+              This repeats (a subscription)
+              {line.is_recurring ? (
+                <select
+                  aria-label="How often it is billed"
+                  value={line.billing_period}
+                  onChange={(event) => update(index, { billing_period: event.target.value })}
+                  className="rounded-md border border-border bg-background px-2 py-1 text-sm"
+                >
+                  <option value="month">every month</option>
+                  <option value="quarter">every quarter</option>
+                  <option value="year">every year</option>
+                </select>
+              ) : null}
+            </label>
+            <div className="flex items-baseline justify-between border-t border-border pt-3">
+              <span className="text-sm text-muted-foreground">
+                {line.qty} × ${Number.isFinite(line.unit_amount) ? line.unit_amount.toFixed(2) : "0.00"}
+              </span>
+              <span className="text-base font-semibold">
+                {moneyNode(lineTotalCents(line))}
+                {line.is_recurring ? <span className="ml-1 text-xs font-normal text-muted-foreground">/ {line.billing_period}</span> : null}
+              </span>
+            </div>
+            <details>
+              <summary className="cursor-pointer text-xs text-muted-foreground">More options</summary>
+              <div className="mt-3 space-y-3">
+                <div>
+                  <label htmlFor={`quote-selection-${index}`} className="text-xs font-medium text-muted-foreground">
+                    Is it required?
+                  </label>
+                  <select
+                    id={`quote-selection-${index}`}
+                    value={line.selection}
+                    onChange={(event) => update(index, { selection: event.target.value })}
+                    className={`${plain} mt-1`}
+                  >
+                    <option value="fixed">Included — always part of the quote</option>
+                    <option value="optional">Optional add-on — the customer ticks it</option>
+                    <option value="choice">Package choice — the customer picks one</option>
+                  </select>
+                </div>
                 {line.selection === "choice" ? (
-                  <div className="grow">
-                    <label htmlFor={`quote-group-${index}`} className="sr-only">Option group</label>
-                    <TextInput
+                  <div>
+                    <label htmlFor={`quote-group-${index}`} className="text-xs font-medium text-muted-foreground">
+                      Which group of packages? (same name = pick one)
+                    </label>
+                    <input
                       id={`quote-group-${index}`}
-                      name={`line_group_${index}`}
-                      defaultValue={line.option_group}
+                      value={line.option_group}
                       onChange={(event) => update(index, { option_group: event.target.value })}
-                      placeholder="Option group, e.g. Package"
+                      placeholder="Package"
+                      className={`${plain} mt-1`}
                     />
                   </div>
                 ) : null}
-                {line.is_recurring ? (
-                  <div className="w-32">
-                    <label htmlFor={`quote-period-${index}`} className="sr-only">Billing period</label>
-                    <SelectInput
-                      id={`quote-period-${index}`}
-                      name={`line_period_${index}`}
-                      defaultValue={line.billing_period}
-                      required
-                      onChange={(event) => update(index, { billing_period: event.target.value })}
-                    >
-                      <option value="month">Monthly</option>
-                      <option value="quarter">Quarterly</option>
-                      <option value="year">Yearly</option>
-                    </SelectInput>
-                  </div>
-                ) : null}
+                <div>
+                  <label htmlFor={`quote-details-${index}`} className="text-xs font-medium text-muted-foreground">
+                    Extra details shown under this item (optional)
+                  </label>
+                  <input
+                    id={`quote-details-${index}`}
+                    value={line.details}
+                    onChange={(event) => update(index, { details: event.target.value })}
+                    className={`${plain} mt-1`}
+                  />
+                </div>
               </div>
-            </div>
+            </details>
           </div>
         ))}
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Included items are always part of the proposal. Optional add-ons are
-        checkboxes for the customer. Package choices with the same option group
-        are mutually exclusive — the customer picks at most one. Prices are
-        stored as integer cents.
-      </p>
+      <button
+        type="button"
+        onClick={() => commit([...lines, blankLine()])}
+        className="press mt-4 rounded-md border border-border px-4 py-2 text-sm hover:bg-muted"
+      >
+        + Add another item
+      </button>
+      <div className="mt-5 flex items-baseline justify-between rounded-xl bg-muted px-4 py-3">
+        <span className="text-sm text-muted-foreground">Items so far</span>
+        <span className="text-lg font-semibold">{moneyNode(totals.subtotal)}</span>
+      </div>
     </div>
   );
 }
@@ -386,16 +415,172 @@ export function NewQuoteForm({
   services?: ServiceOption[];
 }) {
   const [state, action] = useActionState(createQuoteAction, initialState);
+  const [initialLines] = useState<Line[]>(() => [blankLine()]);
+  const [lines, setLines] = useState<Line[]>(initialLines);
+  const [clientId, setClientId] = useState(lockedClientId ?? "");
+  const [kind, setKind] = useState("quote");
+  const [title, setTitle] = useState("");
+  const [number, setNumber] = useState(() => suggestQuoteNumber("quote"));
+  const [issued, setIssued] = useState(() => localDateIso(0));
+  const [valid, setValid] = useState(() => localDateIso(30));
+  const [discount, setDiscount] = useState(0);
+  const [tax, setTax] = useState(0);
+  const totals = quoteTotals(lines, discount, tax);
+  const clientName = clients.find((client) => client.id === clientId)?.label ?? "";
+  const word = kind === "estimate" ? "estimate" : "quote";
+
   return (
-    <Shell title="Create quote">
-      <form action={action} className="space-y-5">
-        <Fields clients={clients} services={services} lockedClientId={lockedClientId} />
-        <div className="flex flex-wrap items-center gap-4">
-          <SubmitButton>Create quote</SubmitButton>
-          <FormMessage {...state} />
-        </div>
-      </form>
-    </Shell>
+    <form action={action}>
+      <input type="hidden" name="status" value="draft" />
+      <input type="hidden" name="currency" value="USD" />
+      <input type="hidden" name="client_id" value={clientId} />
+      <input type="hidden" name="kind" value={kind} />
+      <input type="hidden" name="title" value={title} />
+      <input type="hidden" name="number" value={number} />
+      <input type="hidden" name="issued_on" value={issued} />
+      <input type="hidden" name="valid_until" value={valid} />
+      <input type="hidden" name="discount_amount" value={discount} />
+      <input type="hidden" name="tax_rate" value={tax} />
+      <Wizard
+        compact
+        steps={[
+          {
+            title: "Who is it for?",
+            hint: "Pick the client and what you are sending.",
+            content: (
+              <div className="space-y-4">
+                {lockedClientId ? null : (
+                  <div>
+                    <label htmlFor="nq-client" className="text-xs font-medium text-muted-foreground">Client</label>
+                    <select id="nq-client" required value={clientId} onChange={(event) => setClientId(event.target.value)} className={`${plain} mt-1`}>
+                      <option value="">Choose a client</option>
+                      {clients.map((client) => (
+                        <option key={client.id} value={client.id}>{client.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Type">
+                  {[
+                    ["quote", "Quote", "A proposal to accept"],
+                    ["estimate", "Estimate", "A rough price"],
+                  ].map(([value, label, hint]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      role="radio"
+                      aria-checked={kind === value}
+                      onClick={() => {
+                        setKind(value);
+                        setNumber(suggestQuoteNumber(value));
+                      }}
+                      className={`press rounded-xl border p-4 text-left transition-colors ${kind === value ? "border-foreground bg-muted" : "border-border hover:bg-muted"}`}
+                    >
+                      <span className="block text-sm font-medium">{label}</span>
+                      <span className="block text-xs text-muted-foreground">{hint}</span>
+                    </button>
+                  ))}
+                </div>
+                <div>
+                  <label htmlFor="nq-title" className="text-xs font-medium text-muted-foreground">Name it (the customer sees this)</label>
+                  <input id="nq-title" required value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Website proposal" className={`${plain} mt-1`} />
+                </div>
+              </div>
+            ),
+          },
+          {
+            title: "Dates",
+            hint: "Today is filled in for you. Change it only if you need to.",
+            content: (
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="nq-issued" className="text-xs font-medium text-muted-foreground">Issued on</label>
+                  <input id="nq-issued" type="date" required value={issued} onChange={(event) => setIssued(event.target.value)} className={`${plain} mt-1`} />
+                </div>
+                <div>
+                  <label htmlFor="nq-valid" className="text-xs font-medium text-muted-foreground">Good until (optional — 30 days is filled in)</label>
+                  <input id="nq-valid" type="date" value={valid} onChange={(event) => setValid(event.target.value)} className={`${plain} mt-1`} />
+                </div>
+                <div>
+                  <label htmlFor="nq-number" className="text-xs font-medium text-muted-foreground">{word} number (made for you)</label>
+                  <input id="nq-number" required value={number} onChange={(event) => setNumber(event.target.value)} className={`${plain} mt-1`} />
+                </div>
+              </div>
+            ),
+          },
+          {
+            title: "What are you charging for?",
+            hint: "One card per item. The dollar total of each item shows at the bottom of its card.",
+            content: <LineItemsEditor initial={initialLines} services={services} onChange={setLines} />,
+          },
+          {
+            title: "Discount, tax and a note",
+            hint: "All optional. Skip with Next.",
+            content: (
+              <div className="space-y-4">
+                <DollarInput id="nq-discount" label="Discount (dollars off)" value={discount} onChange={setDiscount} />
+                <div>
+                  <label htmlFor="nq-tax" className="text-xs font-medium text-muted-foreground">Sales tax (%)</label>
+                  <input id="nq-tax" type="number" inputMode="decimal" min={0} max={100} step={0.01} value={tax} onChange={(event) => setTax(Number(event.target.value))} className={`${plain} mt-1`} />
+                </div>
+                <div>
+                  <label htmlFor="nq-notes" className="text-xs font-medium text-muted-foreground">Message to the customer</label>
+                  <textarea id="nq-notes" name="notes" rows={4} placeholder="Intro, terms, or payment conditions" className={`${plain} mt-1`} />
+                </div>
+              </div>
+            ),
+          },
+          {
+            title: "Check and create",
+            hint: `This saves a draft ${word}. You send it from the ${word} page.`,
+            content: (
+              <div className="space-y-4 text-sm">
+                <div className="rounded-xl border border-border p-4">
+                  <p className="font-medium">{title || "Untitled"}</p>
+                  <p className="mt-1 text-muted-foreground">
+                    {[clientName || (lockedClientId ? "This client" : ""), number, `issued ${issued}`].filter(Boolean).join(" · ")}
+                  </p>
+                </div>
+                <ul className="divide-y divide-border rounded-xl border border-border">
+                  {lines.map((line, index) => (
+                    <li key={index} className="flex items-baseline justify-between gap-4 px-4 py-3">
+                      <span>
+                        {line.description || "Untitled item"}
+                        <span className="block text-xs text-muted-foreground">
+                          {line.qty} × ${line.unit_amount.toFixed(2)}
+                          {line.is_recurring ? ` · every ${line.billing_period}` : ""}
+                          {line.selection === "fixed" ? "" : line.selection === "optional" ? " · optional" : " · package choice"}
+                        </span>
+                      </span>
+                      <span className="font-medium">{moneyNode(lineTotalCents(line))}</span>
+                    </li>
+                  ))}
+                </ul>
+                <dl className="space-y-1 rounded-xl bg-muted px-4 py-3">
+                  <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd>{moneyNode(totals.subtotal)}</dd></div>
+                  {totals.discountCents > 0 ? (
+                    <div className="flex justify-between"><dt className="text-muted-foreground">Discount</dt><dd>−{moneyNode(totals.discountCents)}</dd></div>
+                  ) : null}
+                  {totals.taxCents > 0 ? (
+                    <div className="flex justify-between"><dt className="text-muted-foreground">Tax</dt><dd>{moneyNode(totals.taxCents)}</dd></div>
+                  ) : null}
+                  <div className="flex justify-between border-t border-border pt-2 text-base font-semibold"><dt>Total</dt><dd>{moneyNode(totals.total)}</dd></div>
+                  {totals.optional > 0 ? (
+                    <p className="pt-1 text-xs text-muted-foreground">Plus {moneyNode(totals.optional)} of optional items the customer can add.</p>
+                  ) : null}
+                </dl>
+              </div>
+            ),
+          },
+        ]}
+        finish={
+          <div className="flex flex-wrap items-center gap-4">
+            <SubmitButton>Create {word}</SubmitButton>
+            <FormMessage {...state} />
+          </div>
+        }
+      />
+    </form>
   );
 }
 
