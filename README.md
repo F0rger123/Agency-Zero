@@ -1,4 +1,106 @@
-# Agency Zero
+<p align="center">
+  <img src=".github/assets/banner.svg" alt="AGENCY ZERO: The operating system for a one-person agency." width="100%">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/status-public-121212?style=for-the-badge" alt="Public">
+  <img src="https://img.shields.io/badge/license-MIT-121212?style=for-the-badge" alt="License">
+  <img src="https://img.shields.io/github/last-commit/F0rger123/Agency-Zero?style=for-the-badge&color=121212" alt="Last commit">
+  <img src="https://img.shields.io/github/repo-size/F0rger123/Agency-Zero?style=for-the-badge&color=121212" alt="Repo size">
+</p>
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-0d1117?style=flat-square&logo=nextdotjs&logoColor=white" alt="Next.js">
+  <img src="https://img.shields.io/badge/React-0d1117?style=flat-square&logo=react&logoColor=white" alt="React">
+  <img src="https://img.shields.io/badge/TypeScript-0d1117?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Supabase-0d1117?style=flat-square&logo=supabase&logoColor=white" alt="Supabase">
+  <img src="https://img.shields.io/badge/PostgreSQL-0d1117?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/Tailwind-0d1117?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind">
+  <img src="https://img.shields.io/badge/Cloudflare-0d1117?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare">
+  <img src="https://img.shields.io/badge/Vitest-0d1117?style=flat-square&logo=vitest&logoColor=white" alt="Vitest">
+</p>
+
+<h3 align="center">One app to run the whole agency: clients, projects, quotes, contracts, invoices, workload and the calendar.</h3>
+
+<p align="center">
+  <a href="#-what-it-does">What it does</a> ·
+  <a href="#-how-it-works">How it works</a> ·
+  <a href="#-the-sales-pipeline">Sales pipeline</a> ·
+  <a href="#-code-composition">Composition</a> ·
+  <a href="#-field-manual">Field manual</a> ·
+  <a href="#-license">License</a>
+</p>
+
+<p align="center"><img src=".github/assets/divider.svg" width="100%" alt=""></p>
+
+## ⚡ What it does
+
+Agency Zero is a private CRM and operating system for a solo operator selling software, websites, SEO, Meta ads, social media management and video. It replaces the spreadsheet, the invoicing app, the contract tool and the calendar with one black-and-white, keyboard-fast workspace.
+
+| | Module | What you get |
+|---|---|---|
+| 🧑‍💼 | **Clients & projects** | Client records, projects, tasks, notes and a full activity trail |
+| 🧾 | **Quotes** | Packages and options, customer selection, public acceptance links with frozen snapshots |
+| ✍️ | **Contracts** | Templates, placeholders, versioning, signing, immutable once signed |
+| 💸 | **Invoices & payments** | Invoices, manual payments, revenue tracking, profitability view |
+| 📅 | **Calendar & workload** | Day, week and month views, capacity planning, overload detection, rescheduling |
+| 🔔 | **Reminders** | Live and custom reminders tied to real records |
+| 🔐 | **Security** | Row-level security on every internal table, passkeys (WebAuthn), narrow RPCs for public links |
+
+## 🧠 How it works
+
+```mermaid
+flowchart LR
+    subgraph Edge["☁️ Cloudflare Workers"]
+        Site["Public site<br/>/"]
+        CRM["CRM app<br/>/app/**"]
+        Links["Customer links<br/>/q/token · /c/token"]
+        Proxy["proxy.ts<br/>session + route guard"]
+    end
+    subgraph Data["🗄️ Supabase"]
+        Auth["Auth + Passkeys"]
+        PG[("Postgres<br/>RLS on every table")]
+        RPC["Security-definer RPCs"]
+        Store["Storage"]
+    end
+    Owner(["👤 Owner"]) --> Proxy --> CRM
+    Client(["🤝 Customer"]) --> Links
+    CRM --> Auth
+    CRM --> PG
+    CRM --> Store
+    Links --> RPC --> PG
+```
+
+## 🔁 The sales pipeline
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Quote: build packages
+    Quote --> Accepted: customer accepts link
+    Accepted --> Contract: snapshot frozen
+    Contract --> Signed: e-sign
+    Signed --> Invoice
+    Invoice --> Paid: record payment
+    Paid --> [*]
+    note right of Signed: immutable after signing
+```
+
+## 📊 Code composition
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'pie1':'#e5e5e5','pie2':'#8a8a8a','pie3':'#64748b','pie4':'#94a3b8','pie5':'#475569','pie6':'#cbd5e1','pie7':'#334155','pieStrokeColor':'#0d1117','pieOuterStrokeColor':'#0d1117','pieTitleTextColor':'#8b949e','pieLegendTextColor':'#8b949e','pieSectionTextColor':'#0d1117'}}}%%
+pie title Code composition (% of bytes, via GitHub linguist)
+    "TypeScript" : 59.9
+    "PLpgSQL" : 25.8
+    "HTML" : 7.5
+    "CSS" : 4.0
+    "JavaScript" : 2.4
+    "Other" : 0.4
+```
+
+<p align="center"><img src=".github/assets/divider.svg" width="100%" alt=""></p>
+
+## 📚 Field manual
 
 A private, lightweight agency CRM / operating system — built for a solo operator running an agency that sells:
 
@@ -86,3 +188,13 @@ Agents: start with [`AGENTS.md`](AGENTS.md) (session protocol) and [`docs/develo
 2. Build in phases — do not attempt every integration at once.
 3. The AI assistant never silently performs high-impact financial or ad-spend actions; it recommends, the owner approves.
 4. No fake UI: unbuilt features get honest "planned" states, never dead buttons that pretend to work.
+
+## 📜 License
+
+Released under the [MIT License](LICENSE). Use it, fork it, ship it.
+
+<p align="center"><img src=".github/assets/divider.svg" width="100%" alt=""></p>
+
+<p align="center">
+  <sub>Built by <a href="https://github.com/F0rger123"><b>@F0rger123</b></a> · MIT licensed</sub>
+</p>
