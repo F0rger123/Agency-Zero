@@ -56,8 +56,12 @@ function serviceFields(
     defaultEstimatedMinutes = Math.round(hours * 60);
   }
 
+  const category = optionalField(formData, "category");
+  if (category && category.length > 80) return { error: "Category must be 80 characters or fewer." };
+
   return {
     name,
+    category,
     description,
     default_billing: defaultBilling,
     billing_interval: billingInterval,
@@ -65,6 +69,16 @@ function serviceFields(
     default_estimated_minutes: defaultEstimatedMinutes,
     active: formData.get("active") !== "off",
   };
+}
+
+type ServiceValues = Record<string, string | number | boolean | null>;
+
+function withoutCategoryField(values: ServiceValues): ServiceValues {
+  return Object.fromEntries(Object.entries(values).filter(([key]) => key !== "category"));
+}
+
+function missingCategoryColumn(message: string): boolean {
+  return /category/i.test(message) && /column|schema cache/i.test(message);
 }
 
 function revalidateServicePaths() {
@@ -83,7 +97,16 @@ export async function createServiceAction(
   const auth = await getUserClient();
   if ("error" in auth) return auth;
 
-  const { error } = await auth.supabase.from("services").insert(values);
+  let { error } = await auth.supabase.from("services").insert(values);
+  if (error && missingCategoryColumn(error.message)) {
+    // Database is behind (0030 not applied): save without the category.
+    const withoutCategory = withoutCategoryField(values as ServiceValues);
+    ({ error } = await auth.supabase.from("services").insert(withoutCategory));
+    if (!error) {
+      revalidateServicePaths();
+      return { success: "Service created. Categories need database update 0030 (it is optional)." };
+    }
+  }
   if (error) {
     if (error.code === "23505") return { error: "A service with that name already exists." };
     return { error: readableError(error.message) };
@@ -103,7 +126,11 @@ export async function updateServiceAction(
   const auth = await getUserClient();
   if ("error" in auth) return auth;
 
-  const { error, count } = await auth.supabase.from("services").update(values, { count: "exact" }).eq("id", id);
+  let { error, count } = await auth.supabase.from("services").update(values, { count: "exact" }).eq("id", id);
+  if (error && missingCategoryColumn(error.message)) {
+    const withoutCategory = withoutCategoryField(values as ServiceValues);
+    ({ error, count } = await auth.supabase.from("services").update(withoutCategory, { count: "exact" }).eq("id", id));
+  }
   if (error) {
     if (error.code === "23505") return { error: "A service with that name already exists." };
     return { error: readableError(error.message) };

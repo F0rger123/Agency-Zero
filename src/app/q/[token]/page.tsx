@@ -6,6 +6,7 @@ import { isMissingTable } from "@/lib/forms";
 import { MigrationsRequired, SetupRequired } from "@/components/states";
 import { ViewBeacon } from "@/components/view-beacon";
 import { markQuoteViewedAction } from "./actions";
+import { periodPhrase, summarizeQuoteLines } from "@/lib/quote-math";
 import { QuoteDocument, type PublicLine } from "./quote-response-form";
 
 export const metadata: Metadata = { title: "Proposal" };
@@ -62,6 +63,7 @@ export default async function PublicQuotePage({ params }: { params: Promise<{ to
   const quote = response.data as Quote;
   const money = (cents: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: quote.currency }).format(cents / 100);
+  const summary = summarizeQuoteLines(quote.line_items ?? [], quote.discount_cents, quote.tax_rate);
   const date = (value: string | null) =>
     value ? new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(`${value}T00:00:00Z`)) : "—";
 
@@ -74,13 +76,26 @@ export default async function PublicQuotePage({ params }: { params: Promise<{ to
         </p>
         <h1 className="mt-5 text-3xl font-semibold tracking-tight">{quote.title}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {quote.number} · Prepared for {quote.client_name}
+          Prepared for {quote.client_name}
           {quote.company ? `, ${quote.company}` : ""}
         </p>
         <dl className="mt-8 grid gap-4 text-sm sm:grid-cols-3">
           <div><dt className="text-muted-foreground">Issued</dt><dd className="mt-1 font-medium">{date(quote.issued_on)}</dd></div>
           <div><dt className="text-muted-foreground">Valid until</dt><dd className="mt-1 font-medium">{date(quote.valid_until)}</dd></div>
-          <div><dt className="text-muted-foreground">Full-price reference</dt><dd className="mt-1 font-medium">{money(quote.total_cents)}</dd></div>
+          <div>
+            <dt className="text-muted-foreground">Price</dt>
+            <dd className="mt-1 font-medium">
+              {money(summary.total)}
+              {summary.recurring.map(([period, cents]) => (
+                <span key={period} className="block text-xs font-normal text-muted-foreground">
+                  includes {money(cents)} {periodPhrase(period)}
+                </span>
+              ))}
+              {summary.optional > 0 ? (
+                <span className="block text-xs font-normal text-muted-foreground">+ {money(summary.optional)} optional extras</span>
+              ) : null}
+            </dd>
+          </div>
         </dl>
         {quote.notes ? (
           <p className="mt-8 max-w-prose whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{quote.notes}</p>

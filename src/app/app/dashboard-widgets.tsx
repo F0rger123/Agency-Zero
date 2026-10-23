@@ -169,7 +169,7 @@ export function KpiGrid({ summary }: { summary: DashboardSummary }) {
         />
       </li>
       <li>
-        <Stat label="Waiting on client" value={summary.waiting_on_client} />
+        <Stat label="Open tasks" value={summary.tasks_open} />
       </li>
       <li>
         <Stat

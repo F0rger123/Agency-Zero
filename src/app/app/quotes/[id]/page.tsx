@@ -8,7 +8,19 @@ import { PICKER_LIMIT } from "@/lib/limits";
 import { PageHeader } from "@/components/page-header";
 import { FormSection } from "@/components/form-controls";
 import { MigrationsRequired, SetupRequired } from "@/components/states";
-import { ConvertQuoteForm, DeleteQuoteForm, EditQuoteForm, RegenerateQuoteLinkForm } from "../quote-forms";
+import { ConfirmDelete } from "@/components/confirm-delete";
+import { LinkDialog } from "@/components/modal";
+import { periodPhrase, summarizeQuoteLines } from "@/lib/quote-math";
+import { deleteQuoteAction } from "../actions";
+import { editorLines } from "../quote-data";
+import {
+  ConvertQuoteForm,
+  EditQuoteForm,
+  MarkSentForm,
+  RegenerateQuoteLinkForm,
+  ReopenQuoteForm,
+  RespondQuoteDialog,
+} from "../quote-forms";
 
 export const metadata: Metadata = { title: "Quote" };
 
@@ -96,25 +108,13 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
     billing_interval: string;
   }[];
 
-  const quote = {
-    ...raw,
-    line_items: lineItems.map((line) => ({
-      service_id: line.service_id ?? "",
-      description: line.description,
-      details: line.details ?? "",
-      qty: line.qty,
-      unit_amount: line.unit_amount_cents / 100,
-      is_recurring: line.is_recurring,
-      billing_period: line.billing_period ?? "month",
-      selection: line.selection,
-      option_group: line.option_group ?? "",
-    })),
-  };
+  const quote = { ...raw, line_items: editorLines(lineItems) };
   const money = (cents: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: raw.currency }).format(cents / 100);
   const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
   const publicLink = `${site || ""}/q/${raw.public_token}`;
   const isAccepted = raw.status === "accepted";
+  const summary = summarizeQuoteLines(lineItems, raw.discount_cents, raw.tax_rate);
   const selectedIds = new Set(raw.selected_item_ids ?? []);
   const datetime = (value: string | null) => (value ? new Date(value).toLocaleString() : null);
 
@@ -124,8 +124,8 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
         ← All quotes
       </Link>
       <PageHeader
-        title={`${raw.number}: ${raw.title}`}
-        description={`Status: ${raw.status} · Issued ${new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(`${raw.issued_on}T00:00:00Z`))}`}
+        title={raw.title}
+        description={`${raw.status} · Issued ${new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(`${raw.issued_on}T00:00:00Z`))}`}
       />
 
       <div className="flex flex-wrap items-center gap-3 border-y border-border py-4">
@@ -148,6 +148,36 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
           </span>
         ) : null}
       </div>
+
+      {!isAccepted ? (
+        <div className="flex flex-wrap items-center gap-3 border-b border-border py-4">
+          <LinkDialog label="Edit" title="Edit quote" className="rounded-md border border-border px-4 py-2 text-sm text-foreground hover:bg-muted">
+            <EditQuoteForm
+              clients={clients.map((client) => ({
+                id: client.id,
+                label: `${client.name}${client.company ? ` · ${client.company}` : ""}`,
+              }))}
+              services={services}
+              quote={quote}
+            />
+          </LinkDialog>
+          {raw.status === "draft" || raw.status === "expired" ? <MarkSentForm id={raw.id} /> : null}
+          <RespondQuoteDialog id={raw.id} decision="accepted" lines={lineItems} currency={raw.currency} />
+          {raw.status === "rejected" ? (
+            <ReopenQuoteForm id={raw.id} />
+          ) : (
+            <RespondQuoteDialog id={raw.id} decision="rejected" />
+          )}
+          <span className="grow" />
+          <ConfirmDelete
+            action={deleteQuoteAction}
+            fields={{ id: raw.id, after: "list" }}
+            title="Delete this quote?"
+            message="This permanently removes the quote and its customer link. This cannot be undone."
+            className="text-sm text-red-600 hover:text-red-700"
+          />
+        </div>
+      ) : null}
 
       {isAccepted ? (
         <FormSection
@@ -200,7 +230,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
 
       <FormSection
         title="Line items"
-        description="Quote totals assume every option is taken; the accepted total reflects the customer's actual selection."
+        description="The total counts included items only. Optional add-ons and package choices are up to the customer."
       >
         <ul className="divide-y divide-border border-y border-border">
           {lineItems.map((line) => (
@@ -213,7 +243,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
                   ) : null}
                   <p className="mt-1 text-xs text-muted-foreground">
                     {line.qty} × {money(line.unit_amount_cents)}
-                    {line.is_recurring ? ` · recurring ${line.billing_period}` : ""} · {selectionLabel(line)}
+                    {line.is_recurring ? ` · ${periodPhrase(line.billing_period)}` : " · one-time"} · {selectionLabel(line)}
                   </p>
                 </div>
                 <span>{money(line.amount_cents)}</span>
@@ -223,21 +253,39 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
         </ul>
         <dl className="ml-auto mt-6 max-w-sm divide-y divide-border border-y border-border text-sm">
           <div className="flex justify-between gap-4 py-3">
-            <dt className="text-muted-foreground">Subtotal</dt>
-            <dd>{money(raw.subtotal_cents)}</dd>
+            <dt className="text-muted-foreground">Included items</dt>
+            <dd>{money(summary.subtotal)}</dd>
           </div>
-          <div className="flex justify-between gap-4 py-3">
-            <dt className="text-muted-foreground">Discount</dt>
-            <dd>−{money(raw.discount_cents)}</dd>
-          </div>
-          <div className="flex justify-between gap-4 py-3">
-            <dt className="text-muted-foreground">Tax ({raw.tax_rate}%)</dt>
-            <dd>{money(raw.tax_cents)}</dd>
-          </div>
+          {summary.discount > 0 ? (
+            <div className="flex justify-between gap-4 py-3">
+              <dt className="text-muted-foreground">Discount</dt>
+              <dd>−{money(summary.discount)}</dd>
+            </div>
+          ) : null}
+          {summary.tax > 0 ? (
+            <div className="flex justify-between gap-4 py-3">
+              <dt className="text-muted-foreground">Tax ({raw.tax_rate}%)</dt>
+              <dd>{money(summary.tax)}</dd>
+            </div>
+          ) : null}
           <div className="flex justify-between gap-4 py-3 font-medium">
             <dt>Total</dt>
-            <dd>{money(raw.total_cents)}</dd>
+            <dd>{money(summary.total)}</dd>
           </div>
+          {summary.recurring.map(([period, cents]) => (
+            <div key={period} className="flex justify-between gap-4 py-3">
+              <dt className="text-muted-foreground">Of which repeats</dt>
+              <dd>
+                {money(cents)} {periodPhrase(period)}
+              </dd>
+            </div>
+          ))}
+          {summary.optional > 0 ? (
+            <div className="flex justify-between gap-4 py-3">
+              <dt className="text-muted-foreground">Optional extras (not counted)</dt>
+              <dd>{money(summary.optional)}</dd>
+            </div>
+          ) : null}
         </dl>
       </FormSection>
 
@@ -265,24 +313,10 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
       {isAccepted ? (
         <FormSection title="Quote record">
           <p className="text-sm text-muted-foreground">
-            This quote has been accepted by the customer and is now immutable. Create a new quote if the scope changes.
+            The customer accepted this quote, so it is locked and kept as a permanent record. Create a new quote if the scope changes.
           </p>
         </FormSection>
-      ) : (
-        <FormSection title="Quote record">
-          <EditQuoteForm
-            clients={clients.map((client) => ({
-              id: client.id,
-              label: `${client.name}${client.company ? ` · ${client.company}` : ""}`,
-            }))}
-            services={services}
-            quote={quote}
-          />
-          <div className="mt-8 border-t border-border pt-6">
-            <DeleteQuoteForm id={raw.id} />
-          </div>
-        </FormSection>
-      )}
+      ) : null}
     </>
   );
 }

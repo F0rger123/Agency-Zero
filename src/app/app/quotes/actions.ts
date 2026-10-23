@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getUserClient, notFoundWhenNoRows } from "@/lib/actions";
-import { createPublicToken } from "@/lib/public-tokens";
+import { createPublicToken, hashPublicToken } from "@/lib/public-tokens";
 import { field, optionalDate, optionalField, readableError, requiredText, type ActionState } from "@/lib/forms";
 
 const statuses = ["draft", "sent", "viewed", "accepted", "rejected", "expired"];
@@ -109,8 +110,9 @@ function quoteValues(formData: FormData): { values: Record<string, unknown>; lin
   const taxRate = Number(field(formData, "tax_rate") || 0);
   if (!Number.isFinite(taxRate) || taxRate < 0 || taxRate > 100)
     return { error: "Tax rate must be between 0 and 100 percent." };
-  const subtotal = lines.reduce((sum, line) => sum + line.amount_cents, 0);
-  if (discount > subtotal) return { error: "Discount cannot exceed the subtotal." };
+  // The quoted price is the included items only; optional add-ons and package choices are the customer's call.
+  const subtotal = lines.filter((line) => line.selection === "fixed").reduce((sum, line) => sum + line.amount_cents, 0);
+  if (discount > subtotal) return { error: "Discount cannot exceed the included items total." };
   const currency = (field(formData, "currency") || "USD").toUpperCase();
   if (!/^[A-Z]{3}$/.test(currency)) return { error: "Currency must be a three-letter code such as USD." };
   const taxable = subtotal - discount;
@@ -213,13 +215,14 @@ export async function deleteQuoteAction(_previous: ActionState, formData: FormDa
   const current = await auth.supabase.from("quotes").select("status").eq("id", id).maybeSingle();
   if (current.error) return { error: readableError(current.error.message) };
   if (current.data?.status === "accepted")
-    return { error: "Accepted quotes cannot be deleted; they are a permanent record." };
+    return { error: "Accepted quotes cannot be deleted; they are a permanent record of what the customer agreed to." };
   const { error, count } = await auth.supabase.from("quotes").delete({ count: "exact" }).eq("id", id);
   if (error) return { error: readableError(error.message) };
   const missing = notFoundWhenNoRows(count, "Quote");
   if (missing) return missing;
   revalidatePath("/app/quotes");
   revalidatePath("/app");
+  if (field(formData, "after") === "list") redirect("/app/quotes");
   return { success: "Quote deleted." };
 }
 
@@ -254,4 +257,80 @@ export async function convertQuoteAction(_previous: ActionState, formData: FormD
   revalidatePath("/app/projects");
   revalidatePath("/app");
   return { success: `Project created from quote${data ? `: ${data}` : "."}` };
+}
+
+/** Draft → sent. The customer link only works for sent quotes. */
+export async function markQuoteSentAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const id = field(formData, "id");
+  if (!id) return { error: "Quote ID is missing." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error, count } = await auth.supabase
+    .from("quotes")
+    .update({ status: "sent" }, { count: "exact" })
+    .eq("id", id)
+    .in("status", ["draft", "expired"]);
+  if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Draft quote");
+  if (missing) return missing;
+  revalidatePath("/app/quotes");
+  revalidatePath(`/app/quotes/${id}`);
+  revalidatePath("/app");
+  return { success: "Marked as sent." };
+}
+
+/** A declined quote goes back to draft so it can be edited and sent again. */
+export async function reopenQuoteAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const id = field(formData, "id");
+  if (!id) return { error: "Quote ID is missing." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error, count } = await auth.supabase
+    .from("quotes")
+    .update({ status: "draft", rejected_at: null, responded_by: null }, { count: "exact" })
+    .eq("id", id)
+    .eq("status", "rejected");
+  if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Declined quote");
+  if (missing) return missing;
+  revalidatePath("/app/quotes");
+  revalidatePath(`/app/quotes/${id}`);
+  revalidatePath("/app");
+  return { success: "Moved back to draft." };
+}
+
+const MANUAL_RESPONDER = "Recorded by you (manual)";
+
+/**
+ * The customer said yes or no outside the link (call, text, in person). Goes through the same database function the
+ * public page uses, so the accepted selection, accepted totals and timestamps are validated and tracked identically.
+ * Accepting freezes the quote (migration 0008).
+ */
+export async function respondToQuoteAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const id = field(formData, "id");
+  const decision = field(formData, "decision");
+  if (!id) return { error: "Quote ID is missing." };
+  if (decision !== "accepted" && decision !== "rejected") return { error: "Choose accepted or declined." };
+  const selected = formData.getAll("selected").map(String).filter(Boolean);
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const current = await auth.supabase.from("quotes").select("status, public_token").eq("id", id).maybeSingle();
+  if (current.error) return { error: readableError(current.error.message) };
+  if (!current.data) return { error: "Quote not found." };
+  if (current.data.status === "accepted") return { error: "This quote was already accepted." };
+  if (current.data.status !== "sent" && current.data.status !== "viewed") {
+    const { error } = await auth.supabase.from("quotes").update({ status: "sent" }).eq("id", id);
+    if (error) return { error: readableError(error.message) };
+  }
+  const { error } = await auth.supabase.rpc("respond_public_quote", {
+    p_token_hash: hashPublicToken(current.data.public_token),
+    p_decision: decision,
+    p_selected_item_ids: decision === "accepted" ? selected : null,
+    p_responded_by: MANUAL_RESPONDER,
+  });
+  if (error) return { error: readableError(error.message) };
+  revalidatePath("/app/quotes");
+  revalidatePath(`/app/quotes/${id}`);
+  revalidatePath("/app");
+  return { success: decision === "accepted" ? "Marked as accepted." : "Marked as declined." };
 }

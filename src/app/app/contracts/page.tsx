@@ -66,7 +66,7 @@ export default async function ContractsPage() {
               id: item.id,
               label: `${item.name}${item.company ? ` · ${item.company}` : ""}`,
             }))}
-            quotes={quotes.map((item) => ({ id: item.id, label: `${item.number} · ${item.title}` }))}
+            quotes={quotes.map((item) => ({ id: item.id, label: item.title }))}
             projects={projects.map((item) => ({ id: item.id, label: item.name }))}
             templates={templates.filter((item) => item.active).map((item) => ({ id: item.id, label: item.name }))}
           />

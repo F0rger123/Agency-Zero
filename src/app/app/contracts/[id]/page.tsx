@@ -168,7 +168,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
               id: item.id,
               label: `${item.name}${item.company ? ` · ${item.company}` : ""}`,
             }))}
-            quotes={quotes.map((item) => ({ id: item.id, label: `${item.number} · ${item.title}` }))}
+            quotes={quotes.map((item) => ({ id: item.id, label: item.title }))}
             projects={projects.map((item) => ({ id: item.id, label: item.name }))}
             templates={templates.map((item) => ({ id: item.id, label: item.name }))}
             contract={contract}

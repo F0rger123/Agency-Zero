@@ -7,7 +7,12 @@ import { isMissingTable } from "@/lib/forms";
 import { LIST_LIMIT, PICKER_LIMIT } from "@/lib/limits";
 import { PageHeader } from "@/components/page-header";
 import { MigrationsRequired, SetupRequired, LimitNotice } from "@/components/states";
-import { NewQuoteForm } from "./quote-forms";
+import { ConfirmDelete } from "@/components/confirm-delete";
+import { LinkDialog } from "@/components/modal";
+import { EditQuoteForm, NewQuoteForm } from "./quote-forms";
+import { LINE_COLUMNS, editorLines, type StoredQuoteLine } from "./quote-data";
+import { QuotePrice } from "./quote-price";
+import { deleteQuoteAction } from "./actions";
 
 export const metadata: Metadata = { title: "Quotes" };
 
@@ -18,7 +23,7 @@ export default async function QuotesPage() {
     supabase
       .from("quotes")
       .select(
-        "id, number, title, status, issued_on, valid_until, total_cents, currency, client_id, public_token, converted_project_id, clients(name, company)",
+        "id, number, title, notes, status, issued_on, valid_until, discount_cents, tax_rate, total_cents, currency, client_id, public_token, converted_project_id, clients(name, company)",
       )
       .order("created_at", { ascending: false })
       .limit(LIST_LIMIT),
@@ -38,6 +43,9 @@ export default async function QuotesPage() {
   const quotes = (quotesResponse.data ?? []) as {
     id: string;
     number: string;
+    notes: string | null;
+    discount_cents: number;
+    tax_rate: number;
     title: string;
     status: string;
     issued_on: string;
@@ -50,6 +58,30 @@ export default async function QuotesPage() {
     clients: { name: string; company: string | null } | { name: string; company: string | null }[] | null;
   }[];
   const clients = (clientsResponse.data ?? []) as { id: string; name: string; company: string | null }[];
+  // Line items for the visible quotes: price breakdown and the Edit dialog.
+  // `kind` (quote or estimate) arrives with migration 0027; read on its own so a database that is behind never breaks the list.
+  const kindResponse = await supabase.from("quotes").select("id, kind").limit(LIST_LIMIT);
+  const kindById = new Map(
+    (kindResponse.error ? [] : ((kindResponse.data ?? []) as { id: string; kind: string }[])).map((row) => [row.id, row.kind]),
+  );
+  const linesByQuote = new Map<string, StoredQuoteLine[]>();
+  if (quotes.length > 0) {
+    const linesResponse = await supabase
+      .from("quote_line_items")
+      .select(LINE_COLUMNS)
+      .in("quote_id", quotes.map((quote) => quote.id))
+      .order("sort_order")
+      .limit(3000);
+    for (const line of (linesResponse.data ?? []) as StoredQuoteLine[]) {
+      const list = linesByQuote.get(line.quote_id as string) ?? [];
+      list.push(line);
+      linesByQuote.set(line.quote_id as string, list);
+    }
+  }
+  const clientOptions = clients.map((client) => ({
+    id: client.id,
+    label: `${client.name}${client.company ? ` · ${client.company}` : ""}`,
+  }));
   const services = (servicesResponse.data ?? []) as {
     id: string;
     name: string;
@@ -57,15 +89,13 @@ export default async function QuotesPage() {
     default_price_cents: number | null;
     billing_interval: string;
   }[];
-  const money = (cents: number, currency: string) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency }).format(cents / 100);
   const date = (value: string | null) =>
     value ? new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(`${value}T00:00:00Z`)) : "—";
   return (
     <>
       <PageHeader
         title="Quotes"
-        description="Build proposals with priced line items, recurring services, taxes, secure customer links, and response tracking."
+        description="Build a quote, send the link, and track whether it was viewed, accepted or declined."
       />
       <LimitNotice shown={quotesResponse.data?.length ?? 0} limit={LIST_LIMIT} hint="Older quotes are hidden; find them in the client workspace." />
       <section>
@@ -75,10 +105,7 @@ export default async function QuotesPage() {
           </h2>
           <AddDialog label="New quote" title="New quote">
             <NewQuoteForm
-              clients={clients.map((client) => ({
-                id: client.id,
-                label: `${client.name}${client.company ? ` · ${client.company}` : ""}`,
-              }))}
+              clients={clientOptions}
               services={services}
             />
           </AddDialog>
@@ -89,17 +116,15 @@ export default async function QuotesPage() {
           </p>
         ) : (
           <div className="mt-4 overflow-x-auto border-y border-border">
-            <table className="w-full min-w-[850px] text-left text-sm">
+            <table className="w-full min-w-[760px] text-left text-sm">
               <thead className="border-b border-border text-[11px] uppercase tracking-widest text-muted-foreground">
                 <tr>
                   <th className="px-3 py-3 font-medium">Quote</th>
                   <th className="px-3 py-3 font-medium">Client</th>
                   <th className="px-3 py-3 font-medium">Status</th>
                   <th className="px-3 py-3 font-medium">Valid until</th>
-                  <th className="px-3 py-3 font-medium">Total</th>
-                  <th className="px-3 py-3 font-medium">
-                    <span className="sr-only">Open</span>
-                  </th>
+                  <th className="px-3 py-3 font-medium">Price</th>
+                  <th className="px-3 py-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -112,18 +137,45 @@ export default async function QuotesPage() {
                           href={`/app/quotes/${quote.id}`}
                           className="font-medium underline decoration-border underline-offset-4"
                         >
-                          {quote.number}
+                          {quote.title}
                         </Link>
-                        <p className="mt-1 text-xs text-muted-foreground">{quote.title}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{kindById.get(quote.id) === "estimate" ? "Estimate" : "Quote"}</p>
                       </td>
                       <td className="px-3 py-4 text-muted-foreground">{client?.name ?? "—"}</td>
                       <td className="px-3 py-4 text-muted-foreground">{quote.status}</td>
                       <td className="px-3 py-4 text-muted-foreground">{date(quote.valid_until)}</td>
-                      <td className="px-3 py-4 text-muted-foreground">{money(quote.total_cents, quote.currency)}</td>
-                      <td className="px-3 py-4 text-right">
-                        <Link href={`/app/quotes/${quote.id}`} className="underline decoration-border underline-offset-4">
-                          Open
-                        </Link>
+                      <td className="px-3 py-4">
+                        <QuotePrice
+                          lines={linesByQuote.get(quote.id) ?? []}
+                          discountCents={quote.discount_cents}
+                          taxRate={quote.tax_rate}
+                          currency={quote.currency}
+                        />
+                      </td>
+                      <td className="px-3 py-4">
+                        <div className="flex items-center justify-end gap-4 text-xs">
+                          <Link href={`/app/quotes/${quote.id}`} className="underline decoration-border underline-offset-4">
+                            Open
+                          </Link>
+                          {quote.status === "accepted" ? null : (
+                            <>
+                              <LinkDialog label="Edit" title="Edit quote" className="text-xs text-foreground">
+                                <EditQuoteForm
+                                  clients={clientOptions}
+                                  services={services}
+                                  quote={{ ...quote, kind: kindById.get(quote.id), line_items: editorLines(linesByQuote.get(quote.id) ?? []) }}
+                                />
+                              </LinkDialog>
+                              <ConfirmDelete
+                                action={deleteQuoteAction}
+                                fields={{ id: quote.id }}
+                                title={`Delete ${quote.title}?`}
+                                message="This permanently removes the quote and its customer link. This cannot be undone."
+                                className="text-xs text-red-600 hover:text-red-700"
+                              />
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

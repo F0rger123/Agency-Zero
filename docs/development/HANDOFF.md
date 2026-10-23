@@ -1,5 +1,13 @@
 # Handoff log (newest first)
 
+## 2026-10-23 — Claude — quotes: edit/delete/accept/decline; home decluttered; services wizard
+
+**Migration to apply: `0030_service_categories.sql`** (one nullable column; paste-ready copy in `supabase/scripts/apply-0030.sql`; `/app/system` and `check-applied.sql` probe it). Without it, services save and list normally, grouped under "Other".
+- **Quotes** (D-060): list rows have Open / Edit (dialog) / Delete (confirm); detail page has an action bar (Edit, Mark as sent, Mark accepted/declined with a "which extras" picker, Move back to draft, Delete). Reference number removed from every screen (still stored; generated as `Q-YYYYMMDD-HHMMSS-XX`). Price is computed from included items with recurring shown as "includes $X every month"; same on the public `/q/<token>` page (replaces "Full-price reference"). New-quote wizard no longer asks for a number. Accepted quotes remain locked/undeletable by the 0008 trigger (unchanged on purpose). `quote-math.ts` has `summarizeQuoteLines`.
+- **Home**: removed Coming Up, Client Responses, Reminders, Upcoming Deadlines, Waiting on Client, Money to Chase, Delivery, Recent Activity (the KPI strip's "Waiting on client" stat became "Open tasks"). Widgets regrouped: Customers hero + Tasks/Calendar/Projects/Reminders, "Sell and get paid" (Leads, Quotes, Contracts, Invoices, Services), "Content and growth" (Marketing, Social, Shoots, Workload). Dead panel components remain exported in `home-panels.tsx` / `dashboard-widgets.tsx` for a later cleanup.
+- **Services** (D-061): 5-step New service wizard (category + ready-made starting points → name → one-time/recurring + price with `$` → time/active → review); catalogue grouped by category with Edit (dialog) and Deactivate on each row.
+- Unverified in a real browser and against real Supabase (lint, tsc, vitest, SQL tests, build pass). Manual accept relies on `respond_public_quote` being callable by the signed-in owner (granted to `authenticated` in 0008).
+
 ## 2026-10-23 — Claude — new quote is a step-by-step wizard
 
 **No migration.**

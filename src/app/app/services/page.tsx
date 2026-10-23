@@ -1,4 +1,5 @@
-import { AddDialog } from "@/components/modal";
+import { AddDialog, LinkDialog } from "@/components/modal";
+import { groupServices } from "@/lib/service-presets";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -40,15 +41,17 @@ export default async function ServicesPage() {
   if (!isSupabaseConfigured()) return <SetupRequired />;
 
   const supabase = await createClient();
-  const [directoryResponse, clientsResponse] = await Promise.all([
+  const [directoryResponse, clientsResponse, categoriesResponse] = await Promise.all([
     supabase.rpc("get_service_directory"),
     supabase.from("clients").select("id, name").is("deleted_at", null).order("name").limit(PICKER_LIMIT),
+    // Categories arrive with migration 0030; on a database that is behind this errors and everything shows under "Other".
+    supabase.from("services").select("id, category").limit(500),
   ]);
 
   const header = (
     <PageHeader
       title="Services"
-      description="The catalogue behind assignments, quotes, and recurring revenue: default price, one-time or recurring billing, interval, and default estimated time."
+      description="What you sell, grouped by category. Each service sets the default price and billing for quotes and assignments."
     />
   );
 
@@ -74,7 +77,13 @@ export default async function ServicesPage() {
     );
   }
 
-  const services = (directoryResponse.data ?? []) as DirectoryService[];
+  const categoryById = new Map(
+    (categoriesResponse.error ? [] : ((categoriesResponse.data ?? []) as { id: string; category: string | null }[])).map((row) => [row.id, row.category]),
+  );
+  const services = ((directoryResponse.data ?? []) as DirectoryService[]).map((service) => ({
+    ...service,
+    category: categoryById.get(service.id) ?? null,
+  }));
   const clients = (clientsResponse.data ?? []) as { id: string; name: string }[];
   const activeServices = services.filter((service) => service.active);
   const totalMrr = services.reduce((sum, service) => sum + service.mrr_cents, 0);
@@ -84,7 +93,7 @@ export default async function ServicesPage() {
       {header}
 
       <div className="-mt-4 mb-8 flex flex-wrap gap-3">
-        <AddDialog label="New service" title="New catalogue service" description="Defines what you sell: default price, billing type and estimate.">
+        <AddDialog label="New service" title="New service" description="Step by step: pick a starting point, then set the price.">
           <NewServiceForm />
         </AddDialog>
         <AddDialog label="Assign to client" title="Assign a service to a client" variant="outline">
@@ -114,69 +123,63 @@ export default async function ServicesPage() {
       </div>
 
       <section aria-labelledby="service-list-heading" className="mt-12">
-        <h2 id="service-list-heading" className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+        <h2 id="service-list-heading" className="sr-only">
           Catalogue
         </h2>
         {services.length === 0 ? (
-          <p className="mt-4 border-t border-border py-8 text-sm text-muted-foreground">
-            No services yet. Add the first one below — services populate the assignment and quote line pickers.
+          <p className="border-t border-border py-8 text-sm text-muted-foreground">
+            No services yet. Use New service above; it walks you through it.
           </p>
         ) : (
-          <div className="mt-4 space-y-10">
-            {services.map((service) => (
-              <div key={service.id} className="border-t border-border pt-6">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <h3 className="text-base font-medium">
-                      {service.name}
-                      {service.active ? null : (
-                        <span className="ml-2 rounded-full border border-border px-2 py-0.5 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-                          Inactive
-                        </span>
-                      )}
-                    </h3>
-                    <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-                      {service.description || "No description yet."}
-                    </p>
-                  </div>
-                  <SetServiceActiveForm serviceId={service.id} active={service.active} />
-                </div>
-
-                <dl className="mt-4 grid gap-px border border-border bg-border sm:grid-cols-4">
-                  <div className="bg-background p-4">
-                    <dt className="text-[11px] uppercase tracking-widest text-muted-foreground">Billing</dt>
-                    <dd className="mt-1 text-sm font-medium">
-                      {service.default_billing === "recurring"
-                        ? `Recurring · ${billingIntervalLabel(service.billing_interval)}`
-                        : "One-time"}
-                    </dd>
-                  </div>
-                  <div className="bg-background p-4">
-                    <dt className="text-[11px] uppercase tracking-widest text-muted-foreground">Default price</dt>
-                    <dd className="mt-1 text-sm font-medium">{moneyNode(service.default_price_cents)}</dd>
-                  </div>
-                  <div className="bg-background p-4">
-                    <dt className="text-[11px] uppercase tracking-widest text-muted-foreground">Default estimate</dt>
-                    <dd className="mt-1 text-sm font-medium">{hoursLabel(service.default_estimated_minutes)}</dd>
-                  </div>
-                  <div className="bg-background p-4">
-                    <dt className="text-[11px] uppercase tracking-widest text-muted-foreground">Clients / MRR</dt>
-                    <dd className="mt-1 text-sm font-medium">
-                      {service.assigned_clients} assigned
-                      <span className="ml-1 text-muted-foreground">· {moneyNode(service.mrr_cents)}/mo</span>
-                    </dd>
-                  </div>
-                </dl>
-
-                <div className="mt-6">
-                  <EditServiceForm service={service} />
-                </div>
+          <div className="space-y-10">
+            {groupServices(services).map((group) => (
+              <div key={group.title}>
+                <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                  {group.title} <span className="text-faint-foreground">{group.items.length}</span>
+                </h3>
+                <ul className="mt-3 divide-y divide-border border-y border-border">
+                  {group.items.map((service) => (
+                    <li key={service.id} className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 py-4">
+                      <div className="min-w-0 grow basis-64">
+                        <p className="font-medium">
+                          {service.name}
+                          {service.active ? null : (
+                            <span className="ml-2 rounded-full border border-border px-2 py-0.5 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                              Inactive
+                            </span>
+                          )}
+                        </p>
+                        {service.description ? (
+                          <p className="mt-1 line-clamp-2 max-w-prose text-sm text-muted-foreground">{service.description}</p>
+                        ) : null}
+                      </div>
+                      <div className="text-sm">
+                        <p className="font-medium">
+                          {service.default_price_cents != null ? moneyNode(service.default_price_cents) : "No price set"}
+                          {service.default_billing === "recurring" ? (
+                            <span className="ml-1 font-normal text-muted-foreground">{billingIntervalLabel(service.billing_interval)}</span>
+                          ) : null}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {service.default_billing === "recurring" ? "Recurring" : "One-time"}
+                          {service.default_estimated_minutes != null ? ` · ${hoursLabel(service.default_estimated_minutes)}` : ""}
+                          {` · ${service.assigned_clients} ${service.assigned_clients === 1 ? "client" : "clients"}`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <LinkDialog label="Edit" title={`Edit ${service.name}`} className="text-xs text-foreground">
+                          <EditServiceForm service={service} />
+                        </LinkDialog>
+                        <SetServiceActiveForm serviceId={service.id} active={service.active} />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
         )}
       </section>
-
 
       <p className="mt-10 border-t border-border pt-6 text-xs text-muted-foreground">
         Services assigned to a client appear on the client workspace Services tab; recurring assignments feed the

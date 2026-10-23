@@ -1,11 +1,20 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useCallback, useState } from "react";
 import type { ReactNode } from "react";
 import type { ActionState } from "@/lib/forms";
-import { createQuoteAction, deleteQuoteAction, updateQuoteAction, convertQuoteAction, regenerateQuoteTokenAction } from "./actions";
+import {
+  createQuoteAction,
+  updateQuoteAction,
+  convertQuoteAction,
+  markQuoteSentAction,
+  regenerateQuoteTokenAction,
+  reopenQuoteAction,
+  respondToQuoteAction,
+} from "./actions";
 import { FieldLabel, FormMessage, SelectInput, SubmitButton, TextArea, TextInput } from "@/components/form-controls";
 import { Wizard } from "@/components/wizard";
+import { Modal, ModalContext } from "@/components/modal";
 import { moneyNode } from "@/components/money-node";
 import { lineTotalCents, localDateIso, quoteTotals, suggestQuoteNumber } from "@/lib/quote-math";
 
@@ -324,9 +333,12 @@ function Fields({
 }) {
   return (
     <div className="space-y-5">
+      {/* The reference number is internal (unique in the database); it is kept, never typed or shown. */}
+      <input type="hidden" name="number" value={quote?.number ?? suggestQuoteNumber("quote")} />
+      <input type="hidden" name="status" value={quote?.status ?? "draft"} />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <FieldLabel label="Title" htmlFor="quote-title" required />
+          <FieldLabel label="Name" htmlFor="quote-title" required />
           <TextInput id="quote-title" name="title" required defaultValue={quote?.title} placeholder="Website proposal" />
         </div>
         <div>
@@ -335,10 +347,6 @@ function Fields({
             <option value="quote">Quote / proposal</option>
             <option value="estimate">Estimate</option>
           </SelectInput>
-        </div>
-        <div>
-          <FieldLabel label="Number" htmlFor="quote-number" required />
-          <TextInput id="quote-number" name="number" required defaultValue={quote?.number} placeholder="Q-2026-001" />
         </div>
         <div>
           <FieldLabel label="Client" htmlFor="quote-client" required />
@@ -355,17 +363,6 @@ function Fields({
             ))}
           </SelectInput>
           )}
-        </div>
-        <div>
-          <FieldLabel label="Status" htmlFor="quote-status" required />
-          <SelectInput id="quote-status" name="status" required defaultValue={quote?.status ?? "draft"}>
-            <option value="draft">Draft</option>
-            <option value="sent">Sent</option>
-            <option value="viewed">Viewed</option>
-            <option value="accepted">Accepted</option>
-            <option value="rejected">Rejected</option>
-            <option value="expired">Expired</option>
-          </SelectInput>
         </div>
         <div>
           <FieldLabel label="Issued on" htmlFor="quote-issued" required />
@@ -501,10 +498,6 @@ export function NewQuoteForm({
                   <label htmlFor="nq-valid" className="text-xs font-medium text-muted-foreground">Good until (optional — 30 days is filled in)</label>
                   <input id="nq-valid" type="date" value={valid} onChange={(event) => setValid(event.target.value)} className={`${plain} mt-1`} />
                 </div>
-                <div>
-                  <label htmlFor="nq-number" className="text-xs font-medium text-muted-foreground">{word} number (made for you)</label>
-                  <input id="nq-number" required value={number} onChange={(event) => setNumber(event.target.value)} className={`${plain} mt-1`} />
-                </div>
               </div>
             ),
           },
@@ -538,7 +531,7 @@ export function NewQuoteForm({
                 <div className="rounded-xl border border-border p-4">
                   <p className="font-medium">{title || "Untitled"}</p>
                   <p className="mt-1 text-muted-foreground">
-                    {[clientName || (lockedClientId ? "This client" : ""), number, `issued ${issued}`].filter(Boolean).join(" · ")}
+                    {[clientName || (lockedClientId ? "This client" : ""), `issued ${issued}`].filter(Boolean).join(" · ")}
                   </p>
                 </div>
                 <ul className="divide-y divide-border rounded-xl border border-border">
@@ -608,17 +601,6 @@ export function EditQuoteForm({
   );
 }
 
-export function DeleteQuoteForm({ id }: { id: string }) {
-  const [state, action] = useActionState(deleteQuoteAction, initialState);
-  return (
-    <form action={action} className="flex flex-wrap items-center gap-4">
-      <input type="hidden" name="id" value={id} />
-      <SubmitButton pendingLabel="Deleting…" className="bg-background px-0 py-0 text-sm font-normal text-muted-foreground ring-0 hover:text-foreground">Delete quote</SubmitButton>
-      <FormMessage {...state} />
-    </form>
-  );
-}
-
 export function ConvertQuoteForm({ id }: { id: string }) {
   const [state, action] = useActionState(convertQuoteAction, initialState);
   return (
@@ -640,5 +622,129 @@ export function RegenerateQuoteLinkForm({ id }: { id: string }) {
       </button>
       <FormMessage {...state} />
     </form>
+  );
+}
+
+export function MarkSentForm({ id }: { id: string }) {
+  const [state, action] = useActionState(markQuoteSentAction, initialState);
+  return (
+    <form action={action} className="flex flex-wrap items-center gap-3">
+      <input type="hidden" name="id" value={id} />
+      <SubmitButton pendingLabel="Saving…">Mark as sent</SubmitButton>
+      <FormMessage {...state} />
+    </form>
+  );
+}
+
+export function ReopenQuoteForm({ id }: { id: string }) {
+  const [state, action] = useActionState(reopenQuoteAction, initialState);
+  return (
+    <form action={action} className="flex flex-wrap items-center gap-3">
+      <input type="hidden" name="id" value={id} />
+      <SubmitButton pendingLabel="Saving…" className="bg-background text-foreground ring-1 ring-border">Move back to draft</SubmitButton>
+      <FormMessage {...state} />
+    </form>
+  );
+}
+
+export type ChoosableLine = { id: string; description: string; amount_cents: number; selection: string; option_group: string | null };
+
+/**
+ * "Mark as accepted / declined" for when the customer answered outside the link. Asks first, lets you tick which
+ * add-ons / packages they took, and records the answer exactly like the public page does (time, selection, totals).
+ */
+export function RespondQuoteDialog({
+  id,
+  decision,
+  lines = [],
+  currency = "USD",
+  className = "",
+}: {
+  id: string;
+  decision: "accepted" | "rejected";
+  lines?: ChoosableLine[];
+  currency?: string;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  const [state, formAction] = useActionState(respondToQuoteAction, initialState);
+  const [picked, setPicked] = useState<string[]>([]);
+  const accept = decision === "accepted";
+  const choosable = accept ? lines.filter((line) => line.selection !== "fixed") : [];
+  const money = (cents: number) => new Intl.NumberFormat("en-US", { style: "currency", currency }).format(cents / 100);
+  const toggle = (line: ChoosableLine) =>
+    setPicked((current) => {
+      if (current.includes(line.id)) return current.filter((value) => value !== line.id);
+      const others =
+        line.selection === "choice"
+          ? current.filter((value) => lines.find((item) => item.id === value)?.option_group !== line.option_group)
+          : current;
+      return [...others, line.id];
+    });
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={`press rounded-md px-4 py-2 text-sm font-medium transition-opacity ${
+          accept ? "bg-inverted text-inverted-foreground hover:opacity-80" : "border border-border hover:bg-muted"
+        } ${className}`}
+      >
+        {accept ? "Mark accepted" : "Mark declined"}
+      </button>
+      <ModalContext.Provider value={{ close }}>
+        <Modal open={open} onClose={close} title={accept ? "Mark this as accepted?" : "Mark this as declined?"}>
+          <form action={formAction} className="space-y-5">
+            <input type="hidden" name="id" value={id} />
+            <input type="hidden" name="decision" value={decision} />
+            {picked.map((value) => (
+              <input key={value} type="hidden" name="selected" value={value} />
+            ))}
+            <p className="text-sm leading-6 text-muted-foreground">
+              {accept
+                ? "Use this when the customer said yes outside the link (call, text, in person). The time is recorded and the quote is locked, so it can no longer be edited or deleted."
+                : "Use this when the customer said no. The time is recorded. You can move it back to draft later and edit it."}
+            </p>
+            {choosable.length > 0 ? (
+              <fieldset>
+                <legend className="text-sm font-medium">Which extras did they take?</legend>
+                <ul className="mt-2 divide-y divide-border rounded-xl border border-border">
+                  {choosable.map((line) => (
+                    <li key={line.id}>
+                      <label className="flex cursor-pointer items-center gap-3 px-4 py-3 text-sm">
+                        <input
+                          type={line.selection === "choice" ? "radio" : "checkbox"}
+                          checked={picked.includes(line.id)}
+                          onChange={() => toggle(line)}
+                          onClick={() => {
+                            if (line.selection === "choice" && picked.includes(line.id)) toggle(line);
+                          }}
+                          className="size-4 accent-black"
+                        />
+                        <span className="grow">
+                          {line.description}
+                          <span className="block text-xs text-muted-foreground">
+                            {line.selection === "choice" ? `Package choice${line.option_group ? ` · ${line.option_group}` : ""}` : "Optional add-on"}
+                          </span>
+                        </span>
+                        <span>{money(line.amount_cents)}</span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </fieldset>
+            ) : null}
+            <div className="flex flex-wrap items-center gap-3">
+              <SubmitButton pendingLabel="Saving…">{accept ? "Yes, mark accepted" : "Yes, mark declined"}</SubmitButton>
+              <button type="button" onClick={close} className="press rounded-md border border-border px-4 py-2 text-sm hover:bg-muted">
+                Cancel
+              </button>
+              <FormMessage {...state} />
+            </div>
+          </form>
+        </Modal>
+      </ModalContext.Provider>
+    </>
   );
 }

@@ -51,6 +51,11 @@ const probes: Probe[] = [
   table("meetings", "0027"),
   table("lock_in_sessions", "0029"),
   {
+    name: "service categories (services.category)",
+    migration: "0030",
+    run: (s) => s.from("services").select("category", { count: "exact", head: true }),
+  },
+  {
     name: "estimates + client portal columns (quotes.kind, clients.portal_*)",
     migration: "0027",
     run: (s) => s.from("clients").select("portal_token, portal_enabled", { count: "exact", head: true }),

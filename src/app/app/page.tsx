@@ -7,18 +7,8 @@ import { todayIso } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { DataFailure, MigrationsRequired, SetupRequired } from "@/components/states";
 import { HomeWidgets } from "./home-widgets";
-import { AgendaPanel, InvoicesPanel, Panel, RemindersPanel, ResponsesPanel, type AgendaEvent, type InvoiceRow, type ReminderRow, type ResponseRow } from "./home-panels";
-import {
-  DeliveryPanel,
-  type UpcomingShoot,
-  KpiGrid,
-  RevenueCards,
-  type RevenueSummary,
-  RecentActivity,
-  UpcomingDeadlines,
-  WaitingOnClient,
-  type DashboardSummary,
-} from "./dashboard-widgets";
+import { Panel } from "./home-panels";
+import { KpiGrid, RevenueCards, type RevenueSummary, type DashboardSummary } from "./dashboard-widgets";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -52,73 +42,12 @@ export default async function DashboardPage() {
   const today = todayIso();
   // Two cheap aggregates in parallel. Revenue is a separate read model so a
   // missing migration 0018 degrades only the revenue cards, never the dashboard.
-  const nowIso = new Date().toISOString();
-  const since = new Date(new Date().getTime() - 14 * 86400000).toISOString();
-  const [{ data, error }, revenueResponse, leadsResponse, shootsResponse, eventsResponse, remindersResponse, unpaidResponse, quotesAnsweredResponse, contractsSignedResponse, bugsResponse] = await Promise.all([
+  const [{ data, error }, revenueResponse, leadsResponse] = await Promise.all([
     retryOnClockSkew(() => supabase.rpc("get_dashboard_summary", { p_today: today })),
     retryOnClockSkew(() => supabase.rpc("get_revenue_summary", { p_today: today })),
-    // New website inquiries (migration 0019). Errors (e.g. not applied yet) just hide the strip.
+    // New website inquiries (migration 0019). Errors (e.g. not applied yet) just hide the count.
     supabase.from("leads").select("id", { count: "exact", head: true }).eq("status", "new"),
-    // Next content shoots (0024) and open bugs (0023): optional panels that simply hide on a database that is behind.
-    supabase
-      .from("shoots")
-      .select("id, title, shoot_date, start_time, location, status, clients(name)")
-      .gte("shoot_date", today)
-      .in("status", ["planned", "confirmed"])
-      .order("shoot_date")
-      .order("start_time", { nullsFirst: false })
-      .limit(5),
-    supabase.from("calendar_events").select("id, title, type, starts_at").gte("starts_at", nowIso).order("starts_at").limit(5),
-    supabase.from("reminders").select("id, message, due_at").eq("done", false).order("due_at").limit(5),
-    supabase
-      .from("invoices")
-      .select("id, number, title, due_on, balance_cents, currency, clients(name)")
-      .in("status", ["sent", "partially_paid", "overdue"])
-      .order("due_on")
-      .limit(5),
-    supabase
-      .from("quotes")
-      .select("id, title, status, accepted_at, rejected_at, clients(name)")
-      .or(`accepted_at.gte.${since},rejected_at.gte.${since}`)
-      .limit(10),
-    supabase
-      .from("contracts")
-      .select("id, title, signed_at, clients(name)")
-      .gte("signed_at", since)
-      .limit(10),
-    supabase.from("tasks").select("severity").eq("kind", "bug").not("status", "in", "(done,cancelled)").limit(500),
   ]);
-  const upcomingShoots = (shootsResponse.error ? null : (shootsResponse.data ?? [])) as unknown as UpcomingShoot[] | null;
-  const openBugs = bugsResponse.error ? null : (bugsResponse.data ?? []) as { severity: string | null }[];
-  const events = (eventsResponse.error ? null : (eventsResponse.data ?? [])) as AgendaEvent[] | null;
-  const reminders = (remindersResponse.error ? null : (remindersResponse.data ?? [])) as ReminderRow[] | null;
-  const unpaid = (unpaidResponse.error ? null : (unpaidResponse.data ?? [])) as unknown as InvoiceRow[] | null;
-  const clientName = (value: unknown) => ((Array.isArray(value) ? value[0] : value) as { name?: string } | null)?.name ?? null;
-  const responses: ResponseRow[] | null =
-    quotesAnsweredResponse.error || contractsSignedResponse.error
-      ? null
-      : [
-          ...((quotesAnsweredResponse.data ?? []) as unknown as { id: string; title: string; accepted_at: string | null; rejected_at: string | null; clients: unknown }[]).map((quote): ResponseRow => ({
-            id: `q-${quote.id}`,
-            kind: "quote",
-            title: quote.title,
-            client: clientName(quote.clients),
-            outcome: quote.accepted_at ? "accepted" : "declined",
-            at: (quote.accepted_at ?? quote.rejected_at) as string,
-            href: `/app/quotes/${quote.id}`,
-          })),
-          ...((contractsSignedResponse.data ?? []) as unknown as { id: string; title: string; signed_at: string; clients: unknown }[]).map((contract): ResponseRow => ({
-            id: `c-${contract.id}`,
-            kind: "contract",
-            title: contract.title,
-            client: clientName(contract.clients),
-            outcome: "signed",
-            at: contract.signed_at,
-            href: `/app/contracts/${contract.id}`,
-          })),
-        ]
-          .sort((a, b) => (a.at < b.at ? 1 : -1))
-          .slice(0, 6);
   const newLeads = leadsResponse.error ? 0 : (leadsResponse.count ?? 0);
   const revenue = revenueResponse.error ? null : (revenueResponse.data as RevenueSummary | null);
 
@@ -184,31 +113,9 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="mt-12 grid gap-4 lg:grid-cols-2">
-        <Panel className="lg:col-span-2">
+      <div className="mt-12">
+        <Panel>
           <KpiGrid summary={summary} />
-        </Panel>
-        <ResponsesPanel rows={responses} />
-        <AgendaPanel events={events} />
-        <RemindersPanel reminders={reminders} now={nowIso} />
-        <Panel>
-          <UpcomingDeadlines summary={summary} />
-        </Panel>
-        <Panel>
-          <WaitingOnClient summary={summary} />
-        </Panel>
-        <InvoicesPanel invoices={unpaid} today={today} />
-        {upcomingShoots !== null || openBugs !== null ? (
-          <Panel>
-            <DeliveryPanel
-              shoots={upcomingShoots}
-              openBugs={openBugs ? openBugs.length : null}
-              criticalBugs={openBugs ? openBugs.filter((bug) => bug.severity === "critical").length : 0}
-            />
-          </Panel>
-        ) : null}
-        <Panel className="lg:col-span-2">
-          <RecentActivity summary={summary} />
         </Panel>
       </div>
     </>

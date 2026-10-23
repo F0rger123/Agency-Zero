@@ -31,7 +31,7 @@ export function QuotesTab({ data }: { data: ClientWorkspaceData }) {
             <li key={quote.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
               <div>
                 <Link href={crmHref(quote.href)} className="font-medium underline decoration-border underline-offset-4">
-                  {quote.number} · {quote.title}
+                  {quote.title}
                 </Link>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {quote.status}

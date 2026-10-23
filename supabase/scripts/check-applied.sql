@@ -39,5 +39,11 @@ select * from (
   union all
   select '0028', 'phone-only inquiries (leads.email can be empty)',
          exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'leads' and column_name = 'email' and is_nullable = 'YES')
+  union all
+  select '0029', 'Lock In sessions table',
+         to_regclass('public.lock_in_sessions') is not null
+  union all
+  select '0030', 'service categories (services.category)',
+         exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'services' and column_name = 'category')
 ) checks
 order by migration, what;
