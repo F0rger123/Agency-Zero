@@ -6,7 +6,7 @@ import { getUserClient } from "@/lib/actions";
 import { field, isMissingTable, optionalField, readableError, requiredText, type ActionState } from "@/lib/forms";
 import { createPublicToken } from "@/lib/public-tokens";
 import { parseBoard } from "@/lib/whiteboard/ops";
-import { defaultBoard } from "@/lib/whiteboard/template";
+import { buildTemplate } from "@/lib/whiteboard/templates";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 const MAX_BYTES = 3_000_000;
@@ -25,7 +25,7 @@ export async function createWhiteboardAction(_previous: ActionState, formData: F
   const token = createPublicToken();
   const { data, error } = await auth.supabase
     .from("whiteboards")
-    .insert({ title, client_id: clientId && UUID.test(clientId) ? clientId : null, data: defaultBoard(), public_token: token.token, public_token_hash: token.hash })
+    .insert({ title, client_id: clientId && UUID.test(clientId) ? clientId : null, data: buildTemplate(field(formData, "template") || "sales"), public_token: token.token, public_token_hash: token.hash })
     .select("id")
     .single();
   if (error) return { error: friendly(error.message) };

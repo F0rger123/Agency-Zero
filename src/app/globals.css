@@ -1702,6 +1702,6 @@ html[data-splash="seen"] .app-splash { display: none; }
 .wb-frame:hover { background: var(--color-muted); }
 .wb-frame-on { background: var(--color-foreground); color: var(--color-background); }
 .wb-frame-on:hover { background: var(--color-foreground); }
-.wb-frame-label { max-width: 0; overflow: hidden; white-space: nowrap; font-size: 0.8125rem; font-weight: 500; transition: max-width 0.35s var(--ease-out), padding 0.35s var(--ease-out); }
+.wb-frame-label { max-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8125rem; font-weight: 500; transition: max-width 0.35s var(--ease-out), padding 0.35s var(--ease-out); }
 .wb-frame-on .wb-frame-label { max-width: 9.5rem; padding-right: 0.8rem; }
 @media (prefers-reduced-motion: reduce) { .wb-rise, .wb-menu { animation: none; } .wb-frame-label { transition: none; } }

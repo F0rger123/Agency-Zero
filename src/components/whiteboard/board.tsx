@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Engine, type EditRequest, type Mode, type RemoteCursor, type Style, type Tool } from "@/lib/whiteboard/engine";
+import { Engine, type Mode, type RemoteCursor, type Style, type Tool } from "@/lib/whiteboard/engine";
 import { newId } from "@/lib/whiteboard/ids";
 import { mergeBoards } from "@/lib/whiteboard/ops";
 import { buildPdf, dataUrlToBytes } from "@/lib/whiteboard/pdf";
-import { renderFrameCanvas, NOTE_FONT } from "@/lib/whiteboard/render";
+import { renderFrameCanvas } from "@/lib/whiteboard/render";
 import { defaultBoard } from "@/lib/whiteboard/template";
 import { openTransport, type Status, type Transport } from "@/lib/whiteboard/transport";
 import { INK, NOTE_COLORS, PEN_WIDTHS, type BoardData, type Message, type Op, type ShapeKind } from "@/lib/whiteboard/types";
@@ -17,7 +17,6 @@ type Role = "owner" | "guest";
 type ShareMode = "edit" | "view" | "off";
 type Menu = null | "shapes" | "more" | "export" | "share";
 
-const FRAME_SHORT = ["Problem", "Needs", "How I help", "Path forward"];
 const SHAPES: { kind: ShapeKind; label: string }[] = [
   { kind: "rect", label: "Rectangle" },
   { kind: "ellipse", label: "Circle" },
@@ -80,9 +79,7 @@ export function BoardEditor({
   const [following, setFollowing] = useState(true);
   const [status, setStatus] = useState<Status>("connecting");
   const [peers, setPeers] = useState(0);
-  const [, setTick] = useState(0);
   const [zoom, setZoom] = useState(100);
-  const [edit, setEdit] = useState<EditRequest | null>(null);
   const [hist, setHist] = useState({ undo: false, redo: false });
   const [menu, setMenu] = useState<Menu>(null);
   const [toast, setToast] = useState("");
@@ -91,9 +88,10 @@ export function BoardEditor({
   const [saveState, setSaveState] = useState<"saved" | "saving" | "error">("saved");
   const [title, setTitle] = useState(initialTitle);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [dock, setDock] = useState(false);
 
   const viewOnly = role === "guest" && shareMode === "view";
-  const live = useRef({ frame: 0, following: true, present: false, shareMode: initialShareMode, edit: null as EditRequest | null, token: initialToken });
+  const live = useRef({ frame: 0, following: true, present: false, dock: false, shareMode: initialShareMode, token: initialToken });
   const transport = useRef<Transport | null>(null);
   const outbox = useRef<Op[]>([]);
   const flushTimer = useRef<number | undefined>(undefined);
@@ -107,7 +105,7 @@ export function BoardEditor({
   const goFrameRef = useRef<(index: number, manual?: boolean) => void>(() => {});
 
   useEffect(() => {
-    live.current = { frame, following, present, shareMode, edit, token };
+    live.current = { frame, following, present, dock, shareMode, token };
   });
 
   const showToast = useCallback((message: string) => {
@@ -199,12 +197,8 @@ export function BoardEditor({
           if (flushTimer.current === undefined) flushTimer.current = window.setTimeout(flush, 30);
           scheduleSave();
         },
-        onEdit: (request) => {
-          live.current.edit = request;
-          setEdit(request);
-        },
+        onEdit: () => {},
         onView: () => {
-          if (live.current.edit) setTick((value) => value + 1);
           window.clearTimeout(zoomTimer.current);
           zoomTimer.current = window.setTimeout(() => setZoom(Math.round(created.getView().s * 100)), 90);
         },
@@ -304,6 +298,11 @@ export function BoardEditor({
     engine.setMode(mode);
   }, [engine, present, viewOnly]);
 
+  // Tools in presentation mode: the camera stays on the page, but drawing and the other tools work.
+  useEffect(() => {
+    engine?.setAnnotate(present && dock && !viewOnly);
+  }, [engine, present, dock, viewOnly]);
+
   // The board owns the screen: nothing behind it may scroll or bounce.
   useEffect(() => {
     const html = document.documentElement;
@@ -342,12 +341,16 @@ export function BoardEditor({
   };
   const endPresent = useCallback(() => {
     setPresent(false);
+    setDock(false);
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
   }, []);
 
   useEffect(() => {
     const onFullscreen = () => {
-      if (!document.fullscreenElement && live.current.present) setPresent(false);
+      if (!document.fullscreenElement && live.current.present) {
+        setPresent(false);
+        setDock(false);
+      }
     };
     document.addEventListener("fullscreenchange", onFullscreen);
     return () => document.removeEventListener("fullscreenchange", onFullscreen);
@@ -364,11 +367,18 @@ export function BoardEditor({
         if (["ArrowRight", "ArrowDown", "PageDown", " ", "Enter"].includes(event.key)) {
           event.preventDefault();
           goFrame(engine.getFrame() + 1, false);
-        } else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(event.key)) {
+          return;
+        }
+        if (["ArrowLeft", "ArrowUp", "PageUp"].includes(event.key) || (event.key === "Backspace" && !live.current.dock)) {
           event.preventDefault();
           goFrame(engine.getFrame() - 1, false);
-        } else if (event.key === "Escape") endPresent();
-        return;
+          return;
+        }
+        if (event.key === "Escape") {
+          endPresent();
+          return;
+        }
+        if (!live.current.dock) return;
       }
       const meta = event.metaKey || event.ctrlKey;
       if (meta && event.key.toLowerCase() === "z") {
@@ -453,8 +463,8 @@ export function BoardEditor({
   const frames = engine?.getData().frames ?? data.frames;
   const frameCount = frames.length;
   const drawable = !viewOnly && !present;
-  const showStyle = drawable && (tool === "pen" || tool === "shape" || tool === "text" || tool === "note");
-  const editTarget = engine && edit ? engine.getEditTarget(edit.id) : null;
+  const toolsVisible = !viewOnly && (!present || dock);
+  const showStyle = toolsVisible && (tool === "pen" || tool === "shape" || tool === "text" || tool === "note");
 
   const toolButton = (key: Tool, icon: WbIconName, label: string, onClick?: () => void) => (
     <button
@@ -468,6 +478,84 @@ export function BoardEditor({
     >
       <WbIcon name={icon} />
     </button>
+  );
+
+  const toolbar = (
+        <div className={`pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]`} data-wb-menu>
+          {showStyle ? (
+            <div className="wb-rise pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1.5 rounded-2xl border border-border bg-background/95 px-3 py-2 shadow-lg backdrop-blur">
+              <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Colour">
+                {(tool === "note" ? NOTE_COLORS : INK).map((color) => {
+                  const chosen = (tool === "note" ? style.noteColor : style.color) === color;
+                  return (
+                    <button
+                      key={color}
+                      type="button"
+                      role="radio"
+                      aria-checked={chosen}
+                      aria-label={color}
+                      onClick={() => setStyle((value) => (tool === "note" ? { ...value, noteColor: color } : { ...value, color }))}
+                      className={`size-7 rounded-full border transition-transform ${chosen ? "scale-110 border-foreground ring-2 ring-foreground/20" : "border-black/10"}`}
+                      style={{ background: color }}
+                    />
+                  );
+                })}
+              </div>
+              {tool === "pen" || tool === "shape" ? (
+                <div className="flex items-center gap-1" role="radiogroup" aria-label="Thickness">
+                  {PEN_WIDTHS.map((width) => (
+                    <button key={width} type="button" role="radio" aria-checked={style.width === width} aria-label={`Thickness ${width}`} onClick={() => setStyle((value) => ({ ...value, width }))} className={`grid size-8 place-items-center rounded-full transition-colors ${style.width === width ? "bg-muted" : ""}`}>
+                      <span className="rounded-full bg-foreground" style={{ width: 4 + width, height: 4 + width }} />
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {tool === "text" ? (
+                <div className="flex items-center gap-1" role="radiogroup" aria-label="Text size">
+                  {TEXT_SIZES.map((size, index) => (
+                    <button key={size} type="button" role="radio" aria-checked={style.textSize === size} aria-label={`Text size ${["small", "medium", "large"][index]}`} onClick={() => setStyle((value) => ({ ...value, textSize: size }))} className={`grid size-8 place-items-center rounded-full font-semibold transition-colors ${style.textSize === size ? "bg-muted" : ""}`} style={{ fontSize: 11 + index * 4 }}>A</button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {menu === "shapes" ? (
+            <div className="wb-rise pointer-events-auto flex items-center gap-1 rounded-2xl border border-border bg-background/95 p-1.5 shadow-lg backdrop-blur" role="radiogroup" aria-label="Shape">
+              {SHAPES.map((shape) => (
+                <button key={shape.kind} type="button" role="radio" aria-checked={style.shape === shape.kind && tool === "shape"} aria-label={shape.label} title={shape.label} onClick={() => (setStyle((value) => ({ ...value, shape: shape.kind })), setTool("shape"), setMenu(null))} className={`wb-btn !size-11 ${style.shape === shape.kind && tool === "shape" ? "wb-btn-on" : ""}`}>
+                  <WbIcon name={shape.kind} />
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {menu === "more" ? (
+            <div className="wb-rise pointer-events-auto w-[min(92vw,16rem)] rounded-2xl border border-border bg-background/95 p-1.5 shadow-lg backdrop-blur">
+              <button type="button" className="wb-menu-item" disabled={!hist.redo} onClick={() => (engine?.redo(), setMenu(null))}>Redo</button>
+              {present ? null : (
+                <>
+                  <button type="button" className="wb-menu-item" onClick={() => (engine?.zoomBy(1.25), setMenu(null))}>Zoom in</button>
+                  <button type="button" className="wb-menu-item" onClick={() => (engine?.zoomBy(0.8), setMenu(null))}>Zoom out</button>
+                  <button type="button" className="wb-menu-item" onClick={() => (engine?.fit(), setMenu(null))}>Fit to screen</button>
+                </>
+              )}
+              <button type="button" className="wb-menu-item text-red-600" onClick={() => (setConfirmClear(true), setMenu(null))}>Clear this frame…</button>
+            </div>
+          ) : null}
+          <div className="pointer-events-auto grid w-full max-w-[30rem] grid-cols-8 gap-0.5 rounded-[1.6rem] border border-border bg-background/95 p-1 shadow-xl backdrop-blur">
+            {toolButton("select", "select", "Move")}
+            {toolButton("pen", "pen", "Pen")}
+            {toolButton("eraser", "eraser", "Eraser")}
+            {toolButton("shape", "shapes", "Shapes", () => (setMenu(menu === "shapes" ? null : "shapes"), tool !== "shape" && setTool("shape")))}
+            {toolButton("text", "text", "Text")}
+            {toolButton("note", "note", "Sticky note")}
+            <button type="button" aria-label="Undo" title="Undo" disabled={!hist.undo} onClick={() => engine?.undo()} className="wb-btn disabled:opacity-30">
+              <WbIcon name="undo" />
+            </button>
+            <button type="button" aria-label="More" title="More" aria-pressed={menu === "more"} onClick={() => setMenu(menu === "more" ? null : "more")} className={`wb-btn ${menu === "more" ? "wb-btn-on" : ""}`}>
+              <WbIcon name="more" />
+            </button>
+          </div>
+        </div>
   );
 
   return (
@@ -574,7 +662,7 @@ export function BoardEditor({
                   className={`wb-frame press ${active ? "wb-frame-on" : ""}`}
                 >
                   <span className="grid size-7 shrink-0 place-items-center text-[13px] font-semibold tabular-nums">{index + 1}</span>
-                  <span className="wb-frame-label">{FRAME_SHORT[index] ?? entry.title}</span>
+                  <span className="wb-frame-label">{entry.title}</span>
                 </button>
               );
             })}
@@ -582,80 +670,8 @@ export function BoardEditor({
         </header>
       )}
 
-      {/* Toolbar */}
-      {drawable ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]" data-wb-menu>
-          {showStyle ? (
-            <div className="wb-rise pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1.5 rounded-2xl border border-border bg-background/95 px-3 py-2 shadow-lg backdrop-blur">
-              <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Colour">
-                {(tool === "note" ? NOTE_COLORS : INK).map((color) => {
-                  const chosen = (tool === "note" ? style.noteColor : style.color) === color;
-                  return (
-                    <button
-                      key={color}
-                      type="button"
-                      role="radio"
-                      aria-checked={chosen}
-                      aria-label={color}
-                      onClick={() => setStyle((value) => (tool === "note" ? { ...value, noteColor: color } : { ...value, color }))}
-                      className={`size-7 rounded-full border transition-transform ${chosen ? "scale-110 border-foreground ring-2 ring-foreground/20" : "border-black/10"}`}
-                      style={{ background: color }}
-                    />
-                  );
-                })}
-              </div>
-              {tool === "pen" || tool === "shape" ? (
-                <div className="flex items-center gap-1" role="radiogroup" aria-label="Thickness">
-                  {PEN_WIDTHS.map((width) => (
-                    <button key={width} type="button" role="radio" aria-checked={style.width === width} aria-label={`Thickness ${width}`} onClick={() => setStyle((value) => ({ ...value, width }))} className={`grid size-8 place-items-center rounded-full transition-colors ${style.width === width ? "bg-muted" : ""}`}>
-                      <span className="rounded-full bg-foreground" style={{ width: 4 + width, height: 4 + width }} />
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-              {tool === "text" ? (
-                <div className="flex items-center gap-1" role="radiogroup" aria-label="Text size">
-                  {TEXT_SIZES.map((size, index) => (
-                    <button key={size} type="button" role="radio" aria-checked={style.textSize === size} aria-label={`Text size ${["small", "medium", "large"][index]}`} onClick={() => setStyle((value) => ({ ...value, textSize: size }))} className={`grid size-8 place-items-center rounded-full font-semibold transition-colors ${style.textSize === size ? "bg-muted" : ""}`} style={{ fontSize: 11 + index * 4 }}>A</button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-          {menu === "shapes" ? (
-            <div className="wb-rise pointer-events-auto flex items-center gap-1 rounded-2xl border border-border bg-background/95 p-1.5 shadow-lg backdrop-blur" role="radiogroup" aria-label="Shape">
-              {SHAPES.map((shape) => (
-                <button key={shape.kind} type="button" role="radio" aria-checked={style.shape === shape.kind && tool === "shape"} aria-label={shape.label} title={shape.label} onClick={() => (setStyle((value) => ({ ...value, shape: shape.kind })), setTool("shape"), setMenu(null))} className={`wb-btn !size-11 ${style.shape === shape.kind && tool === "shape" ? "wb-btn-on" : ""}`}>
-                  <WbIcon name={shape.kind} />
-                </button>
-              ))}
-            </div>
-          ) : null}
-          {menu === "more" ? (
-            <div className="wb-rise pointer-events-auto w-[min(92vw,16rem)] rounded-2xl border border-border bg-background/95 p-1.5 shadow-lg backdrop-blur">
-              <button type="button" className="wb-menu-item" disabled={!hist.redo} onClick={() => (engine?.redo(), setMenu(null))}>Redo</button>
-              <button type="button" className="wb-menu-item" onClick={() => (engine?.zoomBy(1.25), setMenu(null))}>Zoom in</button>
-              <button type="button" className="wb-menu-item" onClick={() => (engine?.zoomBy(0.8), setMenu(null))}>Zoom out</button>
-              <button type="button" className="wb-menu-item" onClick={() => (engine?.fit(), setMenu(null))}>Fit to screen</button>
-              <button type="button" className="wb-menu-item text-red-600" onClick={() => (setConfirmClear(true), setMenu(null))}>Clear this frame…</button>
-            </div>
-          ) : null}
-          <div className="pointer-events-auto grid w-full max-w-[30rem] grid-cols-8 gap-0.5 rounded-[1.6rem] border border-border bg-background/95 p-1 shadow-xl backdrop-blur">
-            {toolButton("select", "select", "Move")}
-            {toolButton("pen", "pen", "Pen")}
-            {toolButton("eraser", "eraser", "Eraser")}
-            {toolButton("shape", "shapes", "Shapes", () => (setMenu(menu === "shapes" ? null : "shapes"), tool !== "shape" && setTool("shape")))}
-            {toolButton("text", "text", "Text")}
-            {toolButton("note", "note", "Sticky note")}
-            <button type="button" aria-label="Undo" title="Undo" disabled={!hist.undo} onClick={() => engine?.undo()} className="wb-btn disabled:opacity-30">
-              <WbIcon name="undo" />
-            </button>
-            <button type="button" aria-label="More" title="More" aria-pressed={menu === "more"} onClick={() => setMenu(menu === "more" ? null : "more")} className={`wb-btn ${menu === "more" ? "wb-btn-on" : ""}`}>
-              <WbIcon name="more" />
-            </button>
-          </div>
-        </div>
-      ) : null}
+      {/* Toolbar (also in presentation mode, when the tools are expanded) */}
+      {toolsVisible ? toolbar : null}
 
       {/* Zoom (desktop) */}
       {drawable || viewOnly ? (
@@ -667,45 +683,34 @@ export function BoardEditor({
         </div>
       ) : null}
 
-      {/* Text and sticky note editing, right on the board */}
-      {edit && editTarget ? (
-        <textarea
-          key={edit.id}
-          autoFocus
-          defaultValue={editTarget.el.s}
-          placeholder={edit.kind === "note" ? "Type a note" : "Type"}
-          onBlur={(event) => engine?.commitText(edit.id, event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Escape" || ((event.metaKey || event.ctrlKey) && event.key === "Enter")) {
-              event.preventDefault();
-              event.currentTarget.blur();
-            }
-          }}
-          className={`absolute z-30 resize-none overflow-hidden border-0 bg-transparent p-0 font-sans leading-[1.28] outline-none ${edit.kind === "note" ? "rounded-[14px] shadow-lg" : "outline-1 outline-dashed outline-blue-500/60"}`}
-          style={
-            editTarget.el.t === "note"
-              ? { left: editTarget.screen.x, top: editTarget.screen.y, width: editTarget.screen.w, height: editTarget.screen.h, padding: `${16 * editTarget.scale}px ${18 * editTarget.scale}px`, fontSize: NOTE_FONT * editTarget.scale, lineHeight: 1.3, background: editTarget.el.c, color: "#1f2937", fontWeight: 500 }
-              : { left: editTarget.screen.x, top: editTarget.screen.y, width: Math.max(editTarget.screen.w, 120), height: editTarget.screen.h + 8, fontSize: editTarget.el.size * editTarget.scale, color: editTarget.el.c, fontWeight: editTarget.el.bold ? 700 : 500 }
-          }
-        />
-      ) : null}
-
       {/* Presenting */}
       {present ? (
         <>
-          <button type="button" aria-label="Exit presentation" onClick={endPresent} className="wb-pill absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-30 grid size-11 place-items-center rounded-full">
+          <button type="button" aria-label="Exit presentation" onClick={endPresent} className="wb-pill absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-40 grid size-11 place-items-center rounded-full">
             <WbIcon name="close" className="size-5" />
           </button>
+          {viewOnly ? null : (
+            <button
+              type="button"
+              aria-pressed={dock}
+              aria-label={dock ? "Hide tools" : "Show tools"}
+              onClick={() => (setDock((value) => !value), setMenu(null))}
+              className={`wb-pill absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] z-40 flex h-11 items-center gap-2 rounded-full px-3.5 text-sm font-medium ${dock ? "!bg-foreground !text-background" : ""}`}
+            >
+              <WbIcon name="pen" className="size-5" />
+              <span className="hidden sm:inline">{dock ? "Hide tools" : "Tools"}</span>
+            </button>
+          )}
           <button type="button" aria-label="Previous frame" disabled={frame === 0} onClick={() => goFrame(frame - 1, false)} className="wb-pill absolute left-3 top-1/2 z-30 hidden size-12 -translate-y-1/2 place-items-center rounded-full disabled:opacity-0 sm:grid">
             <WbIcon name="prev" />
           </button>
           <button type="button" aria-label="Next frame" disabled={frame === frameCount - 1} onClick={() => goFrame(frame + 1, false)} className="wb-pill absolute right-3 top-1/2 z-30 hidden size-12 -translate-y-1/2 place-items-center rounded-full disabled:opacity-0 sm:grid">
             <WbIcon name="next" />
           </button>
-          <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
-            <div className="flex items-center gap-2 rounded-full border border-border bg-background/90 px-4 py-2 shadow-sm backdrop-blur">
+          <div className="pointer-events-none absolute inset-x-0 top-[max(0.75rem,env(safe-area-inset-top))] z-30 flex justify-center">
+            <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-border bg-background/90 px-4 py-2 shadow-sm backdrop-blur">
               {frames.map((entry, index) => (
-                <button key={entry.id} type="button" aria-label={`Go to frame ${index + 1}`} onClick={() => goFrame(index, false)} className={`h-2 rounded-full transition-all duration-300 ${index === frame ? "w-7 bg-foreground" : "w-2 bg-foreground/25"}`} />
+                <button key={entry.id} type="button" aria-label={`Go to frame ${index + 1}: ${entry.title}`} onClick={() => goFrame(index, false)} className={`h-2 rounded-full transition-all duration-300 ${index === frame ? "w-7 bg-foreground" : "w-2 bg-foreground/25"}`} />
               ))}
               <span className="ml-2 text-xs font-medium tabular-nums text-muted-foreground">{frame + 1} / {frameCount}</span>
             </div>

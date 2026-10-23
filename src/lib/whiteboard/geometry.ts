@@ -47,8 +47,19 @@ const distToSegment = (px: number, py: number, x1: number, y1: number, x2: numbe
   return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
 };
 
-/** Rough size of text in world units (the renderer measures exactly; this is only for hit testing and the editor box). */
-export function textBox(el: { x: number; y: number; s: string; size: number }) {
+type Measurable = { x: number; y: number; s: string; size: number; bold?: boolean };
+let measureText: ((el: Measurable) => { w: number; h: number }) | null = null;
+/** The renderer registers a real text measurer (canvas) so hit testing and selection boxes match what is drawn. */
+export function setTextMeasure(fn: (el: Measurable) => { w: number; h: number }) {
+  measureText = fn;
+}
+
+/** Size of a text element in world units. */
+export function textBox(el: Measurable) {
+  if (measureText) {
+    const m = measureText(el);
+    return { x: el.x, y: el.y, w: m.w, h: m.h };
+  }
   const lines = (el.s || " ").split("\n");
   const longest = Math.max(...lines.map((line) => line.length), 1);
   return { x: el.x, y: el.y, w: longest * el.size * 0.56 + 8, h: lines.length * el.size * 1.28 };

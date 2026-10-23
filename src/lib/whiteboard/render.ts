@@ -1,4 +1,4 @@
-import { exportBounds, textBox, type Viewport } from "./geometry";
+import { exportBounds, setTextMeasure, textBox, type Viewport } from "./geometry";
 import { ordered } from "./ops";
 import { SLIDE, type El, type Frame, type NoteEl, type ShapeEl, type StrokeEl, type TextEl } from "./types";
 
@@ -213,4 +213,17 @@ export function renderFrameCanvas(frame: Frame, scale = 2): HTMLCanvasElement {
   ctx.setTransform(scale, 0, 0, scale, -box.x * scale, -box.y * scale);
   for (const el of els) drawElement(ctx, el, false);
   return canvas;
+}
+
+// Real text measurement for hit testing (a tap on a word must land on that word, however big or bold it is).
+if (typeof document !== "undefined") {
+  let measureCtx: CanvasRenderingContext2D | null = null;
+  setTextMeasure((el) => {
+    measureCtx ??= document.createElement("canvas").getContext("2d");
+    const ctx = measureCtx as CanvasRenderingContext2D;
+    ctx.font = `${el.bold ? 700 : 500} ${el.size}px ${FONT}`;
+    const lines = (el.s || " ").split("\n");
+    const widest = Math.max(...lines.map((line) => ctx.measureText(line || " ").width), el.size * 0.6);
+    return { w: widest + 6, h: lines.length * el.size * 1.28 };
+  });
 }

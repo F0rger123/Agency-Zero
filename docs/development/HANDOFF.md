@@ -1,5 +1,13 @@
 # Handoff log (newest first)
 
+## 2026-10-23 — Claude — whiteboard templates, reliable text editing, tools in presentation mode
+
+**No migration** (still needs 0032 from the previous entry).
+- **Templates** (`src/lib/whiteboard/templates.ts`, tested): Sales call (default), Discovery call, Website kickoff, Marketing plan, Brainstorm, SWOT, Project roadmap, Meeting notes, Pros and cons, Blank. Chosen in the New board dialog (`template` field read by `createWhiteboardAction`). Every word and box is a normal element, so it can be edited, moved or erased; `tpl` elements survive "Clear this frame". Frame count varies per template (1–4); frame pills show each frame's own title (the pill name is set at creation and does not follow later edits to the heading text).
+- **Text editing**: the editor is now a real textarea created and focused by the engine inside the tap (React's mounted-later overlay was why phones sometimes did not open the keyboard); also a click fallback. Move tool: tap words to edit; Text tool: tap existing words to edit, empty space to add; Pen/Shape: double tap/click words to edit (the pen's dot is taken back). Text hit testing uses the real measured size. Mouse hover shows a text cursor over words. On phones the edited element is lifted above the keyboard.
+- **Present mode tools**: a "Tools" button (top left) expands the same toolbar over the slide (pen, eraser, shapes, text, notes, undo, clear); drawing and erasing work with mouse or touch while the camera stays locked; "Hide tools" collapses it and swipe/arrow-key navigation returns. Frame dots moved to the top. Arrow keys/space still change frames while tools are open; tool hotkeys work.
+- Verified in a browser (mock backend): creating boards from templates, editing template text with the mouse and with touch (keyboard focus opened), pen double-click editing, drawing and erasing in presentation mode, hiding tools and stepping frames, no horizontal overflow on a 390px phone in present mode.
+
 ## 2026-10-23 — Claude — Whiteboard for calls; Lock In stage redesign, no scrolling
 
 **Migration to apply: `0032_whiteboards.sql`** (table `whiteboards` + anonymous `get_public_whiteboard()`; paste-ready copy `supabase/scripts/apply-0032.sql`; probed on `/app/system` and in `check-applied.sql`). Supabase Realtime must be enabled for the project (it is by default): the live drawing uses a public **broadcast** channel `wb:<token>`; nothing needs configuring.

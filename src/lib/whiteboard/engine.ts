@@ -1,7 +1,7 @@
 import { clampScale, hits, moved, pinch, toWorld, zoomAt, type Viewport } from "./geometry";
 import { newId } from "./ids";
 import { applyOp, inverseOf, ordered } from "./ops";
-import { BACKDROP, drawElement, drawFrame, drawGrid, drawPage } from "./render";
+import { BACKDROP, NOTE_FONT, drawElement, drawFrame, drawGrid, drawPage } from "./render";
 import { SLIDE, type BoardData, type El, type NoteEl, type Op, type ShapeEl, type ShapeKind, type StrokeEl, type TextEl } from "./types";
 
 export type Tool = "select" | "pen" | "eraser" | "shape" | "text" | "note";
@@ -29,7 +29,7 @@ type Action =
   | { t: "erase"; removed: Map<string, El>; last: Pt }
   | { t: "move"; id: string; orig: El; start: Pt; startScreen: Pt; dragged: boolean }
   | { t: "pan"; last: Pt; vx: number; vy: number; lastT: number; startScreen: Pt; startT: number; swiped: boolean }
-  | { t: "create"; kind: "text" | "note"; at: Pt; startScreen: Pt; moved: boolean };
+  | { t: "create"; kind: "text" | "note"; at: Pt; startScreen: Pt; moved: boolean; targetId?: string };
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const TAP_SLOP = 6;
@@ -75,6 +75,9 @@ export class Engine {
   private observer: ResizeObserver;
   private destroyed = false;
   private removers: (() => void)[] = [];
+  private editor: HTMLTextAreaElement | null = null;
+  private annotate = false;
+  private lastTap: { t: number; p: Pt } | null = null;
 
   constructor(canvas: HTMLCanvasElement, data: BoardData, callbacks: Callbacks) {
     this.canvas = canvas;
@@ -101,6 +104,10 @@ export class Engine {
     });
     listen("wheel", (event) => this.wheel(event), { passive: false });
     listen("contextmenu", (event) => event.preventDefault());
+    // Some phones only open the keyboard for a focus() that happens inside a click.
+    listen("click", () => {
+      if (this.editingId && this.editor && document.activeElement !== this.editor) this.editor.focus({ preventScroll: true });
+    });
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.code === "Space" && !(event.target instanceof HTMLTextAreaElement) && !(event.target instanceof HTMLInputElement)) this.spaceDown = true;
     };
@@ -122,6 +129,7 @@ export class Engine {
     cancelAnimationFrame(this.raf);
     this.observer.disconnect();
     this.removers.forEach((remove) => remove());
+    this.editor?.remove();
   }
 
   getData() {
@@ -153,8 +161,15 @@ export class Engine {
   setStyle(patch: Partial<Style>) {
     this.style = { ...this.style, ...patch };
   }
+  /** In presentation mode, allow drawing and the other tools (the camera stays locked on the page). */
+  setAnnotate(on: boolean) {
+    this.annotate = on;
+    if (!on) this.finishText();
+    this.requestRender();
+  }
   setMode(mode: Mode) {
     this.mode = mode;
+    if (mode !== "present") this.annotate = false;
     if (mode !== "edit") this.finishText();
     if (mode === "present") this.fit(false);
     this.requestRender();
@@ -247,22 +262,10 @@ export class Engine {
     this.commit({ fwd: [op], inv });
   }
 
-  /** The element being edited, with where it sits on screen, for the text box overlay. */
-  getEditTarget(id: string): { el: TextEl | NoteEl; screen: { x: number; y: number; w: number; h: number }; scale: number } | null {
-    const el = (this.pending.get(id) ?? this.data.frames[this.frame].els[id]) as El | undefined;
-    if (!el || (el.t !== "text" && el.t !== "note")) return null;
-    const p = this.worldToScreen(el.x, el.y);
-    const w = el.t === "note" ? el.w : Math.max(160, el.s.length * el.size * 0.6 + 40);
-    const h = el.t === "note" ? el.h : Math.max(el.size * 1.4, el.s.split("\n").length * el.size * 1.28 + 8);
-    return { el, screen: { x: p.x, y: p.y, w: w * this.view.s, h: h * this.view.s }, scale: this.view.s };
-  }
-
   commitText(id: string, text: string) {
     const frame = this.data.frames[this.frame];
     const pending = this.pending.get(id);
     this.pending.delete(id);
-    if (this.editingId === id) this.editingId = null;
-    this.cb.onEdit(null);
     if (pending && pending.t === "text") {
       if (!text.trim()) return this.requestRender();
       this.commit({ fwd: [{ k: "put", f: this.frame, el: { ...pending, s: text } }], inv: [{ k: "del", f: this.frame, ids: [id] }] });
@@ -282,10 +285,8 @@ export class Engine {
   /* ── Internals ────────────────────────────────────────────────────────────────────────── */
 
   private finishText() {
-    if (this.editingId) {
-      this.cb.onEdit(null);
-      this.editingId = null;
-    }
+    // Blurring the editor saves what was typed (see endEdit).
+    if (this.editingId && this.editor) this.editor.blur();
     this.pending.clear();
   }
 
@@ -368,6 +369,19 @@ export class Engine {
     this.anim = null;
   }
 
+  /** Takes back the dots a pen leaves when you tap twice, so a double tap on words only edits them. */
+  private dropRecentDots() {
+    while (this.undoStack.length) {
+      const entry = this.undoStack[this.undoStack.length - 1];
+      const first = entry.fwd[0];
+      if (entry.fwd.length === 1 && first.k === "put" && first.el.t === "stroke" && first.el.pts.length <= 2 && Date.now() - first.el.ts < 900) {
+        this.undoStack.pop();
+        this.apply(entry.inv);
+      } else break;
+    }
+    this.cb.onHistory();
+  }
+
   private cancelAction() {
     const action = this.action;
     this.action = null;
@@ -380,11 +394,17 @@ export class Engine {
     if (action.t === "move") this.apply([{ k: "put", f: this.frame, el: action.orig }]);
   }
 
-  private topHit(p: Pt): El | null {
+  private topHit(p: Pt, skipFreshDots = false): El | null {
     const w = this.world(p);
     const slop = 8 / this.view.s;
     const els = ordered(this.data.frames[this.frame]);
-    for (let i = els.length - 1; i >= 0; i -= 1) if (hits(els[i], w.x, w.y, slop)) return els[i];
+    const now = Date.now();
+    for (let i = els.length - 1; i >= 0; i -= 1) {
+      const el = els[i];
+      // A dot the pen just left (the first tap of a double tap) is not what the second tap is aiming at.
+      if (skipFreshDots && el.t === "stroke" && el.pts.length <= 2 && now - el.ts < 900) continue;
+      if (hits(el, w.x, w.y, slop)) return el;
+    }
     return null;
   }
 
@@ -413,7 +433,7 @@ export class Engine {
 
     const panning = event.button === 1 || (event.pointerType === "mouse" && this.spaceDown);
     const w = this.world(p);
-    if (this.mode === "present") {
+    if (this.mode === "present" && !this.annotate) {
       this.action = { t: "pan", last: p, vx: 0, vy: 0, lastT: performance.now(), startScreen: p, startT: performance.now(), swiped: false };
       return;
     }
@@ -423,6 +443,19 @@ export class Engine {
     }
     if (event.button !== 0 && event.pointerType === "mouse") return;
     this.finishText();
+
+    // A quick double tap on words edits them, whichever drawing tool is active.
+    const now = performance.now();
+    const quick = this.lastTap && now - this.lastTap.t < 380 && Math.hypot(p.x - this.lastTap.p.x, p.y - this.lastTap.p.y) < 24;
+    this.lastTap = { t: now, p };
+    if (quick && (this.tool === "pen" || this.tool === "shape")) {
+      const over = this.topHit(p, true);
+      if (over && (over.t === "text" || over.t === "note")) {
+        this.dropRecentDots();
+        this.action = { t: "create", kind: over.t, at: w, startScreen: p, moved: false, targetId: over.id };
+        return;
+      }
+    }
 
     switch (this.tool) {
       case "pen": {
@@ -443,9 +476,13 @@ export class Engine {
         break;
       }
       case "text":
-      case "note":
-        this.action = { t: "create", kind: this.tool, at: w, startScreen: p, moved: false };
+      case "note": {
+        // Tapping words that are already there edits them; tapping empty space starts a new one.
+        const existing = this.topHit(p);
+        const target = existing && (existing.t === "text" || existing.t === "note") ? existing.id : undefined;
+        this.action = { t: "create", kind: this.tool, at: w, startScreen: p, moved: false, targetId: target };
         break;
+      }
       case "select": {
         const hit = this.topHit(p);
         if (hit) {
@@ -483,6 +520,10 @@ export class Engine {
     }
     if (this.pointers.size > 1 || this.suppress) return;
     if (this.tool === "eraser" && !this.action) this.requestRender();
+    if (!this.action && event.pointerType === "mouse" && this.mode !== "present" && (this.tool === "select" || this.tool === "text" || this.tool === "note")) {
+      const over = this.topHit(p);
+      this.canvas.style.cursor = over && (over.t === "text" || over.t === "note") ? "text" : this.tool === "select" ? "default" : this.tool === "text" ? "text" : "crosshair";
+    }
     const action = this.action;
     if (!action) return;
 
@@ -639,6 +680,11 @@ export class Engine {
       }
       case "create": {
         if (action.moved) break;
+        if (action.targetId) {
+          const target = this.data.frames[this.frame].els[action.targetId];
+          if (target && (target.t === "text" || target.t === "note")) this.beginEdit(target.id, target.t, false);
+          break;
+        }
         const w = action.at;
         if (action.kind === "text") {
           const el: TextEl = { id: newId(), ts: Date.now(), t: "text", x: w.x, y: w.y - this.style.textSize / 2, s: "", size: this.style.textSize, c: this.style.color };
@@ -665,11 +711,115 @@ export class Engine {
     }
   }
 
+  /**
+   * Text and notes are edited in a real textarea laid exactly over the element. It is created here (not by React) and focused
+   * synchronously inside the tap, which is what phones require before they will open the keyboard.
+   */
+  private ensureEditor(): HTMLTextAreaElement {
+    if (this.editor) return this.editor;
+    const ta = document.createElement("textarea");
+    ta.setAttribute("aria-label", "Edit text");
+    ta.setAttribute("autocapitalize", "sentences");
+    ta.spellcheck = true;
+    ta.style.cssText = "position:absolute;display:none;z-index:30;resize:none;overflow:hidden;margin:0;border:0;outline:none;white-space:pre;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;line-height:1.28;touch-action:manipulation;";
+    ta.addEventListener("blur", () => this.endEdit());
+    ta.addEventListener("input", () => this.layoutEditor());
+    ta.addEventListener("keydown", (event) => {
+      event.stopPropagation();
+      if (event.key === "Escape" || ((event.metaKey || event.ctrlKey) && event.key === "Enter")) {
+        event.preventDefault();
+        ta.blur();
+      }
+    });
+    (this.canvas.parentElement ?? document.body).appendChild(ta);
+    this.editor = ta;
+    return ta;
+  }
+
+  private editedElement(): TextEl | NoteEl | null {
+    if (!this.editingId) return null;
+    const el = (this.pending.get(this.editingId) ?? this.data.frames[this.frame].els[this.editingId]) as El | undefined;
+    return el && (el.t === "text" || el.t === "note") ? el : null;
+  }
+
+  /** Puts the editor where the element is on screen, at the element's on-screen size. */
+  private layoutEditor() {
+    const ta = this.editor;
+    const el = this.editedElement();
+    if (!ta || !el) return;
+    const s = this.view.s;
+    const p = this.worldToScreen(el.x, el.y);
+    ta.style.left = `${p.x}px`;
+    ta.style.top = `${p.y}px`;
+    if (el.t === "note") {
+      ta.style.width = `${el.w * s}px`;
+      ta.style.height = `${el.h * s}px`;
+      ta.style.padding = `${16 * s}px ${18 * s}px`;
+      ta.style.fontSize = `${Math.max(NOTE_FONT * s, 16)}px`;
+      ta.style.lineHeight = "1.3";
+      ta.style.background = el.c;
+      ta.style.color = "#1f2937";
+      ta.style.fontWeight = "500";
+      ta.style.borderRadius = `${14 * s}px`;
+      ta.style.boxShadow = "0 8px 18px rgba(17,24,39,0.18)";
+      ta.style.outline = "none";
+      ta.style.whiteSpace = "pre-wrap";
+      ta.style.overflowY = "auto";
+    } else {
+      ta.style.padding = "0";
+      ta.style.fontSize = `${Math.max(el.size * s, 16)}px`;
+      ta.style.lineHeight = "1.28";
+      ta.style.background = "transparent";
+      ta.style.color = el.c;
+      ta.style.fontWeight = el.bold ? "700" : "500";
+      ta.style.borderRadius = "4px";
+      ta.style.boxShadow = "none";
+      ta.style.outline = "1.5px dashed rgba(37,99,235,0.6)";
+      ta.style.outlineOffset = "4px";
+      ta.style.whiteSpace = "pre";
+      ta.style.overflow = "hidden";
+      ta.style.width = "0px";
+      ta.style.height = "0px";
+      ta.style.width = `${Math.max(ta.scrollWidth + 8, 140)}px`;
+      ta.style.height = `${Math.max(ta.scrollHeight + 2, el.size * 1.28 * s)}px`;
+    }
+  }
+
   private beginEdit(id: string, kind: "text" | "note", isNew: boolean) {
+    if (this.editingId && this.editingId !== id) this.finishText();
     this.editingId = id;
     this.selectedId = null;
+    const el = this.editedElement();
+    if (!el) {
+      this.editingId = null;
+      return;
+    }
+    const ta = this.ensureEditor();
+    ta.value = el.s;
+    ta.placeholder = kind === "note" ? "Type a note" : "Type";
+    ta.style.display = "block";
+    this.layoutEditor();
+    // On a phone, lift the element above the keyboard.
+    if (window.matchMedia("(pointer: coarse)").matches) {
+      const p = this.worldToScreen(el.x, el.y);
+      if (p.y > this.height * 0.4) this.animateTo({ ...this.view, y: this.view.y + (this.height * 0.28 - p.y) }, 260);
+    }
+    ta.focus({ preventScroll: true });
+    ta.setSelectionRange(ta.value.length, ta.value.length);
     this.cb.onEdit({ id, kind, isNew });
     this.requestRender();
+  }
+
+  private endEdit() {
+    const id = this.editingId;
+    const ta = this.editor;
+    if (!id || !ta) return;
+    const value = ta.value;
+    this.editingId = null;
+    ta.style.display = "none";
+    this.cb.onEdit(null);
+    this.commitText(id, value);
+    this.pending.delete(id);
   }
 
   private wheel(event: WheelEvent) {
@@ -768,6 +918,7 @@ export class Engine {
       ctx.arc(this.hover.x, this.hover.y, 12, 0, Math.PI * 2);
       ctx.stroke();
     }
+    if (this.editingId) this.layoutEditor();
     if (again) this.requestRender();
   }
 }

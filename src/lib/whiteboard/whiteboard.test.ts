@@ -143,3 +143,27 @@ describe("pdf", () => {
     expect(text.match(/\/Type \/Page /g)?.length).toBe(2);
   });
 });
+
+import { TEMPLATES, buildTemplate } from "./templates";
+
+describe("templates", () => {
+  it("every template is a valid board with every promised frame", () => {
+    expect(TEMPLATES.length).toBeGreaterThanOrEqual(10);
+    for (const template of TEMPLATES) {
+      const data = template.build();
+      expect(parseBoard(JSON.parse(JSON.stringify(data)))).not.toBeNull();
+      expect(data.frames.map((frame) => frame.title)).toEqual(template.frames);
+      for (const frame of data.frames) for (const el of Object.values(frame.els)) expect(el.id).toBeTruthy();
+    }
+  });
+  it("template text is plain editable text and survives clear", () => {
+    const data = buildTemplate("discovery");
+    const before = Object.keys(data.frames[0].els).length;
+    applyOp(data, { k: "clr", f: 0 });
+    expect(Object.keys(data.frames[0].els).length).toBe(before);
+    expect(Object.values(data.frames[0].els).some((el) => el.t === "text" && el.s === "Where they are today")).toBe(true);
+  });
+  it("falls back to the sales template", () => {
+    expect(buildTemplate("nope").frames[0].title).toBe("Their problem");
+  });
+});
