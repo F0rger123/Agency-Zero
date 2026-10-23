@@ -3,6 +3,7 @@
 import { useActionState, useCallback, useState } from "react";
 import { FormMessage } from "@/components/form-controls";
 import { Modal, ModalContext } from "@/components/modal";
+import { haptic } from "@/lib/haptics";
 import type { ActionState } from "@/lib/forms";
 
 /**
@@ -45,6 +46,8 @@ export function ConfirmDelete({
               <button
                 type="submit"
                 disabled={pending}
+                data-no-haptic
+                onClick={() => haptic("warning")}
                 className="press rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-85 disabled:cursor-wait disabled:opacity-50"
               >
                 {pending ? "Deleting…" : confirmLabel}

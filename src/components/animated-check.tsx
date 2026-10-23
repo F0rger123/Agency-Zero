@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { haptic } from "@/lib/haptics";
 
 const PIECES = Array.from({ length: 10 }, (_, index) => ({ angle: index * 36, distance: index % 2 === 0 ? 24 : 16 }));
 
@@ -37,8 +38,10 @@ export function AnimatedCheck({
       role="checkbox"
       aria-checked={checked}
       aria-label={label}
+      data-no-haptic
       onClick={() => {
         if (!checked) setPlays((value) => value + 1);
+        haptic(checked ? "light" : "success");
         onChange(!checked);
       }}
       className={`press relative inline-flex shrink-0 items-center justify-center rounded-full ${className}`}

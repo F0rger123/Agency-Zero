@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { AnimatedCheck, Burst } from "@/components/animated-check";
+import { AnimatedCheck } from "@/components/animated-check";
 import { Icon } from "@/components/icons";
 import { DictationHint, MicButton } from "@/components/mic-button";
 import { applyDictation } from "@/lib/dictation-text";
@@ -417,18 +417,18 @@ function Setup() {
 
   const preview =
     mode === "stopwatch" || mode === "countdown" ? (
-      <TimerRing fraction={mode === "countdown" ? 1 : goal > 0 ? 0.0001 : null} seconds={0} className={PREVIEW_RING}>
-        <span className="text-[clamp(2.25rem,9dvh,4.75rem)] font-semibold leading-none tabular-nums tracking-tight">{mode === "countdown" ? clock((goal || 25) * 60_000) : "00:00"}</span>
+      <TimerRing getState={() => ({ fraction: mode === "countdown" ? 1 : null, orbit: mode === "stopwatch" && goal === 0 ? 0 : null })} running={false} className={PREVIEW_RING}>
+        <span className="text-[clamp(2.25rem,9dvh,4.75rem)] font-extralight leading-none tabular-nums tracking-[-0.04em]">{mode === "countdown" ? clock((goal || 25) * 60_000) : "00:00"}</span>
         <span className="mt-1.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{mode === "countdown" ? "to go" : goal > 0 ? `goal ${goal} min` : "counting up"}</span>
       </TimerRing>
     ) : mode === "checklist" ? (
-      <TimerRing fraction={0} seconds={null} className={PREVIEW_RING}>
-        <span className="text-[clamp(2.25rem,9dvh,4.75rem)] font-semibold leading-none tabular-nums tracking-tight">0<span className="text-muted-foreground">/{items.length}</span></span>
+      <TimerRing getState={() => ({ fraction: 0, orbit: null })} running={false} className={PREVIEW_RING}>
+        <span className="text-[clamp(2.25rem,9dvh,4.75rem)] font-extralight leading-none tabular-nums tracking-[-0.04em]">0<span className="text-muted-foreground">/{items.length}</span></span>
         <span className="mt-1.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">to do</span>
       </TimerRing>
     ) : (
       <BreathRing running className={PREVIEW_RING}>
-        <span className="text-[clamp(1.5rem,5dvh,2.75rem)] font-semibold leading-tight tracking-tight">Locked in</span>
+        <span className="text-[clamp(1.5rem,5dvh,2.75rem)] font-light leading-tight tracking-tight">Locked in</span>
         <span className="mt-1.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">no timer</span>
       </BreathRing>
     );
@@ -782,19 +782,21 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
     ["notes", "Notes"],
   ];
 
-  const secondFraction = (elapsed % 60_000) / 60_000;
-  const arc =
-    session.mode === "countdown" && session.goalMs > 0
-      ? Math.max(0, 1 - elapsed / session.goalMs)
-      : session.mode === "stopwatch" && session.goalMs > 0
-        ? Math.min(1, elapsed / session.goalMs)
-        : session.mode === "checklist"
-          ? (summary.total > 0 ? summary.done / summary.total : 0)
-          : null;
+  const getRing = () => {
+    const current = getSession() ?? session;
+    const worked = elapsedMs(current, Date.now());
+    if (current.mode === "countdown" && current.goalMs > 0) return { fraction: Math.max(0, 1 - worked / current.goalMs), orbit: null };
+    if (current.mode === "stopwatch") return current.goalMs > 0 ? { fraction: Math.min(1, worked / current.goalMs), orbit: null } : { fraction: null, orbit: (worked % 60_000) / 60_000 };
+    if (current.mode === "checklist") {
+      const counts = checklistSummary(current.items);
+      return { fraction: counts.total > 0 ? counts.done / counts.total : 0, orbit: null };
+    }
+    return { fraction: null, orbit: null };
+  };
   const longClock = (clockText ?? "").length > 5;
   const clockClass = longClock
-    ? "text-[clamp(1.75rem,min(9vw,5dvh),3.5rem)] landscape:text-[clamp(2.5rem,8dvh,5rem)]"
-    : "text-[clamp(2.25rem,min(12vw,6.5dvh),4.75rem)] landscape:text-[clamp(3rem,10dvh,6.5rem)]";
+    ? "text-[clamp(2rem,min(10vw,5.5dvh),4rem)] landscape:text-[clamp(2.75rem,9dvh,5.5rem)]"
+    : "text-[clamp(2.75rem,min(15vw,8dvh),6rem)] landscape:text-[clamp(3.5rem,13dvh,8rem)]";
   const caption = done
     ? "finished"
     : session.status === "paused"
@@ -806,66 +808,68 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
         : session.goalMs > 0
           ? reached
             ? "goal reached"
-            : `goal ${Math.round(session.goalMs / 60_000)} min`
+            : `of ${Math.round(session.goalMs / 60_000)} min`
           : "elapsed";
-  const ringSize = "size-[min(68vw,34dvh)] landscape:size-[min(62dvh,34rem)] shrink-0";
+  const ringSize = "size-[min(72vw,36dvh)] landscape:size-[min(64dvh,34rem)] shrink-0";
+  const running = session.status === "running";
 
   return (
-    <div className="lock-in-enter relative mx-auto grid h-full w-full max-w-[1600px] grid-rows-[auto_minmax(0,1fr)] gap-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-8 landscape:grid-cols-[minmax(0,1fr)_minmax(380px,34rem)] landscape:grid-rows-1 landscape:gap-10">
-      <div className="relative flex flex-col items-center gap-3 text-center [justify-content:safe_center] landscape:min-h-0">
-        <span key={session.id} aria-hidden className="lock-in-launch" />
+    <div className="lock-in-enter relative mx-auto grid h-full w-full max-w-[1500px] grid-rows-[auto_minmax(0,1fr)] gap-4 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-8 landscape:grid-cols-[minmax(0,1fr)_minmax(360px,30rem)] landscape:grid-rows-1 landscape:gap-12">
+      <div className="relative flex flex-col items-center gap-4 text-center [justify-content:safe_center] landscape:min-h-0">
         <LiveBadge mode={session.mode} status={session.status} />
         {timed ? (
-          <TimerRing fraction={arc} seconds={session.status === "running" || session.status === "paused" ? secondFraction : null} className={ringSize}>
-            <BigClock text={clockText ?? "00:00"} running={false} paused={session.status === "paused"} alert={reached && !done} className={clockClass} />
-            <span className="mt-1.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">{caption}</span>
+          <TimerRing getState={getRing} running={running} className={ringSize}>
+            <BigClock text={clockText ?? "00:00"} paused={session.status === "paused"} className={clockClass} />
+            <span className="mt-2 text-[11px] uppercase tracking-[0.3em] text-muted-foreground">{caption}</span>
           </TimerRing>
         ) : session.mode === "checklist" ? (
-          <TimerRing fraction={arc} seconds={null} className={ringSize}>
-            <span className={`font-semibold leading-none tabular-nums tracking-tight ${clockClass}`}>
+          <TimerRing getState={getRing} running={false} className={ringSize}>
+            <span className={`font-extralight leading-none tabular-nums tracking-[-0.04em] ${clockClass}`}>
               {summary.done}
-              <span className="text-muted-foreground">/{summary.total}</span>
+              <span className="text-muted-foreground/60">/{summary.total}</span>
             </span>
-            <span className="mt-1.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">{allDone ? "all done" : done ? clock(elapsed) : "done"}</span>
-            {allDone ? <Burst key={`${summary.total}`} size={3.2} /> : null}
+            <span className="mt-2 text-[11px] uppercase tracking-[0.3em] text-muted-foreground">{allDone ? "all done" : done ? clock(elapsed) : "done"}</span>
           </TimerRing>
         ) : (
-          <BreathRing running={session.status === "running"} className={ringSize}>
-            <span className="text-[clamp(1.5rem,5dvh,3rem)] font-semibold leading-tight tracking-tight">{done ? "Done" : "Locked in"}</span>
-            <span className="mt-1.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">{done ? `for ${clock(elapsed)}` : "no timer"}</span>
+          <BreathRing running={running} className={ringSize}>
+            <span className="text-[clamp(1.75rem,6dvh,3.25rem)] font-light leading-tight tracking-tight">{done ? "Done" : "Locked in"}</span>
+            <span className="mt-2 text-[11px] uppercase tracking-[0.3em] text-muted-foreground">{done ? `for ${clock(elapsed)}` : "no timer"}</span>
           </BreathRing>
         )}
-        <div className="flex flex-wrap items-center justify-center gap-2.5">
-          {timed && session.status === "running" ? (
-            <button type="button" onClick={() => writeSession(pause(session, Date.now()))} className="press rounded-full border-[1.5px] border-foreground px-6 py-2.5 text-base font-medium transition-colors hover:bg-muted">
-              Pause
-            </button>
-          ) : null}
-          {timed && session.status === "paused" ? (
-            <button type="button" onClick={() => writeSession(resume(session, Date.now()))} className="press rounded-full bg-inverted px-6 py-2.5 text-base font-medium text-inverted-foreground">
-              Resume
+
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          {timed && !done ? (
+            <button
+              type="button"
+              aria-label={running ? "Pause" : "Resume"}
+              onClick={() => writeSession(running ? pause(session, Date.now()) : resume(session, Date.now()))}
+              className="press grid size-16 place-items-center rounded-full bg-inverted text-inverted-foreground shadow-sm transition-transform active:scale-95"
+            >
+              <svg viewBox="0 0 24 24" className="size-6" fill="currentColor" aria-hidden>
+                {running ? <path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" /> : <path d="M8 5.5v13l11-6.5z" />}
+              </svg>
             </button>
           ) : null}
           {session.mode === "countdown" && !done && reached ? (
             <>
-              <button type="button" onClick={() => writeSession(extendGoal(session, 5))} className="lock-in-cta press rounded-full bg-inverted px-5 py-2.5 text-base font-medium text-inverted-foreground">
+              <button type="button" onClick={() => writeSession(extendGoal(session, 5))} className="press h-11 rounded-full border border-foreground px-5 text-sm font-medium transition-colors hover:bg-muted">
                 +5 min
               </button>
-              <button type="button" onClick={() => writeSession(extendGoal(session, 15))} className="press rounded-full border-[1.5px] border-foreground px-5 py-2.5 text-base font-medium transition-colors hover:bg-muted">
+              <button type="button" onClick={() => writeSession(extendGoal(session, 15))} className="press h-11 rounded-full border border-border px-5 text-sm transition-colors hover:bg-muted">
                 +15 min
               </button>
             </>
           ) : null}
           {!done ? (
-            <button type="button" onClick={finishNow} className={`press rounded-full border px-6 py-2.5 text-base transition-colors hover:bg-muted ${allDone && !(session.mode === "countdown" && reached) ? "lock-in-cta border-foreground font-medium" : "border-border"}`}>
+            <button type="button" onClick={finishNow} className={`press h-11 rounded-full px-6 text-sm font-medium transition-colors ${timed ? "border border-border hover:bg-muted" : "bg-inverted text-inverted-foreground"}`}>
               Finish
             </button>
           ) : (
             <>
-              <button type="button" onClick={keepGoing} className="press rounded-full border-[1.5px] border-foreground px-6 py-2.5 text-base font-medium transition-colors hover:bg-muted">
+              <button type="button" onClick={keepGoing} className="press h-11 rounded-full border border-border px-6 text-sm font-medium transition-colors hover:bg-muted">
                 Keep going
               </button>
-              <button type="button" onClick={startNew} className="press rounded-full bg-inverted px-6 py-2.5 text-base font-medium text-inverted-foreground">
+              <button type="button" onClick={startNew} className="press h-11 rounded-full bg-inverted px-6 text-sm font-medium text-inverted-foreground">
                 New session
               </button>
             </>
@@ -873,7 +877,7 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           {!done ? (
-            <button type="button" onClick={() => setEditingTimer(true)} className="press underline underline-offset-4 hover:text-foreground">
+            <button type="button" onClick={() => setEditingTimer(true)} className="press hover:text-foreground">
               Edit timer
             </button>
           ) : (
@@ -881,15 +885,16 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
               type="button"
               onClick={() => (confirmDiscard ? discard() : setConfirmDiscard(true))}
               onBlur={() => setConfirmDiscard(false)}
-              className="press underline underline-offset-4 hover:text-foreground"
+              className="press hover:text-foreground"
             >
               {confirmDiscard ? "Tap again to discard" : "Discard session"}
             </button>
           )}
+          <span aria-hidden>·</span>
           <span role="status">{syncLabel(sync)}</span>
         </div>
         {editingTimer ? (
-          <div className="lock-in-enter absolute inset-0 z-20 grid place-items-center bg-background/85 backdrop-blur-sm">
+          <div className="lock-in-enter absolute inset-0 z-20 grid place-items-center bg-background/90 backdrop-blur-sm">
             <TimerEditor
               session={session}
               now={now}
@@ -903,8 +908,8 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
         ) : null}
       </div>
 
-      <div className="flex min-h-0 flex-col rounded-2xl border-[1.5px] border-foreground/20 p-3 sm:p-5">
-        <div role="tablist" aria-label="Session panels" className="mb-3 flex shrink-0 gap-1 rounded-full bg-muted p-1 text-sm">
+      <div className="flex min-h-0 flex-col landscape:border-l landscape:border-border landscape:pl-8">
+        <div role="tablist" aria-label="Session panels" className="mb-2 flex shrink-0 gap-6 border-b border-border text-sm">
           {tabs.map(([key, label]) => (
             <button
               key={key}
@@ -912,7 +917,7 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
               role="tab"
               aria-selected={tab === key}
               onClick={() => setTab(key)}
-              className={`press flex-1 rounded-full px-3 py-2 transition-colors ${tab === key ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              className={`-mb-px border-b-2 py-2.5 transition-colors ${tab === key ? "border-foreground font-medium" : "border-transparent text-muted-foreground hover:text-foreground"}`}
             >
               {label}
             </button>
@@ -922,20 +927,9 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
         <div className="lock-in-no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {tab === "checklist" ? (
             <section>
+              {allDone ? <p className="py-2 text-sm text-muted-foreground">Everything is done. {done ? "Nice work." : "Add more, or finish when you are ready."}</p> : null}
               {summary.total > 0 ? (
-                <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
-                  <div className="h-full bg-foreground transition-[width] duration-500" style={{ width: `${(summary.done / summary.total) * 100}%` }} />
-                </div>
-              ) : null}
-              {allDone ? (
-                <div key="all-done" className="az-celebrate relative mb-4 overflow-hidden rounded-xl border-[1.5px] border-foreground px-4 py-4 text-center">
-                  <Burst size={2.6} />
-                  <p className="text-lg font-semibold tracking-tight">Everything on the list is done.</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{done ? "Nice work." : "Add more, or finish when you are ready."}</p>
-                </div>
-              ) : null}
-              {summary.total > 0 ? (
-                <ul className="space-y-2">
+                <ul className="divide-y divide-border">
                   {session.items.map((item) => (
                     <ChecklistRow key={item.id} item={item} locked={done} onToggle={(next) => toggleItem(item.id, next)} onRemove={() => removeItem(item.id)} />
                   ))}
@@ -1058,7 +1052,7 @@ function TimerEditor({ session, now, onApply, onCancel }: { session: LockInSessi
 function ChecklistRow({ item, locked, onToggle, onRemove }: { item: LockInItem; locked: boolean; onToggle: (next: boolean) => void; onRemove: () => void }) {
   const [flashing, setFlashing] = useState(false);
   return (
-    <li className={`az-item-in flex items-start gap-3 rounded-xl border-[1.5px] px-4 py-3.5 transition-colors ${flashing ? "az-row-flash" : ""} ${item.done ? "border-border text-muted-foreground" : "border-foreground/30 hover:border-foreground"}`}>
+    <li className={`flex items-start gap-3 py-3 transition-colors ${flashing ? "az-row-flash" : ""} ${item.done ? "text-muted-foreground" : ""}`}>
       <span className="mt-0.5">
         <AnimatedCheck
           checked={item.done}

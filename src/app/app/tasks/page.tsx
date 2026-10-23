@@ -1,6 +1,4 @@
 import { AddDialog } from "@/components/modal";
-import { ConfirmDelete } from "@/components/confirm-delete";
-import { deleteTaskAction } from "./actions";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -9,8 +7,10 @@ import { isMissingTable } from "@/lib/forms";
 import { LIST_LIMIT, PICKER_LIMIT, daysAgoIso } from "@/lib/limits";
 import { PageHeader } from "@/components/page-header";
 import { MigrationsRequired, SetupRequired, LimitNotice } from "@/components/states";
-import { KIND_LABEL, KIND_LABEL_PLURAL, WORK_KINDS, isWorkKind, needsWorkItemsMigration, statusLabel } from "@/lib/work-items";
+import { KIND_LABEL_PLURAL, WORK_KINDS, isWorkKind, needsWorkItemsMigration } from "@/lib/work-items";
 import { NewTaskForm } from "./task-forms";
+import { TaskList, type TaskRow } from "./task-list";
+import { todayIso } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Tasks" };
 
@@ -92,103 +92,52 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
     }),
     tasks: allTasks.map((task) => ({ id: task.id, label: task.title })),
   };
-  const dateLabel = (date: string | null) =>
-    date ? new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(`${date}T00:00:00Z`)) : "—";
-  const hoursLabel = (minutes: number | null) => (minutes == null ? "—" : `${Math.round((minutes / 60) * 10) / 10} h`);
-  const activeTasks = tasks.filter((task) => !["done", "cancelled"].includes(task.status));
+  const name = (value: { name: string } | { name: string }[] | null) => (Array.isArray(value) ? value[0]?.name : value?.name) ?? null;
+  const rows: TaskRow[] = tasks.map((task) => ({
+    id: task.id,
+    title: task.title,
+    status: task.status,
+    priority: task.priority,
+    due_date: task.due_date,
+    kind: task.kind,
+    severity: task.severity,
+    parent: Boolean(task.parent_task_id),
+    client: name(task.clients),
+    project: name(task.projects),
+  }));
+  const openCount = tasks.filter((task) => !["done", "cancelled"].includes(task.status)).length;
 
   return (
     <>
       <PageHeader
         title="Tasks"
-        description="Tasks, bugs and feature requests with priorities, deadlines, time, dependencies, recurring rules, and waiting-on-client status. Log bugs and requests inside their project."
+        description="Everything to do, grouped by when it is due. Tick to complete, tap to open."
       />
       <LimitNotice shown={tasksResponse.data?.length ?? 0} limit={LIST_LIMIT} hint="Tasks completed more than 30 days ago are hidden; find them in their client or project workspace." />
       {workItemsReady ? (
-        <nav aria-label="Work item kind" className="mb-6 flex flex-wrap gap-x-6 gap-y-2 border-b border-border pb-3 text-sm">
+        <nav aria-label="Work item kind" className="mb-6 flex flex-wrap gap-2 text-sm">
           {(["all", ...WORK_KINDS] as const).map((kind) => (
             <Link
               key={kind}
               href={kind === "all" ? "/app/tasks" : `/app/tasks?kind=${kind}`}
               aria-current={kind === activeKind ? "page" : undefined}
-              className={`underline-offset-4 ${kind === activeKind ? "font-medium underline decoration-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              className={`press rounded-full border px-3.5 py-1.5 transition-colors ${kind === activeKind ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:text-foreground"}`}
             >
-              {kind === "all" ? "All" : KIND_LABEL_PLURAL[kind]} <span className="text-faint-foreground">{kind === "all" ? allTasks.length : kindCount(kind)}</span>
+              {kind === "all" ? "All" : KIND_LABEL_PLURAL[kind]} <span className="opacity-60">{kind === "all" ? allTasks.length : kindCount(kind)}</span>
             </Link>
           ))}
         </nav>
       ) : null}
       <section aria-labelledby="tasks-heading">
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 id="tasks-heading" className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            {activeTasks.length} open · {tasks.length} total
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <h2 id="tasks-heading" className="text-sm text-muted-foreground">
+            {openCount} open
           </h2>
           <AddDialog label="New task" title="New task">
             <NewTaskForm {...options} />
           </AddDialog>
         </div>
-        {tasks.length === 0 ? (
-          <div className="mt-4 border-t border-border pt-8 text-sm text-muted-foreground">
-            No tasks yet.
-          </div>
-        ) : (
-          <div className="mt-4 overflow-x-auto border-y border-border">
-            <table className="w-full min-w-[980px] text-left text-sm">
-              <thead className="border-b border-border text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-                <tr>
-                  <th className="px-3 py-3 font-medium">Task</th>
-                  <th className="px-3 py-3 font-medium">Status</th>
-                  <th className="px-3 py-3 font-medium">Priority</th>
-                  <th className="px-3 py-3 font-medium">Client / project</th>
-                  <th className="px-3 py-3 font-medium">Due</th>
-                  <th className="px-3 py-3 font-medium">Time</th>
-                  <th className="px-3 py-3 font-medium"><span className="sr-only">Delete</span></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {tasks.map((task) => {
-                  const client = Array.isArray(task.clients) ? task.clients[0] : task.clients;
-                  const project = Array.isArray(task.projects) ? task.projects[0] : task.projects;
-                  return (
-                    <tr key={task.id}>
-                      <td className="px-3 py-4 font-medium">
-                        <Link href={`/app/tasks/${task.id}`} className="underline decoration-border underline-offset-4">
-                          {task.parent_task_id ? "↳ " : ""}
-                          {task.title}
-                        </Link>
-                        {task.kind && task.kind !== "task" ? (
-                          <span className="ml-2 rounded-full border border-border px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-                            {KIND_LABEL[task.kind as keyof typeof KIND_LABEL] ?? task.kind}
-                            {task.severity ? ` · ${task.severity}` : ""}
-                          </span>
-                        ) : null}
-                      </td>
-                      <td className="px-3 py-4 text-muted-foreground">
-                        {statusLabel(task.kind ?? "task", task.status).toLowerCase()}
-                      </td>
-                      <td className="px-3 py-4 text-muted-foreground">{task.priority}</td>
-                      <td className="px-3 py-4 text-muted-foreground">
-                        {[client?.name, project?.name].filter(Boolean).join(" · ") || "—"}
-                      </td>
-                      <td className="px-3 py-4 text-muted-foreground">{dateLabel(task.due_date)}</td>
-                      <td className="px-3 py-4 text-muted-foreground">
-                        {hoursLabel(task.actual_minutes)} / {hoursLabel(task.estimated_minutes)}
-                      </td>
-                      <td className="px-3 py-4 text-right">
-                        <ConfirmDelete
-                          action={deleteTaskAction}
-                          fields={{ id: task.id }}
-                          title="Delete this task?"
-                          message={`“${task.title}” will be removed. This cannot be undone.`}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <TaskList key={activeKind} tasks={rows} today={todayIso()} />
       </section>
     </>
   );

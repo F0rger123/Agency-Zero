@@ -5,10 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isMissingTable } from "@/lib/forms";
 import { PICKER_LIMIT } from "@/lib/limits";
-import { PageHeader } from "@/components/page-header";
-import { FormSection } from "@/components/form-controls";
 import { MigrationsRequired, SetupRequired } from "@/components/states";
-import { CompleteTaskForm, DeleteTaskForm, DeleteTimeEntryForm, EditTaskForm, TimeEntryForm } from "../task-forms";
+import { ConfirmDelete } from "@/components/confirm-delete";
+import { DeleteTimeEntryForm, EditTaskForm, TimeEntryForm } from "../task-forms";
+import { TaskQuickEdit } from "../task-quick-edit";
+import { TaskDoneToggle } from "../task-done-toggle";
+import { deleteTaskAction } from "../actions";
 
 export const metadata: Metadata = { title: "Task" };
 
@@ -33,7 +35,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
     subtasksResponse,
     timeEntriesResponse,
   ] = await Promise.all([
-    supabase.from("tasks").select("*").eq("id", id).maybeSingle(),
+    supabase.from("tasks").select("*, clients(name), projects(name)").eq("id", id).maybeSingle(),
     supabase.from("clients").select("id, name").is("deleted_at", null).order("name").limit(PICKER_LIMIT),
     supabase.from("projects").select("id, name, client_id").is("deleted_at", null).order("name").limit(PICKER_LIMIT),
     supabase
@@ -88,6 +90,9 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
     parent_task_id: string | null;
     depends_on_task_id: string | null;
     recurrence_rule: Record<string, unknown> | null;
+    kind?: string;
+    clients?: { name: string } | { name: string }[] | null;
+    projects?: { name: string } | { name: string }[] | null;
   };
   const clients = (clientsResponse.data ?? []) as { id: string; name: string }[];
   const projects = (projectsResponse.data ?? []) as { id: string; name: string }[];
@@ -122,100 +127,114 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
   };
   const hours = (minutes: number | null) => (minutes == null ? "—" : `${Math.round((minutes / 60) * 10) / 10} h`);
 
+  const name = (value: { name: string } | { name: string }[] | null | undefined) => (Array.isArray(value) ? value[0]?.name : value?.name) ?? null;
+  const done = task.status === "done" || task.status === "cancelled";
+  const logged = entries.reduce((sum, entry) => sum + entry.minutes, 0);
+
   return (
-    <>
-      <Link
-        href="/app/tasks"
-        className="text-sm text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground"
-      >
-        ← All tasks
+    <div className="mx-auto max-w-3xl">
+      <Link href="/app/tasks" className="text-sm text-muted-foreground hover:text-foreground">
+        ← Tasks
       </Link>
-      <PageHeader
-        title={task.title}
-        description={[
-          task.status === "blocked_waiting_client" ? "Waiting on client" : task.status.replaceAll("_", " "),
-          task.priority,
-          task.due_date ? `Due ${dateLabel(task.due_date)}` : "No due date",
-        ].join(" · ")}
-      />
-      <div className="flex flex-wrap items-center gap-4 border-y border-border py-4">
-        <span className="rounded-full border border-border px-2.5 py-1 text-[11px] font-medium uppercase tracking-widest">
-          {task.status.replaceAll("_", " ")}
+
+      <div className="mt-6 flex items-start gap-3">
+        <span className="mt-1.5">
+          <TaskDoneToggle id={task.id} done={done} title={task.title} />
         </span>
-        <span className="text-sm text-muted-foreground">
-          {hours(task.actual_minutes)} actual / {hours(task.estimated_minutes)} estimated
-        </span>
-        {dependency ? (
-          <span className="text-sm text-muted-foreground">
-            Depends on:{" "}
-            <Link href={`/app/tasks/${dependency.id}`} className="underline decoration-border underline-offset-4">
-              {dependency.title}
-            </Link>
-          </span>
-        ) : null}
+        <div className="min-w-0">
+          <h1 className={`text-2xl font-semibold tracking-tight sm:text-3xl ${done ? "text-muted-foreground line-through" : ""}`}>{task.title}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {[
+              task.client_id ? <Link key="c" href={`/app/clients/${task.client_id}`} className="hover:text-foreground hover:underline">{name(task.clients) ?? "Client"}</Link> : null,
+              task.project_id ? <Link key="p" href={`/app/projects/${task.project_id}`} className="hover:text-foreground hover:underline">{name(task.projects) ?? "Project"}</Link> : null,
+            ]
+              .filter(Boolean)
+              .reduce<React.ReactNode[]>((all, item, index) => (index ? [...all, " · ", item] : [item]), [])}
+            {!task.client_id && !task.project_id ? "Not linked to a client or project" : null}
+          </p>
+        </div>
       </div>
 
-      <div className="mt-10 grid gap-12 lg:grid-cols-2">
-        <FormSection title="Subtasks" description="Nested work stays connected to this task.">
-          {subtasks.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No subtasks yet. Create one from the Tasks page and choose this task as its parent.
-            </p>
-          ) : (
-            <ul className="divide-y divide-border border-y border-border">
-              {subtasks.map((subtask) => (
-                <li key={subtask.id} className="flex items-center justify-between gap-4 py-4">
-                  <Link
-                    href={`/app/tasks/${subtask.id}`}
-                    className="font-medium underline decoration-border underline-offset-4"
-                  >
-                    ↳ {subtask.title}
-                  </Link>
-                  <span className="text-xs text-muted-foreground">
-                    {subtask.status.replaceAll("_", " ")}
-                    {subtask.due_date ? ` · ${dateLabel(subtask.due_date)}` : ""}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </FormSection>
-        <FormSection
-          title="Time entries"
-          description="Actual time is stored as minutes in the database and shown here as hours."
-        >
-          {entries.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No time entries yet.</p>
-          ) : (
-            <ul className="divide-y divide-border border-y border-border">
+      <div className="mt-6 rounded-2xl border border-border p-4">
+        <TaskQuickEdit id={task.id} kind={task.kind ?? "task"} status={task.status} priority={task.priority} dueDate={task.due_date} />
+      </div>
+
+      {task.description ? <p className="mt-6 whitespace-pre-wrap text-[15px] leading-7">{task.description}</p> : null}
+
+      {dependency ? (
+        <p className="mt-4 text-sm text-muted-foreground">
+          Waits for{" "}
+          <Link href={`/app/tasks/${dependency.id}`} className="underline decoration-border underline-offset-4">
+            {dependency.title}
+          </Link>
+        </p>
+      ) : null}
+
+      {subtasks.length > 0 ? (
+        <section className="mt-8">
+          <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Subtasks</h2>
+          <ul className="mt-2 divide-y divide-border border-y border-border">
+            {subtasks.map((subtask) => (
+              <li key={subtask.id} className="flex items-center justify-between gap-4 py-3">
+                <Link href={`/app/tasks/${subtask.id}`} className={`min-w-0 truncate font-medium hover:underline ${subtask.status === "done" ? "text-muted-foreground line-through" : ""}`}>
+                  {subtask.title}
+                </Link>
+                <span className="shrink-0 text-xs text-muted-foreground">{subtask.due_date ? dateLabel(subtask.due_date) : ""}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <details className="group mt-8 border-t border-border pt-4">
+        <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium">
+          <span>
+            Time{" "}
+            <span className="font-normal text-muted-foreground">
+              · {logged || task.actual_minutes ? `${hours(logged || task.actual_minutes)} logged` : "nothing logged yet"}
+              {task.estimated_minutes ? ` (estimate ${hours(task.estimated_minutes)})` : ""}
+            </span>
+          </span>
+          <span className="text-muted-foreground transition-transform group-open:rotate-180">⌄</span>
+        </summary>
+        <div className="mt-4 space-y-4">
+          <TimeEntryForm taskId={id} />
+          {entries.length ? (
+            <ul className="divide-y divide-border border-y border-border text-sm">
               {entries.map((entry) => (
-                <li key={entry.id} className="flex items-start justify-between gap-4 py-4">
-                  <div>
-                    <p className="font-medium">
-                      {hours(entry.minutes)} · {dateLabel(entry.worked_on)}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">{entry.note || "No note"}</p>
-                  </div>
+                <li key={entry.id} className="flex items-start justify-between gap-4 py-3">
+                  <span>
+                    {hours(entry.minutes)} · {dateLabel(entry.worked_on)}
+                    {entry.note ? <span className="block text-muted-foreground">{entry.note}</span> : null}
+                  </span>
                   <DeleteTimeEntryForm id={entry.id} taskId={id} />
                 </li>
               ))}
             </ul>
-          )}
-          <div className="mt-6">
-            <TimeEntryForm taskId={id} />
-          </div>
-        </FormSection>
-      </div>
-
-      <FormSection title="Task record" description={task.description || "No description yet."}>
-        <EditTaskForm task={task} {...options} />
-      </FormSection>
-      <FormSection title="Actions">
-        <div className="flex flex-wrap items-center gap-6">
-          <CompleteTaskForm taskId={id} />
-          <DeleteTaskForm taskId={id} />
+          ) : null}
         </div>
-      </FormSection>
-    </>
+      </details>
+
+      <details className="group mt-2 border-t border-border pt-4">
+        <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium">
+          <span>Edit all details</span>
+          <span className="text-muted-foreground transition-transform group-open:rotate-180">⌄</span>
+        </summary>
+        <div className="mt-4">
+          <EditTaskForm task={task} {...options} />
+        </div>
+      </details>
+
+      <div className="mt-8 border-t border-border pt-4">
+        <ConfirmDelete
+          action={deleteTaskAction}
+          fields={{ id: task.id, after: "list" }}
+          label="Delete task"
+          title="Delete this task?"
+          message={`“${task.title}” will be removed. This cannot be undone.`}
+          className="text-sm text-red-600 hover:text-red-700"
+        />
+      </div>
+    </div>
   );
 }

@@ -1705,3 +1705,16 @@ html[data-splash="seen"] .app-splash { display: none; }
 .wb-frame-label { max-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8125rem; font-weight: 500; transition: max-width 0.35s var(--ease-out), padding 0.35s var(--ease-out); }
 .wb-frame-on .wb-frame-label { max-width: 9.5rem; padding-right: 0.8rem; }
 @media (prefers-reduced-motion: reduce) { .wb-rise, .wb-menu { animation: none; } .wb-frame-label { transition: none; } }
+
+/* Lock In, calmer (2026-10-23): no blinking, pulsing, ripples or glows. Only slow fades and one breathing ring. */
+.lock-in-dot, .lock-in-colon, .lock-in-alert, .lock-in-cta, .lock-in-mini-live, .lock-in-glow, .lock-in-breath,
+.lock-in-glyph-pulse, .lock-in-glyph-pulse-2,
+.lock-in-mode-card:hover .lock-in-glyph-hand, .lock-in-mode-card[aria-checked="true"] .lock-in-glyph-hand,
+.lock-in-mode-card:hover .lock-in-glyph-spin, .lock-in-mode-card[aria-checked="true"] .lock-in-glyph-spin { animation: none !important; }
+.lock-in-launch, .lock-in-glow { display: none !important; }
+.lock-in-mode-card:hover { transform: none; }
+@keyframes lock-in-fade { from { opacity: 0; } to { opacity: 1; } }
+.lock-in-enter { animation: lock-in-fade 0.45s ease-out both !important; }
+@keyframes lock-in-calm { 0%, 100% { opacity: 0.15; transform: scale(0.97); } 50% { opacity: 0.6; transform: scale(1.03); } }
+.lock-in-calm { animation: lock-in-calm 16s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .lock-in-calm, .lock-in-enter { animation: none !important; } }

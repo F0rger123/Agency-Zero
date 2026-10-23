@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getUserClient, notFoundWhenNoRows, hoursToMinutesField as hoursField } from "@/lib/actions";
 import { SEVERITIES, WORK_ITEMS_MIGRATION_MESSAGE, WORK_SOURCES, isWorkKind, needsWorkItemsMigration } from "@/lib/work-items";
 import { field, optionalDate, optionalField, readableError, requiredText, type ActionState } from "@/lib/forms";
@@ -167,6 +168,7 @@ export async function deleteTaskAction(_previous: ActionState, formData: FormDat
   const missing = notFoundWhenNoRows(count, "Task");
   if (missing) return missing;
   revalidateTaskPaths(undefined, data?.project_id, data?.client_id);
+  if (field(formData, "after") === "list") redirect("/app/tasks");
   return { success: "Task deleted." };
 }
 
@@ -207,4 +209,16 @@ export async function deleteTimeEntryAction(_previous: ActionState, formData: Fo
   if (missing) return missing;
   revalidateTaskPaths(taskId ?? undefined, projectId);
   return { success: "Time entry removed." };
+}
+
+/** Tick a task done (or back to to-do) from a list. */
+export async function setTaskDoneAction(id: string, done: boolean): Promise<{ error?: string }> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return { error: "Task not found." };
+  const auth = await getUserClient();
+  if ("error" in auth) return { error: auth.error };
+  const { data, error } = await auth.supabase.from("tasks").update({ status: done ? "done" : "todo" }).eq("id", id).select("project_id, client_id").maybeSingle();
+  if (error) return { error: readableError(error.message) };
+  if (!data) return { error: "Task not found, or it was already removed." };
+  revalidateTaskPaths(id, data.project_id, data.client_id);
+  return {};
 }

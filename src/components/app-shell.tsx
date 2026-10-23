@@ -11,6 +11,8 @@ import { signOut } from "@/app/actions/auth";
 import { QuickNote } from "@/app/app/quick-note/quick-note";
 import { LockInButton, LockInProvider } from "@/app/app/lock-in/lock-in";
 import { OfflineSupport, clearOfflineData } from "@/components/offline";
+import { HapticsListener } from "@/components/haptics-listener";
+import { HapticsToggle } from "@/components/haptics-toggle";
 
 function Wordmark() {
   return (
@@ -107,6 +109,7 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
               </li>
             ))}
           </ul>
+          <HapticsToggle />
           <form action={signOut} onSubmit={clearOfflineData} className="menu-tile mt-6 border-t border-border pt-5" style={{ "--i": 16 } as React.CSSProperties}>
             <button type="submit" className="press rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted">
               Sign out
@@ -116,6 +119,7 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
       </Modal>
 
       <OfflineSupport warm={WARM_PATHS} />
+      <HapticsListener />
       <main>
         <div className="mx-auto w-full max-w-6xl px-5 py-8 lg:px-8 lg:py-10">{children}</div>
       </main>

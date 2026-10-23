@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import { Burst } from "@/components/animated-check";
 import type { LockInMode } from "@/lib/lock-in";
 
@@ -39,28 +42,17 @@ export function ModeGlyph({ mode, className = "size-8" }: { mode: LockInMode; cl
   );
 }
 
-/** A pill that always says what state the session is in, with a pulsing dot while it is live. */
+/** A quiet line that says what the session is doing. No blinking. */
 export function LiveBadge({ mode, status }: { mode: LockInMode; status: "running" | "paused" | "done" }) {
   const text = status === "done" ? "Finished" : status === "paused" ? "Paused" : MODE_INFO[mode].badge;
-  return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-border px-3.5 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-      <span aria-hidden className={`size-2 rounded-full bg-foreground ${status === "running" ? "lock-in-dot" : "opacity-40"}`} />
-      {text}
-    </span>
-  );
+  return <span className="text-[11px] font-medium uppercase tracking-[0.3em] text-muted-foreground transition-opacity duration-500">{text}</span>;
 }
 
-/** Big clock text. The colon blinks while it runs, the whole thing softly fades when paused, and pulses when time is up. */
-export function BigClock({ text, running, paused, alert, className = "text-[clamp(3.75rem,13vw,9rem)]" }: { text: string; running: boolean; paused: boolean; alert: boolean; className?: string }) {
-  const parts = text.split(":");
+/** Big, light clock digits. Dims when paused; nothing blinks or pulses. */
+export function BigClock({ text, paused, className = "text-[clamp(3.75rem,13vw,9rem)]" }: { text: string; running?: boolean; paused: boolean; alert?: boolean; className?: string }) {
   return (
-    <p aria-live="off" aria-label={text} className={`shrink-0 ${className} font-semibold leading-none tabular-nums tracking-tight ${paused ? "lock-in-paused" : ""} ${alert ? "lock-in-alert" : ""}`}>
-      {parts.map((part, index) => (
-        <span key={index}>
-          {index > 0 ? <span className={running ? "lock-in-colon" : ""}>:</span> : null}
-          {part}
-        </span>
-      ))}
+    <p aria-live="off" aria-label={text} className={`shrink-0 ${className} font-extralight leading-none tabular-nums tracking-[-0.04em] transition-opacity duration-500 ${paused ? "opacity-40" : ""}`}>
+      {text}
     </p>
   );
 }
@@ -113,95 +105,76 @@ export function FocusOrb({ running, className = "" }: { running: boolean; classN
 }
 
 /**
- * The session stage: a minute ring of 60 hairline ticks that fill in with the seconds, an arc for progress toward a goal
- * (or the time left in a countdown) with a small leading dot, and whatever you pass as children in the middle.
- * Everything moves smoothly (CSS transitions, no flashing) and sits still when the session is paused.
+ * The session stage: one thin ring. A countdown's ring empties, a goal's ring fills, and with no goal a small dot travels
+ * once around per minute so you can see time moving. It is drawn every frame (smooth, no ticking) from `getState`.
  */
 export function TimerRing({
-  fraction,
-  seconds,
+  getState,
+  running,
   className = "",
   children,
 }: {
-  /** 0 to 1 arc, or null for no arc. */
-  fraction: number | null;
-  /** 0 to 1 through the current minute, or null for no tick ring. */
-  seconds: number | null;
+  /** fraction: 0 to 1 arc (or null for no arc); orbit: 0 to 1 through the minute (or null for no dot). */
+  getState: () => { fraction: number | null; orbit: number | null };
+  running: boolean;
   className?: string;
   children?: React.ReactNode;
 }) {
-  const radius = 96;
-  const circumference = 2 * Math.PI * radius;
-  const arc = fraction === null ? 0 : Math.min(1, Math.max(0, fraction));
-  const lit = seconds === null ? 0 : Math.floor(seconds * 60);
+  const arcRef = useRef<SVGCircleElement>(null);
+  const dotRef = useRef<SVGGElement>(null);
+  const stateRef = useRef(getState);
+  useEffect(() => {
+    stateRef.current = getState;
+  });
+  // Redraw after every render (a ticked checklist item), and every frame while running.
+  useEffect(() => {
+    paint(arcRef.current, dotRef.current, stateRef.current());
+  });
+  useEffect(() => {
+    if (!running) return;
+    let frame = 0;
+    const loop = () => {
+      paint(arcRef.current, dotRef.current, stateRef.current());
+      frame = requestAnimationFrame(loop);
+    };
+    frame = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(frame);
+  }, [running]);
   return (
-    <div className={`lock-in-stage relative ${className}`}>
-      <span aria-hidden className="lock-in-glow absolute inset-[-12%] rounded-full" />
-      <svg viewBox="0 0 240 240" aria-hidden className="relative size-full">
-        {Array.from({ length: 60 }, (_, index) => {
-          const angle = (index / 60) * Math.PI * 2 - Math.PI / 2;
-          const major = index % 5 === 0;
-          const inner = major ? 108 : 111;
-          return (
-            <line
-              key={index}
-              x1={120 + Math.cos(angle) * inner}
-              y1={120 + Math.sin(angle) * inner}
-              x2={120 + Math.cos(angle) * 117}
-              y2={120 + Math.sin(angle) * 117}
-              strokeWidth={major ? 1.6 : 1}
-              strokeLinecap="round"
-              className={`transition-[stroke,opacity] duration-500 ${index < lit ? "stroke-foreground" : "stroke-foreground/15"}`}
-            />
-          );
-        })}
-        <circle cx="120" cy="120" r={radius} fill="none" strokeWidth="4" className="stroke-foreground/10" />
-        {fraction !== null ? (
-          <>
-            <circle
-              cx="120"
-              cy="120"
-              r={radius}
-              fill="none"
-              strokeWidth="4"
-              strokeLinecap="round"
-              className="stroke-foreground"
-              strokeDasharray={circumference}
-              strokeDashoffset={circumference * (1 - arc)}
-              transform="rotate(-90 120 120)"
-              style={{ transition: "stroke-dashoffset 1s linear" }}
-            />
-            <g style={{ transform: `rotate(${arc * 360}deg)`, transformOrigin: "120px 120px", transition: "transform 1s linear" }}>
-              <circle cx="120" cy={120 - radius} r="5.5" className="fill-foreground" />
-              <circle cx="120" cy={120 - radius} r="11" className="fill-foreground/10" />
-            </g>
-          </>
-        ) : null}
+    <div className={`relative ${className}`}>
+      <svg viewBox="0 0 240 240" aria-hidden className="size-full -rotate-90">
+        <circle cx="120" cy="120" r={RADIUS} fill="none" strokeWidth="2" className="stroke-foreground/10" />
+        <circle ref={arcRef} cx="120" cy="120" r={RADIUS} fill="none" strokeWidth="3" strokeLinecap="round" className="stroke-foreground" strokeDasharray={CIRCUMFERENCE} strokeDashoffset={CIRCUMFERENCE} style={{ transition: running ? "opacity 0.5s" : "stroke-dashoffset 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s" }} />
+        <g ref={dotRef} style={{ transformOrigin: "120px 120px" }} className="transition-opacity duration-500">
+          <circle cx={120 + RADIUS} cy="120" r="4" className="fill-foreground" />
+        </g>
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center px-[14%] text-center">{children}</div>
     </div>
   );
 }
 
-/** For the no-timer mode: three hairline rings that breathe slowly outward, with text in the middle. */
+const RADIUS = 108;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+function paint(arc: SVGCircleElement | null, dot: SVGGElement | null, state: { fraction: number | null; orbit: number | null }) {
+  if (arc) {
+    arc.style.opacity = state.fraction === null ? "0" : "1";
+    arc.style.strokeDashoffset = String(CIRCUMFERENCE * (1 - Math.min(1, Math.max(0, state.fraction ?? 0))));
+  }
+  if (dot) {
+    dot.style.opacity = state.orbit === null ? "0" : "1";
+    dot.style.transform = `rotate(${(state.orbit ?? 0) * 360}deg)`;
+  }
+}
+
+/** For the no-timer mode: one thin ring that breathes very slowly (8 s in, 8 s out), with text in the middle. */
 export function BreathRing({ running, className = "", children }: { running: boolean; className?: string; children?: React.ReactNode }) {
   return (
-    <div className={`lock-in-stage relative ${className}`}>
-      <span aria-hidden className="lock-in-glow absolute inset-[-12%] rounded-full" />
-      <svg viewBox="0 0 240 240" aria-hidden className="relative size-full">
-        <circle cx="120" cy="120" r="96" fill="none" strokeWidth="2.5" className="stroke-foreground/80" />
-        {[0, 1, 2].map((index) => (
-          <circle
-            key={index}
-            cx="120"
-            cy="120"
-            r="96"
-            fill="none"
-            strokeWidth="1.2"
-            className={`stroke-foreground ${running ? "lock-in-breath" : "opacity-10"}`}
-            style={{ animationDelay: `${index * 2.4}s`, transformOrigin: "120px 120px" }}
-          />
-        ))}
+    <div className={`relative ${className}`}>
+      <svg viewBox="0 0 240 240" aria-hidden className="size-full">
+        <circle cx="120" cy="120" r={RADIUS} fill="none" strokeWidth="2" className="stroke-foreground/10" />
+        <circle cx="120" cy="120" r={RADIUS} fill="none" strokeWidth="2" className={`stroke-foreground/50 ${running ? "lock-in-calm" : "opacity-0"}`} style={{ transformOrigin: "120px 120px" }} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center px-[14%] text-center">{children}</div>
     </div>

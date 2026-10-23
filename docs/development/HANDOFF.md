@@ -1,5 +1,12 @@
 # Handoff log (newest first)
 
+## 2026-10-23 — Claude — haptics, simpler tasks, calmer Lock In
+
+**No migration.**
+- **Haptics** (`src/lib/haptics.ts`, `components/haptics-listener.tsx`): on touch screens a light tick on every tap of a button/link/checkbox/tab (one capture listener in the app shell, and in the guest whiteboard); a "success" pattern when something is ticked off (AnimatedCheck), a "warning" one on confirmed deletes. Android uses the Vibration API; iPhone (Safari 18+) has no vibration API, so a hidden native `switch` checkbox is toggled inside the tap, which produces the system haptic. "Vibrate on taps" switch in the menu (stored on the device). Desktop: nothing.
+- **Tasks**: the list is no longer a wide table; tasks are grouped Overdue / Today / Next 7 days / Later / No due date / Done recently (collapsed), one line each with a tick-to-complete circle, client · project · date underneath, and only meaningful tags (Urgent/High, In progress, Waiting, Bug/Request). Kind filter is a row of pills. Task page: title with a tick, the client/project line, a single quick-edit row (status, priority, due), description, subtasks only if any, and "Time" and "Edit all details" folded away; delete at the bottom (returns to the list). Pure grouping in `src/lib/task-groups.ts` (tested); `setTaskDoneAction` in tasks/actions.
+- **Lock In look**: one thin ring drawn every frame (smooth, no ticking): it empties for a countdown, fills toward a goal, and with no goal a small dot travels round once a minute; big light digits; one round play/pause button plus Finish; quiet status text instead of the pulsing pill; tabs as underlined text; checklist rows as plain lines. Removed every blinking/pulsing/ripple/glow animation (a CSS override block at the end of globals.css neutralises the old classes); the no-timer mode has one ring breathing on a 16-second cycle. Entrances are plain fades.
+
 ## 2026-10-23 — Claude — whiteboard templates, reliable text editing, tools in presentation mode
 
 **No migration** (still needs 0032 from the previous entry).

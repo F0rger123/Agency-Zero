@@ -12,6 +12,7 @@ import { openTransport, type Status, type Transport } from "@/lib/whiteboard/tra
 import { INK, NOTE_COLORS, PEN_WIDTHS, type BoardData, type Message, type Op, type ShapeKind } from "@/lib/whiteboard/types";
 import { regenerateWhiteboardLinkAction, renameWhiteboardAction, saveWhiteboardAction, setWhiteboardShareAction } from "@/app/app/whiteboard/actions";
 import { WbIcon, type WbIconName } from "./wb-icons";
+import { HapticsListener } from "@/components/haptics-listener";
 
 type Role = "owner" | "guest";
 type ShareMode = "edit" | "view" | "off";
@@ -573,6 +574,7 @@ export function BoardEditor({
       }}
     >
       <canvas ref={attachCanvas} aria-label="Whiteboard" className="absolute inset-0 size-full" />
+      {role === "guest" ? <HapticsListener /> : null}
 
       {/* Header */}
       {present ? null : (
