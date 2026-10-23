@@ -1,12 +1,12 @@
 <p align="center">
-  <img src=".github/assets/banner.svg" alt="AGENCY ZERO: The operating system for a one-person agency." width="100%">
+  <img src=".github/assets/banner.svg" alt="Agency Zero: The operating system for a one-person agency." width="100%">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/status-public-121212?style=for-the-badge" alt="Public">
-  <img src="https://img.shields.io/badge/license-MIT-121212?style=for-the-badge" alt="License">
-  <img src="https://img.shields.io/github/last-commit/F0rger123/Agency-Zero?style=for-the-badge&color=121212" alt="Last commit">
-  <img src="https://img.shields.io/github/repo-size/F0rger123/Agency-Zero?style=for-the-badge&color=121212" alt="Repo size">
+  <img src="https://img.shields.io/badge/status-public-0a0a0a?style=for-the-badge" alt="Public">
+  <img src="https://img.shields.io/badge/license-MIT-0a0a0a?style=for-the-badge" alt="License">
+  <img src="https://img.shields.io/github/last-commit/F0rger123/Agency-Zero?style=for-the-badge&color=0a0a0a" alt="Last commit">
+  <img src="https://img.shields.io/github/repo-size/F0rger123/Agency-Zero?style=for-the-badge&color=0a0a0a" alt="Repo size">
 </p>
 <p align="center">
   <img src="https://img.shields.io/badge/Next.js-0d1117?style=flat-square&logo=nextdotjs&logoColor=white" alt="Next.js">
@@ -22,57 +22,75 @@
 <h3 align="center">One app to run the whole agency: clients, projects, quotes, contracts, invoices, workload and the calendar.</h3>
 
 <p align="center">
-  <a href="#-what-it-does">What it does</a> ·
-  <a href="#-how-it-works">How it works</a> ·
-  <a href="#-the-sales-pipeline">Sales pipeline</a> ·
-  <a href="#-code-composition">Composition</a> ·
-  <a href="#-field-manual">Field manual</a> ·
-  <a href="#-license">License</a>
+  <a href="#01--what-it-does">What it does</a> ·
+  <a href="#02--inside-the-app">Inside the app</a> ·
+  <a href="#03--how-it-works">How it works</a> ·
+  <a href="#04--the-sales-pipeline">The sales pipeline</a> ·
+  <a href="#05--code-composition">Code composition</a> ·
+  <a href="#field-manual">Field manual</a> ·
+  <a href="#license">License</a>
 </p>
 
 <p align="center"><img src=".github/assets/divider.svg" width="100%" alt=""></p>
 
-## ⚡ What it does
+## 01 · What it does
 
-Agency Zero is a private CRM and operating system for a solo operator selling software, websites, SEO, Meta ads, social media management and video. It replaces the spreadsheet, the invoicing app, the contract tool and the calendar with one black-and-white, keyboard-fast workspace.
+Agency Zero is a private CRM and operating system for a solo operator selling software, websites, SEO, Meta ads, social media management and video. Black, white and grayscale only. Emphasis comes from weight, size and contrast, never hue, with one exception: money is green, so currency reads at a glance.
 
-| | Module | What you get |
-|---|---|---|
-| 🧑‍💼 | **Clients & projects** | Client records, projects, tasks, notes and a full activity trail |
-| 🧾 | **Quotes** | Packages and options, customer selection, public acceptance links with frozen snapshots |
-| ✍️ | **Contracts** | Templates, placeholders, versioning, signing, immutable once signed |
-| 💸 | **Invoices & payments** | Invoices, manual payments, revenue tracking, profitability view |
-| 📅 | **Calendar & workload** | Day, week and month views, capacity planning, overload detection, rescheduling |
-| 🔔 | **Reminders** | Live and custom reminders tied to real records |
-| 🔐 | **Security** | Row-level security on every internal table, passkeys (WebAuthn), narrow RPCs for public links |
+| Module | What you get |
+|---|---|
+| **Clients & projects** | Client records, projects, tasks, notes and a full activity trail |
+| **Quotes** | Packages and options, customer selection, public acceptance links with frozen snapshots |
+| **Contracts** | Templates, placeholders, versioning, signing, immutable once signed |
+| **Invoices & payments** | Invoices, manual payments, revenue tracking, profitability view |
+| **Calendar & workload** | Day, week and month views, capacity planning, overload detection, rescheduling |
+| **Lock In & Quick note** | Focus timer and voice-dictated notes from the top bar |
+| **Security** | Row-level security on every table, passkeys (WebAuthn), narrow RPCs for public links |
 
-## 🧠 How it works
+## 02 · Inside the app
+
+<table>
+  <tr>
+    <td colspan="2"><img src=".github/assets/screens/crm-home.jpg" alt="Agency Zero CRM home: revenue tiles in green and the module grid"><br><sub><b>CRM home.</b> Revenue, recurring income, outstanding invoices and every module one click away. Shown with demo data.</sub></td>
+  </tr>
+  <tr>
+    <td width="72%"><img src=".github/assets/screens/site-home.jpg" alt="Agency Zero public site hero with ASCII zero art"><br><sub><b>Public site.</b> The marketing half lives in the same app at <code>/</code>.</sub></td>
+    <td width="28%"><img src=".github/assets/screens/site-mobile.jpg" alt="Agency Zero site on a phone"><br><sub><b>Mobile.</b></sub></td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src=".github/assets/screens/crm-login.jpg" alt="Agency Zero private sign-in screen"><br><sub><b>Sign in.</b> There is no public sign-up. The owner account is created in Supabase.</sub></td>
+  </tr>
+</table>
+
+## 03 · How it works
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#0a0a0a','primaryTextColor':'#f4f4f2','primaryBorderColor':'#737373','lineColor':'#8a8a8a','secondaryColor':'#1f1f1f','tertiaryColor':'#141414','clusterBkg':'transparent','clusterBorder':'#737373','noteBkgColor':'#1f1f1f','noteTextColor':'#f4f4f2','actorBkg':'#0a0a0a','actorTextColor':'#f4f4f2','actorBorder':'#737373','signalColor':'#8a8a8a','signalTextColor':'#8a8a8a','labelBoxBkgColor':'#0a0a0a','fontFamily':'inherit'}}}%%
 flowchart LR
-    subgraph Edge["☁️ Cloudflare Workers"]
+    subgraph Edge["Cloudflare Workers"]
         Site["Public site<br/>/"]
         CRM["CRM app<br/>/app/**"]
         Links["Customer links<br/>/q/token · /c/token"]
         Proxy["proxy.ts<br/>session + route guard"]
     end
-    subgraph Data["🗄️ Supabase"]
+    subgraph Data["Supabase"]
         Auth["Auth + Passkeys"]
         PG[("Postgres<br/>RLS on every table")]
         RPC["Security-definer RPCs"]
         Store["Storage"]
     end
-    Owner(["👤 Owner"]) --> Proxy --> CRM
-    Client(["🤝 Customer"]) --> Links
+    Owner(["Owner"]) --> Proxy --> CRM
+    Client(["Customer"]) --> Links
     CRM --> Auth
     CRM --> PG
     CRM --> Store
     Links --> RPC --> PG
 ```
 
-## 🔁 The sales pipeline
+## 04 · The sales pipeline
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#0a0a0a','primaryTextColor':'#f4f4f2','primaryBorderColor':'#737373','lineColor':'#8a8a8a','secondaryColor':'#1f1f1f','tertiaryColor':'#141414','clusterBkg':'transparent','clusterBorder':'#737373','noteBkgColor':'#1f1f1f','noteTextColor':'#f4f4f2','actorBkg':'#0a0a0a','actorTextColor':'#f4f4f2','actorBorder':'#737373','signalColor':'#8a8a8a','signalTextColor':'#8a8a8a','labelBoxBkgColor':'#0a0a0a','fontFamily':'inherit'}}}%%
 stateDiagram-v2
     direction LR
     [*] --> Quote: build packages
@@ -85,10 +103,10 @@ stateDiagram-v2
     note right of Signed: immutable after signing
 ```
 
-## 📊 Code composition
+## 05 · Code composition
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'pie1':'#e5e5e5','pie2':'#8a8a8a','pie3':'#64748b','pie4':'#94a3b8','pie5':'#475569','pie6':'#cbd5e1','pie7':'#334155','pieStrokeColor':'#0d1117','pieOuterStrokeColor':'#0d1117','pieTitleTextColor':'#8b949e','pieLegendTextColor':'#8b949e','pieSectionTextColor':'#0d1117'}}}%%
+%%{init: {'theme':'base','themeVariables':{'pie1':'#f4f4f2','pie2':'#737373','pie3':'#64748b','pie4':'#94a3b8','pie5':'#475569','pie6':'#cbd5e1','pie7':'#334155','pieStrokeColor':'#0d1117','pieOuterStrokeColor':'#0d1117','pieTitleTextColor':'#8b949e','pieLegendTextColor':'#8b949e','pieSectionTextColor':'#0d1117'}}}%%
 pie title Code composition (% of bytes, via GitHub linguist)
     "TypeScript" : 59.9
     "PLpgSQL" : 25.8
@@ -100,7 +118,7 @@ pie title Code composition (% of bytes, via GitHub linguist)
 
 <p align="center"><img src=".github/assets/divider.svg" width="100%" alt=""></p>
 
-## 📚 Field manual
+## Field manual
 
 A private, lightweight agency CRM / operating system — built for a solo operator running an agency that sells:
 
@@ -189,7 +207,7 @@ Agents: start with [`AGENTS.md`](AGENTS.md) (session protocol) and [`docs/develo
 3. The AI assistant never silently performs high-impact financial or ad-spend actions; it recommends, the owner approves.
 4. No fake UI: unbuilt features get honest "planned" states, never dead buttons that pretend to work.
 
-## 📜 License
+## License
 
 Released under the [MIT License](LICENSE). Use it, fork it, ship it.
 
