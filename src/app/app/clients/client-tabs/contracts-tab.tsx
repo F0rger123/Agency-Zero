@@ -5,17 +5,16 @@ import Link from "next/link";
 import { AddDialog } from "@/components/modal";
 import { FormSection } from "@/components/form-controls";
 import { dateLabel } from "@/lib/format";
-import { NewContractForm } from "../../contracts/contract-forms";
+import { NewContractWizard } from "../../contracts/contract-wizard";
 import { clientFormOptions } from "../client-workspace-options";
 import type { ClientWorkspaceData } from "../client-workspace-types";
 import { Empty } from "../client-workspace-parts";
 
 export function ContractsTab({
   data,
-  templates,
 }: {
   data: ClientWorkspaceData;
-  templates: { id: string; label: string }[];
+  templates?: { id: string; label: string }[];
 }) {
   const options = clientFormOptions(data);
   return (
@@ -23,14 +22,8 @@ export function ContractsTab({
       title="Contracts"
       description="Agreements for this client and their signature status."
       action={
-        <AddDialog label="New contract" title="New contract" description={`For ${data.client.name}`}>
-          <NewContractForm
-            lockedClientId={data.client.id}
-            clients={options.clients}
-            quotes={options.quotes}
-            projects={options.projects}
-            templates={templates}
-          />
+        <AddDialog label="Create contract" title="Create contract" description={`For ${data.client.name}`}>
+          <NewContractWizard lockedClientId={data.client.id} clients={options.clients} />
         </AddDialog>
       }
     >

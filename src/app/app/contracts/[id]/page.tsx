@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { FormSection } from "@/components/form-controls";
 import { MigrationsRequired, SetupRequired } from "@/components/states";
 import { DeleteContractForm, EditContractForm, RegenerateContractLinkForm } from "../contract-forms";
+import { ContractSendPanel } from "../contract-wizard";
 
 export const metadata: Metadata = { title: "Contract" };
 
@@ -70,6 +71,8 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
   const projects = (projectsResponse.data ?? []) as { id: string; name: string }[];
   const templates = (templatesResponse.data ?? []) as { id: string; name: string }[];
 
+  const clientResponse = await supabase.from("clients").select("name, email, phone").eq("id", contract.client_id).maybeSingle();
+  const person = (clientResponse.data ?? { name: "", email: null, phone: null }) as { name: string; email: string | null; phone: string | null };
   const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
   const publicLink = `${site || ""}/c/${contract.public_token}`;
   const isSigned = contract.status === "signed";
@@ -101,7 +104,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
         title="Customer signing link"
         description="Share this secure link. Customers can read the current contract and sign once while its status is Sent."
       >
-        <div className="break-all border-y border-border py-4 font-mono text-sm">{publicLink}</div>
+        <ContractSendPanel id={contract.id} link={publicLink} status={contract.status} email={person.email ?? ""} phone={person.phone ?? ""} title={contract.title} name={person.name} />
         <RegenerateContractLinkForm id={contract.id} />
       </FormSection>
 

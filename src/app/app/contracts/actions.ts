@@ -248,3 +248,107 @@ export async function regenerateContractTokenAction(_previous: ActionState, form
   revalidatePath(`/app/contracts/${id}`);
   return { success: "New signing link generated — the previous link no longer works." };
 }
+
+/* ── Create-contract wizard ─────────────────────────────────────────────────────────────────── */
+
+export type ContractContext = {
+  error?: string;
+  client?: { id: string; name: string; company: string | null; email: string | null; phone: string | null; website: string | null };
+  business?: { name: string; email: string };
+  /** Names of the services this customer has, to suggest a type of work. */
+  serviceNames?: string[];
+  hasRecurring?: boolean;
+  quotes?: { id: string; title: string; status: string }[];
+};
+
+/** Everything the wizard needs to fill in a contract for one customer. Read only. */
+export async function getContractContextAction(clientId: string): Promise<ContractContext> {
+  if (!/^[0-9a-f-]{36}$/i.test(clientId)) return { error: "Choose a customer." };
+  const auth = await getUserClient();
+  if ("error" in auth) return { error: auth.error };
+  const [clientResponse, settingsResponse, servicesResponse, quotesResponse, userResponse] = await Promise.all([
+    auth.supabase.from("clients").select("id, name, company, email, phone, website").eq("id", clientId).maybeSingle(),
+    auth.supabase.from("settings").select("business_name").eq("id", 1).maybeSingle(),
+    auth.supabase.from("client_services").select("billing, services(name)").eq("client_id", clientId).limit(50),
+    auth.supabase.from("quotes").select("id, title, status").eq("client_id", clientId).order("created_at", { ascending: false }).limit(20),
+    auth.supabase.auth.getUser(),
+  ]);
+  if (clientResponse.error) return { error: readableError(clientResponse.error.message) };
+  if (!clientResponse.data) return { error: "Customer not found." };
+  const rows = (servicesResponse.error ? [] : servicesResponse.data ?? []) as unknown as { billing: string; services: { name: string } | { name: string }[] | null }[];
+  const serviceNames = rows.map((row) => (Array.isArray(row.services) ? row.services[0]?.name : row.services?.name)).filter((name): name is string => Boolean(name));
+  return {
+    client: clientResponse.data,
+    business: { name: settingsResponse.data?.business_name || "Agency Zero", email: userResponse.data.user?.email ?? "" },
+    serviceNames,
+    hasRecurring: rows.some((row) => row.billing === "recurring"),
+    quotes: quotesResponse.error ? [] : ((quotesResponse.data ?? []) as { id: string; title: string; status: string }[]),
+  };
+}
+
+/** The included line items of one quote, to turn into the contract's fee schedule. */
+export async function getQuoteFeeLinesAction(quoteId: string): Promise<{ error?: string; lines?: { description: string; amount_cents: number; selection: string; is_recurring: boolean; billing_period: string | null }[] }> {
+  if (!/^[0-9a-f-]{36}$/i.test(quoteId)) return { error: "Choose a quote." };
+  const auth = await getUserClient();
+  if ("error" in auth) return { error: auth.error };
+  const { data, error } = await auth.supabase
+    .from("quote_line_items")
+    .select("description, amount_cents, selection, is_recurring, billing_period")
+    .eq("quote_id", quoteId)
+    .order("sort_order")
+    .limit(100);
+  if (error) return { error: readableError(error.message) };
+  return { lines: data ?? [] };
+}
+
+export type WizardContractState = ActionState & { id?: string; link?: string; sent?: boolean };
+
+/** Saves the contract the wizard built. "send" makes it Sent, which is what lets the customer sign through the link. */
+export async function createContractFromWizardAction(_previous: WizardContractState, formData: FormData): Promise<WizardContractState> {
+  const clientId = field(formData, "client_id");
+  const title = requiredText(formData, "title", "Contract name", 200);
+  if (typeof title !== "string") return title;
+  if (!clientId) return { error: "Choose a customer." };
+  const body = String(formData.get("body") ?? "").trim();
+  if (body.length < 50) return { error: "The contract text is empty." };
+  if (body.length > 100000) return { error: "The contract is too long (100,000 characters at most)." };
+  const send = field(formData, "send") === "1";
+  const quoteId = optionalField(formData, "quote_id");
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const token = createPublicToken();
+  const { data, error } = await auth.supabase
+    .from("contracts")
+    .insert({ client_id: clientId, quote_id: quoteId, title, status: send ? "sent" : "draft", body, public_token: token.token, public_token_hash: token.hash })
+    .select("id, version")
+    .single();
+  if (error) return { error: readableError(error.message) };
+  const version = await auth.supabase.from("contract_versions").insert({ contract_id: data.id, version: data.version, body });
+  if (version.error) return { error: readableError(version.error.message) };
+  revalidatePath("/app/contracts");
+  revalidatePath(`/app/clients/${clientId}`);
+  revalidatePath("/app");
+  const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
+  return {
+    success: send ? "Contract ready to send." : "Saved as a draft.",
+    id: data.id,
+    link: `${site}/c/${token.token}`,
+    sent: send,
+  };
+}
+
+/** Draft → sent, so the signing link starts working. */
+export async function markContractSentAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const id = field(formData, "id");
+  if (!id) return { error: "Contract ID is missing." };
+  const auth = await getUserClient();
+  if ("error" in auth) return auth;
+  const { error, count } = await auth.supabase.from("contracts").update({ status: "sent" }, { count: "exact" }).eq("id", id).eq("status", "draft");
+  if (error) return { error: readableError(error.message) };
+  const missing = notFoundWhenNoRows(count, "Draft contract");
+  if (missing) return missing;
+  revalidatePath("/app/contracts");
+  revalidatePath(`/app/contracts/${id}`);
+  revalidatePath("/app");
+  return { success: "Marked as sent. The signing link now works." };
+}

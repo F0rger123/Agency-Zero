@@ -8,13 +8,15 @@ import { LIST_LIMIT, PICKER_LIMIT } from "@/lib/limits";
 import { PageHeader } from "@/components/page-header";
 import { FormSection } from "@/components/form-controls";
 import { MigrationsRequired, SetupRequired, LimitNotice } from "@/components/states";
-import { DeleteTemplateForm, NewContractForm, TemplateForm } from "./contract-forms";
+import { DeleteTemplateForm, TemplateForm } from "./contract-forms";
+import { NewContractWizard } from "./contract-wizard";
+import { WORK_TYPES } from "@/lib/contract-library";
 
 export const metadata: Metadata = { title: "Contracts" };
 export default async function ContractsPage() {
   if (!isSupabaseConfigured()) return <SetupRequired />;
   const supabase = await createClient();
-  const [contractsResponse, templatesResponse, clientsResponse, quotesResponse, projectsResponse] = await Promise.all([
+  const [contractsResponse, templatesResponse, clientsResponse] = await Promise.all([
     supabase
       .from("contracts")
       .select("id, title, status, version, created_at, client_id, public_token, clients(name)")
@@ -22,14 +24,8 @@ export default async function ContractsPage() {
       .limit(LIST_LIMIT),
     supabase.from("contract_templates").select("id, name, body, active").order("name"),
     supabase.from("clients").select("id, name, company").is("deleted_at", null).order("name").limit(PICKER_LIMIT),
-    supabase
-      .from("quotes")
-      .select("id, number, title, client_id")
-      .order("created_at", { ascending: false })
-      .limit(PICKER_LIMIT),
-    supabase.from("projects").select("id, name, client_id").is("deleted_at", null).order("name").limit(PICKER_LIMIT),
   ]);
-  const responses = [contractsResponse, templatesResponse, clientsResponse, quotesResponse, projectsResponse];
+  const responses = [contractsResponse, templatesResponse, clientsResponse];
   if (responses.some((response) => response.error && isMissingTable(response.error.message)))
     return <MigrationsRequired />;
   const failed = responses.find((response) => response.error);
@@ -46,13 +42,11 @@ export default async function ContractsPage() {
   }[];
   const templates = (templatesResponse.data ?? []) as { id: string; name: string; body: string; active: boolean }[];
   const clients = (clientsResponse.data ?? []) as { id: string; name: string; company: string | null }[];
-  const quotes = (quotesResponse.data ?? []) as { id: string; number: string; title: string }[];
-  const projects = (projectsResponse.data ?? []) as { id: string; name: string }[];
   return (
     <>
       <PageHeader
         title="Contracts"
-        description="Templates, linked agreements, version history, secure signing links, and preserved signed snapshots."
+        description="Create a contract in a few taps, send the customer a link, and keep the signed copy here."
       />
       <LimitNotice shown={contractsResponse.data?.length ?? 0} limit={LIST_LIMIT} hint="Older contracts are hidden; find them in the client workspace." />
       <section>
@@ -60,17 +54,14 @@ export default async function ContractsPage() {
           <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
             {contracts.length} contracts
           </h2>
-            <AddDialog label="New contract" title="New contract">
-          <NewContractForm
-            clients={clients.map((item) => ({
-              id: item.id,
-              label: `${item.name}${item.company ? ` · ${item.company}` : ""}`,
-            }))}
-            quotes={quotes.map((item) => ({ id: item.id, label: item.title }))}
-            projects={projects.map((item) => ({ id: item.id, label: item.name }))}
-            templates={templates.filter((item) => item.active).map((item) => ({ id: item.id, label: item.name }))}
-          />
-            </AddDialog>
+          <AddDialog label="Create contract" title="Create contract" description="Pick the customer and the kind of work. The contract fills itself in.">
+            <NewContractWizard
+              clients={clients.map((item) => ({
+                id: item.id,
+                label: `${item.name}${item.company ? ` · ${item.company}` : ""}`,
+              }))}
+            />
+          </AddDialog>
         </div>
         {contracts.length === 0 ? (
           <p className="mt-4 border-t border-border py-8 text-sm text-muted-foreground">
@@ -113,8 +104,31 @@ export default async function ContractsPage() {
       </section>
       <div className="mt-14" />
       <FormSection
-        title="Contract templates"
-        description="Reusable bodies for new agreements. Existing contracts preserve their own version history."
+        title="Built-in templates"
+        description="Used by Create contract. Each one covers payment, ownership, confidentiality, liability, ending the deal and disputes for both sides, plus what is specific to that kind of work. General starting points, not legal advice."
+      >
+        <ul className="divide-y divide-border border-y border-border">
+          {WORK_TYPES.map((type) => (
+            <li key={type.key}>
+              <details className="py-3">
+                <summary className="flex cursor-pointer flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <span className="font-medium">{type.name}</span>
+                  <span className="text-xs text-muted-foreground">{type.summary}</span>
+                </summary>
+                <ul className="mt-3 grid gap-x-6 gap-y-1 text-sm text-muted-foreground sm:grid-cols-2">
+                  {type.covers.map((item) => (
+                    <li key={item}>• {item}</li>
+                  ))}
+                </ul>
+              </details>
+            </li>
+          ))}
+        </ul>
+      </FormSection>
+      <div className="mt-14" />
+      <FormSection
+        title="Your own templates"
+        description="Optional: your own reusable text. Existing contracts keep their own version history."
       >
         <div className="space-y-8">
           {templates.map((template) => (

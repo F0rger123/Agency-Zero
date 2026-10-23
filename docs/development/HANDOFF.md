@@ -1,5 +1,13 @@
 # Handoff log (newest first)
 
+## 2026-10-23 — Claude — Create contract wizard + template library
+
+**No migration** (uses the existing `contracts`, `contract_versions` and public signing page `/c/<token>` from 0006/0008).
+- **Create contract** (Contracts page and each customer's Contracts tab; `src/app/app/contracts/contract-wizard.tsx`): 5 steps: customer → type of work (the best match is preselected from the customer's services, "Suggested" badge) → what the work is (prefilled, editable, `[brackets]` flagged) → fees and terms (typed amounts, or pull the fee schedule from one of their quotes: included items only; deposit, payment days, notice, minimum commitment, governing state, optional notice email) → review the finished text (editable; "start over" resets) → **Create and get signing link** (status Sent) or **Save as draft**. After saving: copy link, Email it, Text it (mailto/sms with a ready message), Open contract. Signed copies, evidence and snapshots already save into the CRM via the existing signing flow.
+- **Library** (`src/lib/contract-library.ts`, tested): 11 types (software/CRM, website, monthly recurring, SEO retainer, paid ads, social and video content, care plan, branding, consulting/hourly, other, mutual NDA) composed from shared clauses so each covers scope and change orders, payment and late fees, acceptance, ownership/licence, confidentiality, data/security, warranty, no-guarantee language for marketing, ad spend and platform rules, shoots and releases, liability limits, mutual indemnity, ending/renewal, independent contractor, disputes, general terms. Filled from the customer (name, company, email, phone, website), the business name from settings and today's date. The business email is NOT taken from the login; it is an optional field.
+- Contract page: new send panel (copy link, email, text, Mark as sent). Contracts page lists the built-in templates and what they cover; the old DB templates section stays ("Your own templates").
+- **Legal caveat to pass on**: these are general starting points, not legal advice; the wizard says so. Default governing state is Pennsylvania (matches the York, PA positioning); change per contract. Unverified against real Supabase; browser-smoked against the mock backend.
+
 ## 2026-10-23 — Claude — Lock In modes, Quick note voice, menu animation
 
 **No migration.** (Applies on top of 0030/0031 from the previous entries.)
