@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { appPath } from "@/lib/routes";
+import { reloadFresh, useRecoverFromStaleBuild } from "@/lib/stale-build";
 
 export default function AppError({
   error,
@@ -10,6 +11,7 @@ export default function AppError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useRecoverFromStaleBuild(error);
   return (
     <div className="border-t border-border pt-10">
       <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
@@ -39,6 +41,21 @@ export default function AppError({
       >
         Try again
       </button>
+      <button
+        type="button"
+        onClick={reloadFresh}
+        className="ml-3 mt-6 rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted"
+      >
+        Reload the app
+      </button>
+      <details className="mt-8 max-w-prose text-xs text-muted-foreground">
+        <summary className="cursor-pointer">Technical details</summary>
+        <p className="mt-2 break-words font-mono">
+          {error.name}: {error.message}
+          {error.digest ? ` (ref: ${error.digest})` : ""}
+        </p>
+        <p className="mt-2">If this keeps happening, send this text to whoever is helping you.</p>
+      </details>
     </div>
   );
 }
