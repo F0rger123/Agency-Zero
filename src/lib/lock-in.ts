@@ -11,7 +11,7 @@ export type LockInItem = {
   id: string;
   text: string;
   done: boolean;
-  kind: "custom" | "task" | "project";
+  kind: "custom" | "task" | "project" | "todo";
   /** Task or project id when the item came from the CRM. */
   refId?: string;
 };
@@ -129,7 +129,7 @@ const cleanItems = (raw: unknown): LockInItem[] =>
           id: item.id,
           text: item.text.slice(0, 300),
           done: Boolean(item.done),
-          kind: item.kind === "task" || item.kind === "project" ? item.kind : "custom",
+          kind: item.kind === "task" || item.kind === "project" || item.kind === "todo" ? item.kind : "custom",
           ...(typeof item.refId === "string" ? { refId: item.refId } : {}),
         }))
     : [];

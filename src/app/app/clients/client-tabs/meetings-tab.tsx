@@ -9,6 +9,8 @@ import { useOnline } from "@/components/offline";
 import { dateTimeLabel } from "@/lib/format";
 import { MEETINGS_MIGRATION_MESSAGE, meetingDuration, openItemsToConvert, type ActionItem, type Meeting } from "@/lib/meetings";
 import { useDictation } from "@/lib/use-dictation";
+import { applyDictation } from "@/lib/dictation-text";
+import { DictationHint, MicButton } from "@/components/mic-button";
 import type { ActionState } from "@/lib/forms";
 import { deleteMeetingAction, meetingTasksAction, saveMeetingAction, setMeetingStatusAction, startMeetingAction } from "../../meetings/actions";
 import type { ClientWorkspaceData } from "../client-workspace-types";
@@ -139,7 +141,7 @@ function MeetingEditor({ meeting }: { meeting: Meeting }) {
     timer.current = window.setTimeout(save, 900);
   };
 
-  const dictation = useDictation((phrase) => change({ notes: `${latest.current.notes}${latest.current.notes && !latest.current.notes.endsWith("\n") ? " " : ""}${phrase}` }));
+  const dictation = useDictation((phrase) => change({ notes: applyDictation(latest.current.notes, phrase) }));
 
   // Back online: send whatever was waiting on the device.
   useEffect(() => {
@@ -192,19 +194,9 @@ function MeetingEditor({ meeting }: { meeting: Meeting }) {
             placeholder="Type or dictate as you go. It saves itself."
             className={`${field} resize-y pr-14 leading-6`}
           />
-          {dictation.supported ? (
-            <button
-              type="button"
-              onClick={dictation.toggle}
-              aria-pressed={dictation.listening}
-              aria-label={dictation.listening ? "Stop voice typing" : "Start voice typing"}
-              className={`press absolute right-3 top-3 flex size-10 items-center justify-center rounded-full border transition-colors ${dictation.listening ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"}`}
-            >
-              <Icon name="mic" className={`size-5 ${dictation.listening ? "animate-pulse" : ""}`} />
-            </button>
-          ) : null}
+          <MicButton dictation={dictation} className="absolute right-3 top-3" />
         </div>
-        {dictation.error ? <p role="alert" className="mt-2 text-xs font-medium">{dictation.error}</p> : null}
+        <DictationHint dictation={dictation} className="mt-2" />
       </div>
 
       <div>

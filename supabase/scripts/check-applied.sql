@@ -45,5 +45,8 @@ select * from (
   union all
   select '0030', 'service categories (services.category)',
          exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'services' and column_name = 'category')
+  union all
+  select '0031', 'to-do list table',
+         to_regclass('public.todos') is not null
 ) checks
 order by migration, what;

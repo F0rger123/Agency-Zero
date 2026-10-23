@@ -42,13 +42,16 @@ export default async function DashboardPage() {
   const today = todayIso();
   // Two cheap aggregates in parallel. Revenue is a separate read model so a
   // missing migration 0018 degrades only the revenue cards, never the dashboard.
-  const [{ data, error }, revenueResponse, leadsResponse] = await Promise.all([
+  const [{ data, error }, revenueResponse, leadsResponse, todosResponse] = await Promise.all([
     retryOnClockSkew(() => supabase.rpc("get_dashboard_summary", { p_today: today })),
     retryOnClockSkew(() => supabase.rpc("get_revenue_summary", { p_today: today })),
     // New website inquiries (migration 0019). Errors (e.g. not applied yet) just hide the count.
     supabase.from("leads").select("id", { count: "exact", head: true }).eq("status", "new"),
+    // Open to-dos (migration 0031); an error just hides the count.
+    supabase.from("todos").select("id", { count: "exact", head: true }).eq("done", false),
   ]);
   const newLeads = leadsResponse.error ? 0 : (leadsResponse.count ?? 0);
+  const openTodos = todosResponse.error ? 0 : (todosResponse.count ?? 0);
   const revenue = revenueResponse.error ? null : (revenueResponse.data as RevenueSummary | null);
 
   const header = (
@@ -108,6 +111,7 @@ export default async function DashboardPage() {
             "/app/clients": { value: summary.clients, label: summary.clients === 1 ? "customer" : "customers" },
             "/app/projects": { value: summary.active_projects, label: "active" },
             "/app/tasks": { value: summary.tasks_open, label: summary.tasks_overdue > 0 ? `open · ${summary.tasks_overdue} overdue` : "open" },
+            ...(openTodos > 0 ? { "/app/todos": { value: openTodos, label: "open" } } : {}),
             ...(newLeads > 0 ? { "/app/leads": { value: newLeads, label: "new" } } : {}),
           }}
         />

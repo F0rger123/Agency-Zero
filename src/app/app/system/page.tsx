@@ -50,6 +50,7 @@ const probes: Probe[] = [
   table("passkeys", "0026"),
   table("meetings", "0027"),
   table("lock_in_sessions", "0029"),
+  table("todos", "0031"),
   {
     name: "service categories (services.category)",
     migration: "0030",

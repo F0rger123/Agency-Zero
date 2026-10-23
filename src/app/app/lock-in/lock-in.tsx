@@ -1,8 +1,12 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { AnimatedCheck, Burst } from "@/components/animated-check";
 import { Icon } from "@/components/icons";
+import { DictationHint, MicButton } from "@/components/mic-button";
+import { applyDictation } from "@/lib/dictation-text";
+import { useDictationTarget } from "@/lib/use-dictation";
 import {
   addItem,
   checklistSummary,
@@ -25,6 +29,8 @@ import {
 } from "@/lib/lock-in";
 import { completeLockInTasksAction, getLockInOptionsAction, listLockInSessionsAction, saveLockInSessionAction, type LockInOptions, type SavedSession } from "./actions";
 import { Hourglass } from "./hourglass";
+import { listTodosAction, setTodoDoneAction, type Todo } from "../todos/actions";
+import { TodoQuickAdd } from "../todos/todo-quick-add";
 
 /* ── Session store: localStorage, so a session survives navigation and reloads ───────────────── */
 
@@ -262,40 +268,79 @@ function MiniTimer({ session, onOpen }: { session: LockInSession; onOpen: () => 
 
 const GOALS = [25, 45, 60, 90, 120];
 const field = "w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-foreground";
+const noopSubscribe = () => () => {};
+
+const subscribeFullscreen = (callback: () => void) => {
+  document.addEventListener("fullscreenchange", callback);
+  return () => document.removeEventListener("fullscreenchange", callback);
+};
+const useFullscreenState = () =>
+  useSyncExternalStore(subscribeFullscreen, () => document.fullscreenElement != null, () => false);
+/** Browsers on iPhone cannot make a page full screen; the screen still fills the whole display there. */
+const useCanFullscreen = () => useSyncExternalStore(noopSubscribe, () => document.fullscreenEnabled === true, () => false);
 
 function LockInScreen({ session, onClose }: { session: LockInSession | null; onClose: () => void }) {
+  const root = useRef<HTMLDivElement>(null);
+  const fullscreen = useFullscreenState();
+  const canFullscreen = useCanFullscreen();
+
   useEffect(() => {
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" && !document.fullscreenElement) onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = previous;
       window.removeEventListener("keydown", onKey);
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
     };
   }, [onClose]);
 
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    else void root.current?.requestFullscreen().catch(() => {});
+  };
+
   const live = session && session.status !== "done";
   return (
-    <div role="dialog" aria-modal="true" aria-label="Lock In" className="modal-backdrop fixed inset-0 z-[60] overflow-y-auto bg-background">
-      <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-5 pb-10 pt-4 sm:px-8">
-        <div className="flex items-center justify-between py-2">
-          <span className="text-[11px] font-medium uppercase tracking-[0.28em] text-muted-foreground">Lock In</span>
+    <div ref={root} role="dialog" aria-modal="true" aria-label="Lock In" className="modal-backdrop fixed inset-0 z-[60] h-dvh overflow-hidden bg-background">
+      <header className="flex h-14 items-center justify-between gap-3 px-4 sm:px-8">
+        <span className="text-[11px] font-medium uppercase tracking-[0.28em] text-muted-foreground">Lock In</span>
+        <div className="flex items-center gap-2">
+          {canFullscreen ? (
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              aria-pressed={fullscreen}
+              className="press flex items-center gap-2 rounded-full border border-border px-3.5 py-2 text-sm transition-colors hover:bg-muted"
+            >
+              <FullscreenIcon exit={fullscreen} />
+              <span className="max-sm:sr-only">{fullscreen ? "Exit full screen" : "Full screen"}</span>
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={onClose}
             aria-label={live ? "Minimize, keep running" : "Close"}
             className="press flex items-center gap-2 rounded-full border border-border px-3.5 py-2 text-sm transition-colors hover:bg-muted"
           >
-            {live ? "Minimize" : "Close"}
+            <span className="max-sm:sr-only">{live ? "Minimize" : "Close"}</span>
             <Icon name="close" className="size-4" />
           </button>
         </div>
-        {session ? <SessionView session={session} onExit={onClose} /> : <Setup />}
-      </div>
+      </header>
+      <div className="h-[calc(100dvh-3.5rem)] overflow-y-auto">{session ? <SessionView session={session} onExit={onClose} /> : <div className="mx-auto w-full max-w-6xl px-5 pb-10 sm:px-8"><Setup /></div>}</div>
     </div>
+  );
+}
+
+function FullscreenIcon({ exit }: { exit: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden>
+      {exit ? <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /> : <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />}
+    </svg>
   );
 }
 
@@ -306,7 +351,12 @@ function Setup() {
   const [draft, setDraft] = useState("");
   const [notes, setNotes] = useState("");
   const [options, setOptions] = useState<LockInOptions | null>(null);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(false);
+  const { dictation, toggleFor, activeTarget } = useDictationTarget<"item" | "notes">((target, phrase) => {
+    if (target === "item") setDraft((current) => applyDictation(current, phrase));
+    else setNotes((current) => applyDictation(current, phrase));
+  });
 
   const addCustom = () => {
     const text = draft.trim();
@@ -314,7 +364,7 @@ function Setup() {
     setItems((current) => [...current, { id: newSessionId(), text: text.slice(0, 300), done: false, kind: "custom" }]);
     setDraft("");
   };
-  const toggleRef = (kind: "task" | "project", refId: string, text: string) =>
+  const toggleRef = (kind: "task" | "project" | "todo", refId: string, text: string) =>
     setItems((current) =>
       current.some((item) => item.refId === refId)
         ? current.filter((item) => item.refId !== refId)
@@ -322,11 +372,14 @@ function Setup() {
     );
   const loadOptions = async () => {
     setLoading(true);
-    setOptions(await getLockInOptionsAction());
+    const [loaded, todoResult] = await Promise.all([getLockInOptionsAction(), listTodosAction()]);
+    setOptions(loaded);
+    setTodos(todoResult.todos.filter((todo) => !todo.done));
     setLoading(false);
   };
   const selected = (refId: string) => items.some((item) => item.refId === refId);
   const start = () => {
+    dictation.stop();
     const pending = draft.trim();
     const all = pending ? [...items, { id: newSessionId(), text: pending.slice(0, 300), done: false, kind: "custom" as const }] : items;
     const session = startSession(goal, all, notes, Date.now());
@@ -335,10 +388,10 @@ function Setup() {
   };
 
   return (
-    <div className="grid flex-1 gap-8 py-6 lg:grid-cols-[minmax(0,320px)_1fr] lg:gap-12">
-      <div className="flex flex-col items-center text-center">
-        <Hourglass progress={0} running={false} className="h-48 w-auto sm:h-64" />
-        <p className="mt-4 text-5xl font-semibold tabular-nums tracking-tight sm:text-6xl">00:00</p>
+    <div className="grid gap-8 py-4 lg:grid-cols-[minmax(0,360px)_1fr] lg:gap-14">
+      <div className="flex flex-col items-center text-center lg:sticky lg:top-2 lg:self-start">
+        <Hourglass progress={0} running={false} className="h-56 w-auto sm:h-72" />
+        <p className="mt-4 text-6xl font-semibold tabular-nums tracking-tight sm:text-7xl">00:00</p>
         <p className="mt-1 text-sm text-muted-foreground">A timer that counts up. It only stops when you do.</p>
         <p className="mt-6 text-xs font-medium uppercase tracking-widest text-muted-foreground">Goal (optional)</p>
         <div className="mt-3 flex flex-wrap justify-center gap-2" role="group" aria-label="Goal">
@@ -389,7 +442,7 @@ function Setup() {
       <div className="space-y-8">
         <section>
           <h2 className="text-lg font-semibold tracking-tight">What are you getting done?</h2>
-          <p className="mt-1 text-sm text-muted-foreground">You can add more items any time during the session.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Type or talk. You can add more items any time during the session.</p>
           <div className="mt-3 flex gap-2">
             <label className="sr-only" htmlFor="lock-in-item">Checklist item</label>
             <input
@@ -405,16 +458,18 @@ function Setup() {
               placeholder="Add a checklist item and press Enter"
               className={field}
             />
+            <MicButton dictation={dictation} active={activeTarget === "item"} onClick={() => toggleFor("item")} />
             <button type="button" onClick={addCustom} className="press shrink-0 rounded-md border border-border px-4 text-sm font-medium transition-colors hover:bg-muted">
               Add
             </button>
           </div>
+          <DictationHint dictation={dictation} className="mt-2" />
           {items.length > 0 ? (
             <ul className="mt-4 space-y-2">
               {items.map((item) => (
                 <li key={item.id} className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3 text-sm">
                   <span className="min-w-0">
-                    {item.kind !== "custom" ? <span className="mr-2 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">{item.kind}</span> : null}
+                    {item.kind !== "custom" ? <span className="mr-2 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">{item.kind === "todo" ? "to-do" : item.kind}</span> : null}
                     {item.text}
                   </span>
                   <button type="button" aria-label={`Remove ${item.text}`} onClick={() => setItems((current) => current.filter((entry) => entry.id !== item.id))} className="press -mr-1 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
@@ -428,7 +483,7 @@ function Setup() {
 
         <section>
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold tracking-tight">Pull in tasks and projects</h2>
+            <h2 className="text-lg font-semibold tracking-tight">Pull in from your lists</h2>
             {options ? null : (
               <button type="button" onClick={loadOptions} disabled={loading} className="press rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted disabled:opacity-50">
                 {loading ? "Loading…" : "Choose"}
@@ -438,6 +493,7 @@ function Setup() {
           {options?.error ? <p role="alert" className="mt-3 text-sm font-medium">{options.error}</p> : null}
           {options && !options.error ? (
             <div className="mt-4 space-y-5">
+              <PickList title="To-do list" empty="Nothing on your to-do list." rows={todos.map((todo) => ({ id: todo.id, label: todo.text, sub: null }))} selected={selected} onToggle={(row) => toggleRef("todo", row.id, row.label)} />
               <PickList title="Tasks" empty="No open tasks." rows={options.tasks.map((task) => ({ id: task.id, label: task.title, sub: task.client }))} selected={selected} onToggle={(row) => toggleRef("task", row.id, row.label)} />
               <PickList title="Projects" empty="No active projects." rows={options.projects.map((project) => ({ id: project.id, label: project.name, sub: project.client }))} selected={selected} onToggle={(row) => toggleRef("project", row.id, row.label)} />
             </div>
@@ -447,7 +503,10 @@ function Setup() {
         <section>
           <h2 className="text-lg font-semibold tracking-tight">Notes</h2>
           <label className="sr-only" htmlFor="lock-in-notes">Notes</label>
-          <textarea id="lock-in-notes" value={notes} onChange={(event) => setNotes(event.target.value)} rows={4} placeholder="Anything you want in front of you while you work." className={`${field} mt-3 resize-y leading-6`} />
+          <div className="relative mt-3">
+            <textarea id="lock-in-notes" value={notes} onChange={(event) => setNotes(event.target.value)} rows={4} placeholder="Anything you want in front of you while you work." className={`${field} resize-y pr-14 leading-6`} />
+            <MicButton dictation={dictation} active={activeTarget === "notes"} onClick={() => toggleFor("notes")} className="absolute right-3 top-3" />
+          </div>
         </section>
 
         <button type="button" onClick={start} className="press w-full rounded-xl bg-inverted px-6 py-4 text-base font-semibold text-inverted-foreground transition-opacity hover:opacity-85 sm:w-auto sm:min-w-56">
@@ -540,6 +599,8 @@ function PickList({
   );
 }
 
+type Tab = "checklist" | "todo" | "notes";
+
 function SessionView({ session, onExit }: { session: LockInSession; onExit: () => void }) {
   const now = useNow();
   const sync = useSyncState();
@@ -548,10 +609,18 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
   const done = session.status === "done";
   const summary = checklistSummary(session.items);
   const reached = goalReached(session, now);
+  const allDone = summary.total > 0 && summary.done === summary.total;
+  const [tab, setTab] = useState<Tab>("checklist");
   const [draft, setDraft] = useState("");
   const [result, setResult] = useState<{ error?: string; success?: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const { dictation, toggleFor, activeTarget } = useDictationTarget<"item" | "notes">((target, phrase) => {
+    const current = getSession();
+    if (!current) return;
+    if (target === "item") setDraft((text) => applyDictation(text, phrase));
+    else writeSession({ ...current, notes: applyDictation(current.notes, phrase) });
+  });
 
   // Keep the tab title useful while you work in another window.
   useEffect(() => {
@@ -568,16 +637,32 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
   }, [session.status]);
 
   const update = (patch: Partial<LockInSession>) => writeSession({ ...session, ...patch });
-  const toggleItem = (id: string) => update({ items: session.items.map((item) => (item.id === id ? { ...item, done: !item.done } : item)) });
+  const toggleItem = (id: string, next: boolean) => {
+    const item = session.items.find((entry) => entry.id === id);
+    update({ items: session.items.map((entry) => (entry.id === id ? { ...entry, done: next } : entry)) });
+    // A to-do ticked in the session is ticked in the to-do list too.
+    if (item?.kind === "todo" && item.refId) void setTodoDoneAction(item.refId, next);
+  };
   const removeItem = (id: string) => update({ items: session.items.filter((item) => item.id !== id) });
   const submitItem = () => {
     if (!draft.trim()) return;
     writeSession(addItem(session, draft));
     setDraft("");
   };
+  const addTodoToSession = (todos: Todo[]) => {
+    const current = getSession();
+    if (!current) return;
+    const fresh = todos.filter((todo) => !current.items.some((item) => item.refId === todo.id));
+    if (fresh.length === 0) return;
+    writeSession({
+      ...current,
+      items: [...current.items, ...fresh.map((todo): LockInItem => ({ id: newSessionId(), text: todo.text, done: false, kind: "todo", refId: todo.id }))],
+    });
+  };
   const doneTaskIds = session.items.filter((item) => item.done && item.kind === "task" && item.refId).map((item) => item.refId as string);
 
   const finishNow = () => {
+    dictation.stop();
     const finished = finish(session, Date.now());
     writeSession(finished);
     rememberSession(toRecord(finished, Date.now()));
@@ -597,141 +682,285 @@ function SessionView({ session, onExit }: { session: LockInSession; onExit: () =
     setSaving(false);
   };
 
+  const status = done
+    ? "Finished."
+    : session.status === "paused"
+      ? "Paused."
+      : reached
+        ? `Goal of ${Math.round(session.goalMs / 60_000)} minutes reached. Keep going or finish when you are ready.`
+        : session.goalMs > 0
+          ? `Goal: ${Math.round(session.goalMs / 60_000)} minutes`
+          : "Running";
+  const tabs: [Tab, string][] = [
+    ["checklist", summary.total > 0 ? `Checklist ${summary.done}/${summary.total}` : "Checklist"],
+    ["todo", "To-do list"],
+    ["notes", "Notes"],
+  ];
+
   return (
-    <div className="grid flex-1 gap-8 py-6 lg:grid-cols-[minmax(0,360px)_1fr] lg:gap-12">
-      <div className="flex flex-col items-center text-center">
-        <Hourglass progress={frac} running={session.status === "running"} className="h-56 w-auto sm:h-72" />
-        <p aria-live="off" className="mt-4 text-6xl font-semibold tabular-nums tracking-tight sm:text-7xl">
+    <div className="mx-auto grid min-h-full w-full max-w-[1600px] gap-6 px-4 pb-6 sm:px-8 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_minmax(380px,34rem)] lg:gap-12">
+      <div className="flex flex-col items-center justify-center gap-4 py-2 text-center lg:min-h-0">
+        <Hourglass progress={frac} running={session.status === "running"} celebrate={reached && !done} className="h-[min(40dvh,28rem)] w-auto lg:h-[min(50dvh,36rem)]" />
+        <p aria-live="off" className="text-[clamp(3.75rem,13vw,9rem)] font-semibold leading-none tabular-nums tracking-tight">
           {clock(elapsed)}
         </p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {done
-            ? "Finished."
-            : session.status === "paused"
-              ? "Paused."
-              : reached
-                ? `Goal of ${Math.round(session.goalMs / 60_000)} minutes reached. Keep going or finish when you are ready.`
-                : session.goalMs > 0
-                  ? `Goal: ${Math.round(session.goalMs / 60_000)} minutes`
-                  : "Running"}
-        </p>
-        <div className="mt-5 flex flex-wrap justify-center gap-2">
+        {session.goalMs > 0 ? (
+          <div className="h-1.5 w-full max-w-md overflow-hidden rounded-full bg-muted" aria-hidden>
+            <div className="h-full bg-foreground transition-[width] duration-500" style={{ width: `${Math.min(100, (elapsed / session.goalMs) * 100)}%` }} />
+          </div>
+        ) : null}
+        <p className="max-w-md text-sm text-muted-foreground">{status}</p>
+        <div className="flex flex-wrap justify-center gap-3">
           {session.status === "running" ? (
-            <button type="button" onClick={() => writeSession(pause(session, Date.now()))} className="press rounded-full border-[1.5px] border-foreground px-5 py-2.5 text-sm font-medium transition-colors hover:bg-muted">
+            <button type="button" onClick={() => writeSession(pause(session, Date.now()))} className="press rounded-full border-[1.5px] border-foreground px-7 py-3 text-base font-medium transition-colors hover:bg-muted">
               Pause
             </button>
           ) : null}
           {session.status === "paused" ? (
-            <button type="button" onClick={() => writeSession(resume(session, Date.now()))} className="press rounded-full bg-inverted px-5 py-2.5 text-sm font-medium text-inverted-foreground">
+            <button type="button" onClick={() => writeSession(resume(session, Date.now()))} className="press rounded-full bg-inverted px-7 py-3 text-base font-medium text-inverted-foreground">
               Resume
             </button>
           ) : null}
           {!done ? (
-            <button type="button" onClick={finishNow} className="press rounded-full border border-border px-5 py-2.5 text-sm transition-colors hover:bg-muted">
+            <button type="button" onClick={finishNow} className="press rounded-full border border-border px-7 py-3 text-base transition-colors hover:bg-muted">
               Finish
             </button>
           ) : (
             <>
-              <button type="button" onClick={keepGoing} className="press rounded-full border-[1.5px] border-foreground px-5 py-2.5 text-sm font-medium transition-colors hover:bg-muted">
+              <button type="button" onClick={keepGoing} className="press rounded-full border-[1.5px] border-foreground px-7 py-3 text-base font-medium transition-colors hover:bg-muted">
                 Keep going
               </button>
-              <button type="button" onClick={startNew} className="press rounded-full bg-inverted px-5 py-2.5 text-sm font-medium text-inverted-foreground">
+              <button type="button" onClick={startNew} className="press rounded-full bg-inverted px-7 py-3 text-base font-medium text-inverted-foreground">
                 New session
               </button>
             </>
           )}
         </div>
-        <p role="status" className="mt-4 text-xs text-muted-foreground">{syncLabel(sync)}</p>
+        <p role="status" className="text-xs text-muted-foreground">{syncLabel(sync)}</p>
         {done ? (
           <button
             type="button"
             onClick={() => (confirmDiscard ? discard() : setConfirmDiscard(true))}
             onBlur={() => setConfirmDiscard(false)}
-            className="press mt-2 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+            className="press text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
           >
             {confirmDiscard ? "Tap again to discard this session" : "Discard session"}
           </button>
         ) : null}
       </div>
 
-      <div className="space-y-8">
-        <section>
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-lg font-semibold tracking-tight">{done ? "How it went" : "Checklist"}</h2>
-            {summary.total > 0 ? <span className="text-sm tabular-nums text-muted-foreground">{summary.done} of {summary.total} done</span> : null}
-          </div>
-          {summary.total > 0 ? (
-            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
-              <div className="h-full bg-foreground transition-[width] duration-500" style={{ width: `${(summary.done / summary.total) * 100}%` }} />
-            </div>
+      <div className="flex min-h-0 flex-col rounded-2xl border-[1.5px] border-foreground/20 p-4 sm:p-5 lg:max-h-full">
+        <div role="tablist" aria-label="Session panels" className="mb-4 flex gap-1 rounded-full bg-muted p-1 text-sm">
+          {tabs.map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={tab === key}
+              onClick={() => setTab(key)}
+              className={`press flex-1 rounded-full px-3 py-2 transition-colors ${tab === key ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+          {tab === "checklist" ? (
+            <section>
+              {summary.total > 0 ? (
+                <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+                  <div className="h-full bg-foreground transition-[width] duration-500" style={{ width: `${(summary.done / summary.total) * 100}%` }} />
+                </div>
+              ) : null}
+              {allDone ? (
+                <div key="all-done" className="az-celebrate relative mb-4 overflow-hidden rounded-xl border-[1.5px] border-foreground px-4 py-4 text-center">
+                  <Burst size={2.6} />
+                  <p className="text-lg font-semibold tracking-tight">Everything on the list is done.</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{done ? "Nice work." : "Add more, or finish when you are ready."}</p>
+                </div>
+              ) : null}
+              {summary.total > 0 ? (
+                <ul className="space-y-2">
+                  {session.items.map((item) => (
+                    <ChecklistRow key={item.id} item={item} locked={done} onToggle={(next) => toggleItem(item.id, next)} onRemove={() => removeItem(item.id)} />
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">Nothing on the list yet.</p>
+              )}
+              {!done ? (
+                <>
+                  <div className="mt-3 flex gap-2">
+                    <label className="sr-only" htmlFor="lock-in-session-item">Add a checklist item</label>
+                    <input
+                      id="lock-in-session-item"
+                      value={draft}
+                      onChange={(event) => setDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          submitItem();
+                        }
+                      }}
+                      maxLength={300}
+                      placeholder="Add an item and press Enter"
+                      className={field}
+                    />
+                    <MicButton dictation={dictation} active={activeTarget === "item"} onClick={() => toggleFor("item")} />
+                    <button type="button" onClick={submitItem} className="press shrink-0 rounded-md border border-border px-4 text-sm font-medium transition-colors hover:bg-muted">
+                      Add
+                    </button>
+                  </div>
+                  <DictationHint dictation={dictation} className="mt-2" />
+                </>
+              ) : null}
+              {done && doneTaskIds.length > 0 ? (
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  <button type="button" onClick={completeTasks} disabled={saving || Boolean(result?.success)} className="press rounded-md bg-inverted px-4 py-2 text-sm font-medium text-inverted-foreground transition-opacity hover:opacity-80 disabled:opacity-50">
+                    {saving ? "Saving…" : `Mark ${doneTaskIds.length} ticked task${doneTaskIds.length === 1 ? "" : "s"} done in the CRM`}
+                  </button>
+                  {result ? <span role="status" className="text-sm">{result.error ?? result.success}</span> : null}
+                </div>
+              ) : null}
+            </section>
           ) : null}
-          {summary.total > 0 ? (
-            <ul className="mt-4 space-y-2">
-              {session.items.map((item) => (
-                <li key={item.id} className={`flex items-start gap-1 rounded-xl border-[1.5px] pr-2 transition-colors ${item.done ? "border-border bg-muted/60 text-muted-foreground" : "border-foreground/30 hover:border-foreground"}`}>
-                  <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-3 px-4 py-3.5 text-base">
-                    <input type="checkbox" checked={item.done} onChange={() => toggleItem(item.id)} className="mt-1 size-5 accent-foreground" />
-                    <span className={`min-w-0 ${item.done ? "line-through" : ""}`}>
-                      {item.kind !== "custom" ? <span className="mr-2 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">{item.kind}</span> : null}
-                      {item.text}
-                    </span>
-                  </label>
-                  {!done ? (
-                    <button type="button" aria-label={`Remove ${item.text}`} onClick={() => removeItem(item.id)} className="press mt-2.5 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
-                      <Icon name="close" className="size-4" />
+
+          {tab === "todo" ? <SessionTodos session={session} disabled={done} onAdd={addTodoToSession} onToggleInSession={(refId, next) => {
+            const current = getSession();
+            const item = current?.items.find((entry) => entry.refId === refId);
+            if (current && item) writeSession({ ...current, items: current.items.map((entry) => (entry.id === item.id ? { ...entry, done: next } : entry)) });
+          }} /> : null}
+
+          {tab === "notes" ? (
+            <section>
+              <label className="sr-only" htmlFor="lock-in-session-notes">Notes</label>
+              <div className="relative">
+                <textarea
+                  id="lock-in-session-notes"
+                  value={session.notes}
+                  onChange={(event) => update({ notes: event.target.value })}
+                  rows={10}
+                  placeholder="Jot things down as you go. Type or talk."
+                  className={`${field} resize-y pr-14 leading-6`}
+                />
+                <MicButton dictation={dictation} active={activeTarget === "notes"} onClick={() => toggleFor("notes")} className="absolute right-3 top-3" />
+              </div>
+              <DictationHint dictation={dictation} className="mt-2" />
+            </section>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChecklistRow({ item, locked, onToggle, onRemove }: { item: LockInItem; locked: boolean; onToggle: (next: boolean) => void; onRemove: () => void }) {
+  const [flashing, setFlashing] = useState(false);
+  return (
+    <li className={`flex items-start gap-3 rounded-xl border-[1.5px] px-4 py-3.5 transition-colors ${flashing ? "az-row-flash" : ""} ${item.done ? "border-border text-muted-foreground" : "border-foreground/30 hover:border-foreground"}`}>
+      <span className="mt-0.5">
+        <AnimatedCheck
+          checked={item.done}
+          label={`${item.done ? "Mark not done" : "Mark done"}: ${item.text}`}
+          onChange={(next) => {
+            if (next) {
+              setFlashing(true);
+              window.setTimeout(() => setFlashing(false), 900);
+            }
+            onToggle(next);
+          }}
+        />
+      </span>
+      <span className="min-w-0 flex-1 break-words text-base leading-7">
+        {item.kind !== "custom" ? <span className="mr-2 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">{item.kind === "todo" ? "to-do" : item.kind}</span> : null}
+        <span data-done={item.done} className="az-strike">{item.text}</span>
+      </span>
+      {!locked ? (
+        <button type="button" aria-label={`Remove ${item.text}`} onClick={onRemove} className="press -mr-1 mt-0.5 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+          <Icon name="close" className="size-4" />
+        </button>
+      ) : null}
+    </li>
+  );
+}
+
+/** The general to-do list, inside a session: add to it, tick things off, or put an item on this session's checklist. */
+function SessionTodos({
+  session,
+  disabled,
+  onAdd,
+  onToggleInSession,
+}: {
+  session: LockInSession;
+  disabled: boolean;
+  onAdd: (todos: Todo[]) => void;
+  onToggleInSession: (refId: string, next: boolean) => void;
+}) {
+  const [todos, setTodos] = useState<Todo[] | null>(null);
+  const [error, setError] = useState("");
+  const [alsoChecklist, setAlsoChecklist] = useState(true);
+
+  useEffect(() => {
+    let live = true;
+    listTodosAction().then((result) => {
+      if (!live) return;
+      if (result.error) setError(result.error);
+      setTodos(result.todos.filter((todo) => !todo.done));
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  const inSession = (id: string) => session.items.some((item) => item.refId === id);
+  const tick = async (todo: Todo, next: boolean) => {
+    setTodos((current) => (current ?? []).map((item) => (item.id === todo.id ? { ...item, done: next } : item)));
+    onToggleInSession(todo.id, next);
+    const result = await setTodoDoneAction(todo.id, next);
+    if (result.error) setError(result.error);
+  };
+
+  if (todos === null) return <p className="text-sm text-muted-foreground">Loading your to-do list…</p>;
+  return (
+    <section className="space-y-4">
+      {error ? <p role="alert" className="text-sm font-medium">{error}</p> : null}
+      {error && /0031/.test(error) ? null : (
+        <>
+          <TodoQuickAdd
+            placeholder="Add to your to-do list"
+            onAdded={(added) => {
+              setTodos((current) => [...added, ...(current ?? [])]);
+              if (alsoChecklist && !disabled) onAdd(added);
+            }}
+          />
+          {disabled ? null : (
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input type="checkbox" checked={alsoChecklist} onChange={(event) => setAlsoChecklist(event.target.checked)} className="size-4 accent-foreground" />
+              Also put new items on this session&apos;s checklist
+            </label>
+          )}
+          {todos.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Your to-do list is empty.</p>
+          ) : (
+            <ul className="space-y-2">
+              {todos.map((todo) => (
+                <li key={todo.id} className={`flex items-start gap-3 rounded-xl border-[1.5px] px-4 py-3 ${todo.done ? "border-border text-muted-foreground" : "border-foreground/30"}`}>
+                  <span className="mt-0.5">
+                    <AnimatedCheck checked={todo.done} label={`${todo.done ? "Mark not done" : "Mark done"}: ${todo.text}`} onChange={(next) => void tick(todo, next)} />
+                  </span>
+                  <span className="min-w-0 flex-1 break-words text-base leading-7"><span data-done={todo.done} className="az-strike">{todo.text}</span></span>
+                  {!disabled && !todo.done && !inSession(todo.id) ? (
+                    <button type="button" onClick={() => onAdd([todo])} className="press shrink-0 rounded-md border border-border px-2.5 py-1 text-xs transition-colors hover:bg-muted">
+                      + Checklist
                     </button>
                   ) : null}
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="mt-3 text-sm text-muted-foreground">Nothing on the list yet.</p>
           )}
-          {!done ? (
-            <div className="mt-3 flex gap-2">
-              <label className="sr-only" htmlFor="lock-in-session-item">Add a checklist item</label>
-              <input
-                id="lock-in-session-item"
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    submitItem();
-                  }
-                }}
-                maxLength={300}
-                placeholder="Add an item and press Enter"
-                className={field}
-              />
-              <button type="button" onClick={submitItem} className="press shrink-0 rounded-md border border-border px-4 text-sm font-medium transition-colors hover:bg-muted">
-                Add
-              </button>
-            </div>
-          ) : null}
-          {done && doneTaskIds.length > 0 ? (
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <button type="button" onClick={completeTasks} disabled={saving || Boolean(result?.success)} className="press rounded-md bg-inverted px-4 py-2 text-sm font-medium text-inverted-foreground transition-opacity hover:opacity-80 disabled:opacity-50">
-                {saving ? "Saving…" : `Mark ${doneTaskIds.length} ticked task${doneTaskIds.length === 1 ? "" : "s"} done in the CRM`}
-              </button>
-              {result ? <span role="status" className="text-sm">{result.error ?? result.success}</span> : null}
-            </div>
-          ) : null}
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold tracking-tight">Notes</h2>
-          <label className="sr-only" htmlFor="lock-in-session-notes">Notes</label>
-          <textarea
-            id="lock-in-session-notes"
-            value={session.notes}
-            onChange={(event) => update({ notes: event.target.value })}
-            rows={5}
-            placeholder="Jot things down as you go."
-            className={`${field} mt-3 resize-y leading-6`}
-          />
-        </section>
-      </div>
-    </div>
+        </>
+      )}
+    </section>
   );
 }

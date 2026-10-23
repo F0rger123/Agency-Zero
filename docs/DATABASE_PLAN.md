@@ -358,3 +358,4 @@ available for a scheduled/back-office sweep.
 | 0028 | Website inquiries by phone, email or both: `leads.email` nullable (email or phone required), `submit_lead()` validates phone (7–15 digits) and rate-limits by phone when there is no email |
 | 0029 | Lock In sessions saved to the database: `lock_in_sessions` (client-generated id, upsert, owner-only RLS) |
 | 0030 | Service categories: nullable `services.category` (max 80 chars) used to group the Services page |
+| 0031 | General to-do list: `todos` (text, done, done_at; owner-only RLS) |

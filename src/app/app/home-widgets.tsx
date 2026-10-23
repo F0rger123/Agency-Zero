@@ -8,10 +8,10 @@ type Widget = (typeof homeWidgets)[number];
 
 const byHref = (href: string): Widget => homeWidgets.find((widget) => widget.href === href) as Widget;
 
-/** Customers is the hero; the next four share its two rows; the rest are grouped by what they are for. */
-const TOP = ["/app/tasks", "/app/calendar", "/app/projects", "/app/reminders"];
+/** Customers is the hero; the next six share its two rows; the rest are grouped by what they are for. */
+const TOP = ["/app/todos", "/app/tasks", "/app/calendar", "/app/projects", "/app/reminders", "/app/leads"];
 const GROUPS: { title: string; hrefs: string[]; columns: string }[] = [
-  { title: "Sell and get paid", hrefs: ["/app/leads", "/app/quotes", "/app/contracts", "/app/invoices", "/app/services"], columns: "lg:grid-cols-5" },
+  { title: "Sell and get paid", hrefs: ["/app/quotes", "/app/contracts", "/app/invoices", "/app/services"], columns: "lg:grid-cols-4" },
   { title: "Content and growth", hrefs: ["/app/marketing", "/app/social", "/app/shoots", "/app/workload"], columns: "lg:grid-cols-4" },
 ];
 
@@ -57,7 +57,7 @@ export function HomeWidgets({ counts }: { counts: Counts }) {
   let index = 0;
   return (
     <div className="space-y-10">
-      <section aria-label="Everyday" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <section aria-label="Everyday" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         <Tile widget={byHref("/app/clients")} count={counts["/app/clients"]} index={index++} hero />
         {TOP.map((href) => (
           <Tile key={href} widget={byHref(href)} count={counts[href]} index={index++} />

@@ -1486,3 +1486,87 @@ html[data-splash="seen"] .app-splash { display: none; }
   .zero-ring, .zero-slash, .app-splash-name span, .app-splash-line { animation: none; stroke-dashoffset: 0; opacity: 1; transform: none; }
   .loader-bar { animation: none; }
 }
+
+/* Voice typing: a ripple behind the mic while listening, faster while words are coming in. */
+@keyframes voice-ring {
+  0% { opacity: 0.55; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.9); }
+}
+.voice-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  color: var(--color-foreground);
+  animation: voice-ring 1.8s ease-out infinite;
+  pointer-events: none;
+}
+.voice-ring-fast { animation-duration: 0.9s; }
+@media (prefers-reduced-motion: reduce) {
+  .voice-ring { animation: none; opacity: 0.35; }
+}
+
+/* Animated checkboxes (to-do list and Lock In): the tick draws itself, the box pops and a small burst flies out. */
+@keyframes az-check-draw { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+@keyframes az-check-pop { 0% { transform: scale(1); } 40% { transform: scale(1.3); } 100% { transform: scale(1); } }
+@keyframes az-burst {
+  0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--a)) translateY(0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(var(--d, 22px) * -1)) scale(0.3); }
+}
+@keyframes az-row-flash {
+  0% { background-color: color-mix(in srgb, var(--color-foreground) 12%, transparent); }
+  100% { background-color: transparent; }
+}
+@keyframes az-celebrate-in {
+  0% { opacity: 0; transform: translateY(8px) scale(0.96); }
+  100% { opacity: 1; transform: none; }
+}
+.az-check-pop { animation: az-check-pop 0.4s var(--ease-out); }
+.az-check-draw { stroke-dasharray: 24; animation: az-check-draw 0.35s 0.05s ease-out both; }
+.az-burst { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
+.az-burst > i {
+  position: absolute; left: 0; top: 0; width: 5px; height: 5px; border-radius: 1px;
+  background: var(--color-foreground);
+  animation: az-burst 0.7s cubic-bezier(0.15, 0.7, 0.3, 1) forwards;
+}
+.az-row-flash { animation: az-row-flash 0.9s ease-out; }
+.az-celebrate { animation: az-celebrate-in 0.5s var(--ease-out) both; }
+/* Strike-through that draws left to right instead of appearing. */
+.az-strike {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 58%;
+  background-size: 0% 1.5px;
+  transition: background-size 0.4s ease-out, color 0.3s;
+}
+.az-strike[data-done="true"] { background-size: 100% 1.5px; }
+@media (prefers-reduced-motion: reduce) {
+  .az-check-pop, .az-check-draw, .az-row-flash, .az-celebrate { animation: none; }
+  .az-check-draw { stroke-dasharray: none; }
+  .az-burst { display: none; }
+  .az-strike { transition: none; }
+}
+
+/* Lock In hourglass: falling grains, a soft breathing glass and a pulse when the goal is reached. */
+@keyframes lock-in-grain {
+  0% { opacity: 0; transform: translateY(0); }
+  15% { opacity: 1; }
+  100% { opacity: 0.2; transform: translateY(var(--fall, 60px)); }
+}
+.lock-in-grain { animation: lock-in-grain 0.9s cubic-bezier(0.5, 0, 1, 1) infinite; }
+.lock-in-grain-2 { animation-delay: 0.3s; }
+.lock-in-grain-3 { animation-delay: 0.6s; }
+@keyframes lock-in-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.025); }
+}
+.lock-in-breathe { animation: lock-in-breathe 5s ease-in-out infinite; transform-origin: center; }
+@keyframes lock-in-celebrate {
+  0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+  50% { filter: drop-shadow(0 0 14px color-mix(in srgb, var(--color-foreground) 35%, transparent)); }
+}
+.lock-in-celebrate { animation: lock-in-celebrate 2.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .lock-in-grain, .lock-in-breathe, .lock-in-celebrate { animation: none; }
+  .lock-in-grain { display: none; }
+}

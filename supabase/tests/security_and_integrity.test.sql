@@ -566,3 +566,24 @@ set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';   -- strange
 update public.services set category = 'Hacked' where name = 'Category probe service';
 do $$ begin assert (select count(*) from public.services where name = 'Category probe service') = 0, 'stranger cannot see services'; end $$;
 reset role;
+
+-- ── to-do list (0031) ──────────────────────────────────────────────────────
+reset role;
+reset request.jwt.claim.sub;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';   -- owner
+insert into public.todos (text) values ('Call the accountant');
+update public.todos set done = true, done_at = now() where text = 'Call the accountant';
+do $$ begin
+  assert (select done from public.todos where text = 'Call the accountant'), 'owner can tick a to-do';
+end $$;
+select pg_temp.expect_error($q$insert into public.todos (text) values ('   ')$q$, 'check');
+select pg_temp.expect_error($q$insert into public.todos (text) values (repeat('x', 301))$q$, 'check');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';   -- stranger
+do $$ begin assert (select count(*) from public.todos) = 0, 'stranger cannot read to-dos'; end $$;
+select pg_temp.expect_error($q$insert into public.todos (text) values ('sneaky')$q$, 'row-level security');
+reset role;
+set role anon;
+do $$ begin assert (select count(*) from public.todos) = 0, 'anon cannot read to-dos'; end $$;
+reset role;
+

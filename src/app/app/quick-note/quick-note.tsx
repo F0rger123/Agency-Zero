@@ -1,30 +1,14 @@
 "use client";
 
-import { Component, useActionState, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Component, useActionState, useCallback, useState, type ReactNode } from "react";
 import { Icon } from "@/components/icons";
+import { DictationHint, MicButton } from "@/components/mic-button";
 import { Modal } from "@/components/modal";
 import { useOnline } from "@/components/offline";
+import { applyDictation } from "@/lib/dictation-text";
+import { useDictation } from "@/lib/use-dictation";
 import type { NoteContext, ProposedAction } from "@/lib/quick-note";
 import { applyNoteActionsAction, organizeNoteAction, type ApplyState, type OrganizeState } from "./actions";
-
-type RecognitionResult = { isFinal: boolean; 0: { transcript: string } };
-type Recognition = {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  start: () => void;
-  stop: () => void;
-  onresult: ((event: { resultIndex: number; results: ArrayLike<RecognitionResult> }) => void) | null;
-  onerror: ((event: { error: string }) => void) | null;
-  onend: (() => void) | null;
-};
-type RecognitionCtor = new () => Recognition;
-
-function recognitionCtor(): RecognitionCtor | null {
-  if (typeof window === "undefined") return null;
-  const w = window as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor };
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
-}
 
 const field = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-foreground";
 
@@ -181,52 +165,16 @@ function writeDrafts(list: string[]) {
 
 function NoteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [text, setText] = useState("");
-  const [listening, setListening] = useState(false);
-  const [voiceError, setVoiceError] = useState("");
-  const recognition = useRef<Recognition | null>(null);
+  const dictation = useDictation((phrase) => setText((current) => applyDictation(current, phrase)));
   const [state, organize, pending] = useActionState<OrganizeState, FormData>(organizeNoteAction, {});
   const [reviewKey, setReviewKey] = useState(0);
   const [reviewing, setReviewing] = useState(false);
-  const supported = typeof window !== "undefined" && recognitionCtor() !== null;
   const online = useOnline();
   // Notes written with no connection wait here until there is one to organise them.
   const [drafts, setDrafts] = useState<string[]>(readDrafts);
   const [savedNotice, setSavedNotice] = useState("");
 
-  const stop = useCallback(() => {
-    recognition.current?.stop();
-    recognition.current = null;
-    setListening(false);
-  }, []);
-
-  // The dialog is only mounted while open, so unmounting is the moment to release the microphone.
-  useEffect(() => () => recognition.current?.stop(), []);
-
-  const toggle = () => {
-    if (listening) return stop();
-    const Ctor = recognitionCtor();
-    if (!Ctor) return;
-    setVoiceError("");
-    const instance = new Ctor();
-    instance.lang = "en-US";
-    instance.continuous = true;
-    instance.interimResults = false;
-    instance.onresult = (event) => {
-      let spoken = "";
-      for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        if (event.results[i].isFinal) spoken += event.results[i][0].transcript;
-      }
-      if (spoken) setText((current) => `${current}${current && !current.endsWith(" ") ? " " : ""}${spoken.trim()}`);
-    };
-    instance.onerror = (event) => {
-      setVoiceError(event.error === "not-allowed" ? "Microphone access was blocked. Allow it in your browser, or just type." : "Voice typing stopped. Try again.");
-      setListening(false);
-    };
-    instance.onend = () => setListening(false);
-    recognition.current = instance;
-    instance.start();
-    setListening(true);
-  };
+  const stop = dictation.stop;
 
   const showReview = reviewing && state.actions && state.context;
 
@@ -273,19 +221,7 @@ function NoteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
               placeholder={`“Acme Bakery paid me $400 for the website. Started the logo task, I'm 50% done, they want a warmer red.”`}
               className={`${field} resize-y pr-14 leading-6`}
             />
-            {supported ? (
-              <button
-                type="button"
-                onClick={toggle}
-                aria-pressed={listening}
-                aria-label={listening ? "Stop voice typing" : "Start voice typing"}
-                className={`press absolute right-3 top-3 flex size-10 items-center justify-center rounded-full border transition-colors ${
-                  listening ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"
-                }`}
-              >
-                <Icon name="mic" className={`size-5 ${listening ? "animate-pulse" : ""}`} />
-              </button>
-            ) : null}
+            <MicButton dictation={dictation} className="absolute right-3 top-3" />
           </div>
           {drafts.length > 0 && online ? (
             <div className="rounded-lg border border-border p-3">
@@ -312,9 +248,7 @@ function NoteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
             </div>
           ) : null}
           {savedNotice ? <p role="status" className="text-sm font-medium">{savedNotice}</p> : null}
-          {listening ? <p role="status" className="text-xs text-muted-foreground">Listening… tap the mic again when you are done.</p> : null}
-          {!supported ? <p className="text-xs text-muted-foreground">Voice typing is not available in this browser. Use your keyboard&apos;s microphone key, or type.</p> : null}
-          {voiceError ? <p role="alert" className="text-xs font-medium">{voiceError}</p> : null}
+          <DictationHint dictation={dictation} />
           {state.error && !pending ? <p role="alert" className="text-sm font-medium">{state.error}</p> : null}
           <div className="flex flex-wrap items-center gap-3">
             <button

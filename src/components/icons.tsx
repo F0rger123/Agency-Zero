@@ -101,6 +101,12 @@ const paths: Record<string, JSX.Element> = {
       <rect x="15.3" y="13" width="3.2" height="4" rx="0.5" />
     </>
   ),
+  todo: (
+    <>
+      <path d="M4.5 6.5l1.6 1.6 2.9-3.2M4.5 14l1.6 1.6 2.9-3.2" />
+      <path d="M12 7h7.5M12 14.5h7.5M4.5 20.5h15" />
+    </>
+  ),
   settings: (
     <>
       <path d="M4 7.5h8.5M17.5 7.5H20" />
