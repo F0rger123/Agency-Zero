@@ -13,6 +13,7 @@ import { LockInButton, LockInProvider } from "@/app/app/lock-in/lock-in";
 import { OfflineSupport, clearOfflineData } from "@/components/offline";
 import { HapticsListener } from "@/components/haptics-listener";
 import { HapticsToggle } from "@/components/haptics-toggle";
+import { PrivacyToggle } from "@/components/privacy-toggle";
 
 function Wordmark() {
   return (
@@ -68,6 +69,7 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
             </Link>
           )}
           <div className="ml-auto flex items-center gap-2">
+            <PrivacyToggle />
             <LockInButton />
             <QuickNote />
             <button

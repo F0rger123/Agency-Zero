@@ -42,7 +42,7 @@ export function ClientTab({ data }: { data: ProjectWorkspaceData }) {
             {services.map((service) => (
               <li key={service.id} className="flex items-center justify-between gap-4 py-3 text-sm">
                 <span className="font-medium">{service.service_name}</span>
-                <span className="text-muted-foreground">
+                <span className="az-money text-muted-foreground">
                   {service.billing === "recurring"
                     ? `${moneyLabel(service.amount_cents)} ${billingIntervalLabel(service.billing_interval)} · ${moneyLabel(service.monthly_amount_cents)}/mo`
                     : "one-off"}

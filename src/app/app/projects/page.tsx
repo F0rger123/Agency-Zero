@@ -161,7 +161,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
                       <td className="px-3 py-4 text-muted-foreground">
                         {hoursLabel(project.actual_minutes)} / {hoursLabel(project.estimated_minutes)}
                       </td>
-                      <td className="px-3 py-4 text-muted-foreground">
+                      <td className="az-money px-3 py-4 text-muted-foreground">
                         {moneyLabel(project.value_cents, project.currency)}
                       </td>
                       <td className="px-3 py-4 text-right">

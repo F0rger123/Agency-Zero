@@ -19,7 +19,7 @@ export function QuotePrice({
   if (lines.length === 0) return <span className="text-muted-foreground">—</span>;
   const summary = summarizeQuoteLines(lines, discountCents, taxRate);
   return (
-    <span className="block">
+    <span className="az-money block">
       <span className="font-medium">{moneyLabel(summary.total, currency)}</span>
       {summary.recurring.map(([period, cents]) => (
         <span key={period} className="block text-xs text-muted-foreground">

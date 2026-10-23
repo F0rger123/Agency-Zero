@@ -360,3 +360,4 @@ available for a scheduled/back-office sweep.
 | 0030 | Service categories: nullable `services.category` (max 80 chars) used to group the Services page |
 | 0031 | General to-do list: `todos` (text, done, done_at; owner-only RLS) |
 | 0032 | Call whiteboards: `whiteboards` (owner-only RLS, board json, share token hash + mode) and anonymous `get_public_whiteboard()` |
+| 0033 | Meeting workspace: `meetings.client_id` optional, `meetings.questions`, `whiteboards.meeting_id`, `client_files.meeting_id` |

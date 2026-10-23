@@ -12,6 +12,8 @@ import { defaultBoard } from "@/lib/whiteboard/template";
 import { openTransport, type Status, type Transport } from "@/lib/whiteboard/transport";
 import { INK, NOTE_COLORS, PEN_WIDTHS, type BoardData, type Message, type Op, type ShapeKind } from "@/lib/whiteboard/types";
 import { regenerateWhiteboardLinkAction, renameWhiteboardAction, saveWhiteboardAction, setWhiteboardShareAction } from "@/app/app/whiteboard/actions";
+import { saveBoardFileAction } from "@/app/app/meetings/actions";
+import { Notepad, type NotepadMeeting } from "./notepad";
 import { WbIcon, type WbIconName } from "./wb-icons";
 import { HapticsListener } from "@/components/haptics-listener";
 
@@ -64,6 +66,8 @@ export function BoardEditor({
   shareMode: initialShareMode,
   title: initialTitle,
   backHref,
+  meeting: initialMeeting = null,
+  canFile = false,
 }: {
   initial: BoardData | null;
   boardId?: string;
@@ -72,6 +76,10 @@ export function BoardEditor({
   shareMode: ShareMode;
   title: string;
   backHref?: string;
+  /** The meeting this board belongs to (owner only); its notes are the notepad. */
+  meeting?: NotepadMeeting | null;
+  /** The board (or its meeting) has a customer, so exports can be saved to their files. */
+  canFile?: boolean;
 }) {
   const [data] = useState<BoardData>(() => initial ?? defaultBoard());
   const [selfId] = useState(() => newId());
@@ -95,6 +103,9 @@ export function BoardEditor({
   const [title, setTitle] = useState(initialTitle);
   const [confirmClear, setConfirmClear] = useState(false);
   const [dock, setDock] = useState(false);
+  const [notepad, setNotepad] = useState(false);
+  const [meeting, setMeeting] = useState<NotepadMeeting | null>(initialMeeting);
+  const [filing, setFiling] = useState(false);
   const [dockOffset, setDockOffset] = useState({ x: 0, y: 0 });
   const dockDrag = useRef<{ id: number; x: number; y: number; ox: number; oy: number } | null>(null);
   const router = useRouter();
@@ -424,15 +435,36 @@ export function BoardEditor({
       if (blob) download(blob, `${slug(title)}-${index + 1}-${slug(engine.getData().frames[index].title)}.png`);
     }, "image/png");
   };
-  const exportPdf = () => {
-    if (!engine) return;
-    setMenu(null);
-    const pages = engine.getData().frames.map((entry) => {
+  const boardPdf = (current: Engine) => {
+    const pages = current.getData().frames.map((entry) => {
       const canvas = renderFrameCanvas(entry, 2);
       return { jpeg: dataUrlToBytes(canvas.toDataURL("image/jpeg", 0.92)), pxWidth: canvas.width, pxHeight: canvas.height, ptWidth: canvas.width / 4, ptHeight: canvas.height / 4 };
     });
-    const bytes = buildPdf(pages);
-    download(new Blob([bytes as BlobPart], { type: "application/pdf" }), `${slug(title)}.pdf`);
+    return new Blob([buildPdf(pages) as BlobPart], { type: "application/pdf" });
+  };
+  const exportPdf = () => {
+    if (!engine) return;
+    setMenu(null);
+    download(boardPdf(engine), `${slug(title)}.pdf`);
+  };
+  /** All frames as a PDF, straight into the customer's files (tagged with the meeting when there is one). */
+  const fileToCustomer = async () => {
+    if (!engine || !boardId || filing) return;
+    setMenu(null);
+    setFiling(true);
+    showToast("Saving to the customer's files…");
+    try {
+      await saveNow();
+      const form = new FormData();
+      form.set("board_id", boardId);
+      form.set("file", new File([boardPdf(engine)], `${slug(title)}-${new Date().toISOString().slice(0, 10)}.pdf`, { type: "application/pdf" }));
+      const result = await saveBoardFileAction(form);
+      showToast(result.ok ? "Saved to the customer's files" : (result.error ?? "Could not save the file."));
+    } catch {
+      showToast("No connection. Try again in a moment.");
+    } finally {
+      setFiling(false);
+    }
   };
 
   /* ── Share ──────────────────────────────────────────────────────────────────────────────── */
@@ -668,9 +700,17 @@ export function BoardEditor({
                 <div className="wb-menu !fixed right-2 top-[calc(3.25rem+env(safe-area-inset-top))]">
                   <button type="button" className="wb-menu-item" onClick={exportPng}>This frame as image (PNG)</button>
                   <button type="button" className="wb-menu-item" onClick={exportPdf}>All frames as PDF</button>
+                  {role === "owner" && boardId && canFile ? (
+                    <button type="button" className="wb-menu-item" disabled={filing} onClick={() => void fileToCustomer()}>Save PDF to customer file</button>
+                  ) : null}
                 </div>
               ) : null}
             </div>
+            {role === "owner" && boardId ? (
+              <button type="button" aria-label="Meeting notepad" title="Meeting notepad" aria-pressed={notepad} onClick={() => setNotepad((open) => !open)} className={`wb-btn wb-pill !size-10 ${notepad ? "wb-btn-on" : ""}`}>
+                <WbIcon name="notepad" className="size-5" />
+              </button>
+            ) : null}
             {role === "owner" ? (
               <div className="relative" data-wb-menu>
                 <button type="button" aria-label="Share" title="Share" onClick={() => setMenu(menu === "share" ? null : "share")} className="wb-btn wb-pill !size-10">
@@ -783,6 +823,8 @@ export function BoardEditor({
           </div>
         </>
       ) : null}
+
+      {notepad && role === "owner" && boardId ? <Notepad boardId={boardId} meeting={meeting} onClose={() => setNotepad(false)} onMeeting={setMeeting} /> : null}
 
       {confirmClear ? (
         <div className="absolute inset-0 z-40 grid place-items-center bg-black/25 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Clear this frame">

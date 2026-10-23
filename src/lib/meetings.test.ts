@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanActionItems, meetingDuration, openItemsToConvert } from "./meetings";
+import { cleanActionItems, cleanQuestions, meetingDuration, needsMeetingWorkspaceMigration, openItemsToConvert } from "./meetings";
 
 describe("meeting helpers", () => {
   it("cleans action items from the browser", () => {
@@ -24,5 +24,20 @@ describe("meeting helpers", () => {
     expect(meetingDuration({ meeting_at: "2026-10-10T10:00:00Z", ended_at: "2026-10-10T10:45:00Z" })).toBe("45 min");
     expect(meetingDuration({ meeting_at: "2026-10-10T10:00:00Z", ended_at: "2026-10-10T11:30:00Z" })).toBe("1 h 30 min");
     expect(meetingDuration({ meeting_at: "2026-10-10T10:00:00Z", ended_at: null })).toBeNull();
+  });
+
+  it("cleans questions from the browser", () => {
+    const questions = cleanQuestions([{ id: "q1", text: "  Budget?  ", answer: "About 5k" }, { text: "" }, "junk", { text: "Timeline?" }]);
+    expect(questions).toEqual([
+      { id: "q1", text: "Budget?", answer: "About 5k" },
+      { id: "1-9", text: "Timeline?", answer: "" },
+    ]);
+    expect(cleanQuestions(null)).toEqual([]);
+  });
+
+  it("spots a database without the meeting workspace update", () => {
+    expect(needsMeetingWorkspaceMigration('column "questions" of relation "meetings" does not exist')).toBe(true);
+    expect(needsMeetingWorkspaceMigration('null value in column "client_id" of relation "meetings" violates not-null constraint')).toBe(true);
+    expect(needsMeetingWorkspaceMigration("permission denied")).toBe(false);
   });
 });

@@ -121,7 +121,7 @@ export default async function MarketingPage() {
                           </p>
                         </div>
                         <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                          <span>
+                          <span className="az-money">
                             {moneyNode(campaign.spend_cents)}
                             {campaign.budget_cents != null ? ` of ${moneyLabel(campaign.budget_cents)}` : ""}
                           </span>

@@ -81,6 +81,13 @@ const paths: Record<string, ReactNode> = {
   minimize: <path d="M6 10l6 6 6-6" />,
   expand: <path d="M6 14l6-6 6 6" />,
   next: <path d="M9.5 5l7 7-7 7" />,
+  notepad: (
+    <>
+      <rect x="5" y="3.5" width="14" height="17" rx="2" />
+      <path d="M8.5 8h7M8.5 12h7M8.5 16h4" />
+    </>
+  ),
+  upload: <path d="M12 16V4.5M7.5 9L12 4.5 16.5 9M5 15.5v3a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-3" />,
 };
 
 export type WbIconName = keyof typeof paths;

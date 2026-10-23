@@ -1,5 +1,15 @@
 # Handoff log (newest first)
 
+## 2026-10-23 — Claude — meetings anywhere, whiteboard notepad, hide money
+
+**Migration to apply: `0033_meeting_workspace.sql`** (paste-ready `supabase/scripts/apply-0033.sql`; probed on `/app/system` and in `check-applied.sql`). Needs 0027 and 0032 first. Until it is applied: meetings still work with a customer, questions are hidden, boards have no meeting link (the notepad's "Start meeting notes" and general meetings without a customer show a "needs 0033" message), uploads save without the meeting tag.
+- **Meetings page** (`/app/meetings`, in the menu and on home under "Meet, sell and get paid"): every meeting, newest first. "New meeting": customer optional; "Start taking notes" opens the meeting page, "Start on a whiteboard" creates the meeting plus a Meeting-notes board linked to it and opens the board.
+- **Meeting page** (`/app/meetings/[id]`): save to a customer (if none yet; its boards follow), Whiteboard (open/new, list of linked boards), Notes and questions (the existing autosaving editor, now shared from `meetings/meeting-editor.tsx`, with a Questions list: question + answer), Uploads (file picker, plus "Take a photo" on phones) into the customer's private files tagged with the meeting; they also show in the customer's Files tab.
+- **Client Meetings tab**: start form has "Take notes here" or "Open a whiteboard with them"; each meeting has "Open meeting page" and "Whiteboard". `?tab=Meetings` / `?tab=Files` deep-link into a customer.
+- **Whiteboard notepad** (owner only, notepad button in the board header): side panel on PC, bottom sheet on phones; writes the linked meeting's notes (autosave, voice typing). A board without a meeting offers "Start meeting notes" (creates a meeting with the board's customer and links it). Guests never see it. Export menu has "Save PDF to customer file" when the board or its meeting has a customer. A meeting's board goes back to the meeting page.
+- **Hide money**: eye button in the top bar blurs every amount (`Money` component, plus marked spots: revenue/recurring cards, quote prices, service prices, project values). Remembered per device; applied before first paint.
+- Browser-checked against the mock backend (see below in this entry's commit). Not checked against real Supabase Storage for the board PDF upload path.
+
 ## 2026-10-23 — Claude — whiteboard presentation controls for mouse and keyboard
 
 **No migration.**

@@ -59,6 +59,7 @@ export function ClientWorkspace({
   meetings = null,
   portal = null,
   siteUrl = "",
+  initialTab = null,
 }: {
   data: ClientWorkspaceData;
   templates?: { id: string; label: string }[];
@@ -73,9 +74,11 @@ export function ClientWorkspace({
   /** Client portal state (migration 0027); null when the database has not applied it yet. */
   portal?: ClientPortal | null;
   siteUrl?: string;
+  /** `?tab=Meetings` style deep link (e.g. back from a meeting page). */
+  initialTab?: string | null;
 }) {
   // null = the customer home (big section widgets); otherwise one section is open.
-  const [tab, setTab] = useState<Tab | null>(null);
+  const [tab, setTab] = useState<Tab | null>(() => (initialTab === "Meetings" || initialTab === "Files" ? initialTab : null));
   const { client, stats } = data;
   const currency = "USD";
   const sections: { tab: Tab; label: string; icon: IconName; blurb: string; count: number | null }[] = [

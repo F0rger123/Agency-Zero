@@ -1688,6 +1688,7 @@ html[data-splash="seen"] .app-splash { display: none; }
 .wb-btn-on:hover { background: var(--color-foreground); }
 .wb-pill { border: 1px solid var(--color-border); background: color-mix(in srgb, var(--color-background) 92%, transparent); backdrop-filter: blur(8px); box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
 .wb-pill:hover { background: var(--color-background); }
+.wb-pill.wb-btn-on, .wb-pill.wb-btn-on:hover { background: var(--color-foreground); color: var(--color-background); border-color: var(--color-foreground); }
 .wb-menu {
   position: absolute; z-index: 30; min-width: 14rem; border-radius: 1rem; border: 1px solid var(--color-border);
   background: color-mix(in srgb, var(--color-background) 97%, transparent); backdrop-filter: blur(10px);
@@ -1746,4 +1747,15 @@ html[data-splash="seen"] .app-splash { display: none; }
 @keyframes wb-tip { from { opacity: 0; translate: 0 3px; } to { opacity: 1; translate: 0 0; } }
 @media (prefers-reduced-motion: reduce) {
   .wb-tool:hover, .wb-swatch:hover, .wb-chip:hover, .wb-lift:hover { transform: none !important; }
+}
+
+/* "Hide money" (PrivacyToggle): amounts, MRR and revenue blur while a customer can see the screen. */
+.az-money,
+.az-private > :not(h2) {
+  transition: filter 0.25s ease;
+}
+html[data-private] .az-money,
+html[data-private] .az-private > :not(h2) {
+  filter: blur(9px);
+  user-select: none;
 }

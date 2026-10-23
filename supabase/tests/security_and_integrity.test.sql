@@ -615,3 +615,23 @@ set role anon;
 do $$ begin assert public.get_public_whiteboard('hash-wb-1') is null, 'sharing off hides the board'; end $$;
 reset role;
 
+-- ── meeting workspace (0033) ───────────────────────────────────────────────
+reset role;
+reset request.jwt.claim.sub;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';   -- owner
+insert into public.meetings (title, notes) values ('Coffee with a prospect', 'Wants a new site');
+do $$ begin
+  assert (select client_id from public.meetings where title = 'Coffee with a prospect') is null, 'a meeting can start without a customer';
+  assert (select jsonb_array_length(questions) from public.meetings where title = 'Coffee with a prospect') = 0, 'questions default to an empty list';
+end $$;
+select pg_temp.expect_error($q$update public.meetings set questions = '{}' where title = 'Coffee with a prospect'$q$, 'check');
+insert into public.whiteboards (title, public_token, public_token_hash, meeting_id)
+  select 'Board for coffee', 'tok-wb-m', 'hash-wb-m', id from public.meetings where title = 'Coffee with a prospect';
+do $$ begin
+  assert (select count(*) from public.whiteboards w join public.meetings m on m.id = w.meeting_id where m.title = 'Coffee with a prospect') = 1, 'a board can belong to a meeting';
+end $$;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b2';   -- stranger
+do $$ begin assert (select count(*) from public.meetings where title = 'Coffee with a prospect') = 0, 'stranger cannot read client-less meetings'; end $$;
+reset role;
+

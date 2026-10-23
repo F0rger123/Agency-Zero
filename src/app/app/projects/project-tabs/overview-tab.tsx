@@ -52,7 +52,7 @@ export function OverviewTab({ data, currency }: { data: ProjectWorkspaceData; cu
             ))}
           </dl>
           {services.length > 0 ? (
-            <p className="mt-4 text-xs text-muted-foreground">
+            <p className="az-money mt-4 text-xs text-muted-foreground">
               Client services:{" "}
               {services
                 .map((service) =>

@@ -14,6 +14,7 @@ export const navItems = [
   { label: "Projects", href: "/app/projects", icon: "projects" },
   { label: "Tasks", href: "/app/tasks", icon: "tasks" },
   { label: "To-do", href: "/app/todos", icon: "todo" },
+  { label: "Meetings", href: "/app/meetings", icon: "meetings" },
   { label: "Whiteboard", href: "/app/whiteboard", icon: "whiteboard" },
   { label: "Calendar", href: "/app/calendar", icon: "calendar" },
   { label: "Shoots", href: "/app/shoots", icon: "shoots" },
@@ -30,7 +31,7 @@ export const navItems = [
 
 /** A nav entry; `planned` sections are placeholders shown in a separate, muted group. */
 export type NavItem = { label: string; href: string; icon: string; planned?: boolean };
-export type IconName = (typeof navItems)[number]["icon"] | "menu" | "close" | "mic";
+export type IconName = (typeof navItems)[number]["icon"] | "menu" | "close" | "mic" | "eye" | "eye-off";
 
 /**
  * Home-screen widgets, in the order they appear. The flow is customer-first: Customers is the big one,
@@ -43,6 +44,7 @@ export const homeWidgets = [
   { label: "To-do", href: "/app/todos", icon: "todo", blurb: "Quick list. Type or talk, tick it off." },
   { label: "Tasks", href: "/app/tasks", icon: "tasks", blurb: "What needs doing, bugs and requests." },
   { label: "Invoices", href: "/app/invoices", icon: "invoices", blurb: "Billing, balances and payments." },
+  { label: "Meetings", href: "/app/meetings", icon: "meetings", blurb: "Notes, questions and boards, saved to the customer." },
   { label: "Whiteboard", href: "/app/whiteboard", icon: "whiteboard", blurb: "Draw with a prospect, live on a call." },
   { label: "Quotes", href: "/app/quotes", icon: "quotes", blurb: "Proposals waiting on a yes." },
   { label: "Contracts", href: "/app/contracts", icon: "contracts", blurb: "Agreements and signatures." },

@@ -2,9 +2,13 @@
 
 export type ActionItem = { id: string; text: string; done: boolean; /** already turned into a task */ task?: boolean };
 
+/** A question to ask (or that the customer asked), with the answer once there is one (migration 0033). */
+export type MeetingQuestion = { id: string; text: string; answer: string };
+
 export type Meeting = {
   id: string;
-  client_id: string;
+  /** Null for a general meeting that is not filed under a customer yet (migration 0033). */
+  client_id: string | null;
   project_id: string | null;
   title: string;
   meeting_at: string;
@@ -14,9 +18,14 @@ export type Meeting = {
   notes: string;
   decisions: string | null;
   action_items: ActionItem[];
+  /** Missing until migration 0033 is applied. */
+  questions?: MeetingQuestion[];
   status: "scheduled" | "in_progress" | "done";
   ended_at: string | null;
 };
+
+/** Columns every meeting query reads; `questions` (0033) is added separately so a database that is behind still loads. */
+export const MEETING_COLUMNS = "id, client_id, project_id, title, meeting_at, location, attendees, agenda, notes, decisions, action_items, status, ended_at";
 
 export const MEETINGS_MIGRATION_MESSAGE = "Meeting notes need database update 0027. Apply it in the Supabase SQL editor, then reload.";
 
@@ -42,6 +51,29 @@ export function cleanActionItems(raw: unknown): ActionItem[] {
   }
   return items;
 }
+
+/** Normalise untrusted questions (from the browser) before they are stored. */
+export function cleanQuestions(raw: unknown): MeetingQuestion[] {
+  if (!Array.isArray(raw)) return [];
+  const questions: MeetingQuestion[] = [];
+  for (const entry of raw.slice(0, 100)) {
+    if (!entry || typeof entry !== "object") continue;
+    const row = entry as Record<string, unknown>;
+    const value = text(row.text, 500).trim();
+    if (!value) continue;
+    questions.push({
+      id: typeof row.id === "string" && row.id.length <= 64 ? row.id : `${questions.length}-${value.length}`,
+      text: value,
+      answer: text(row.answer, 5_000),
+    });
+  }
+  return questions;
+}
+
+/** True when the database has not had migration 0033 yet (no questions / meeting_id columns, client still required). */
+export const needsMeetingWorkspaceMigration = (message: string) => /questions|meeting_id|client_id/i.test(message);
+
+export const MEETING_WORKSPACE_MIGRATION_MESSAGE = "This needs database update 0033 (meeting workspace). Apply it in the Supabase SQL editor, then reload.";
 
 export function openItemsToConvert(items: ActionItem[]): ActionItem[] {
   return items.filter((item) => !item.done && !item.task);

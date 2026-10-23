@@ -11,9 +11,9 @@ export function AppSplash() {
   return (
     <>
       <script
-        // Runs before first paint: skip the intro if it already played in this tab.
+        // Runs before first paint: skip the intro if it already played in this tab, and apply "Hide money" (PrivacyToggle).
         dangerouslySetInnerHTML={{
-          __html: `try{if(sessionStorage.getItem('az-splash')){document.documentElement.setAttribute('data-splash','seen')}else{sessionStorage.setItem('az-splash','1')}}catch(e){}`,
+          __html: `try{if(sessionStorage.getItem('az-splash')){document.documentElement.setAttribute('data-splash','seen')}else{sessionStorage.setItem('az-splash','1')}}catch(e){}try{if(localStorage.getItem('az-private')==='1'){document.documentElement.setAttribute('data-private','1')}}catch(e){}`,
         }}
       />
       <div className="app-splash" aria-hidden>

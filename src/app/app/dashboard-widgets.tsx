@@ -103,7 +103,7 @@ export type RevenueSummary = {
  */
 export function RevenueCards({ revenue, mrrCents, currency }: { revenue: RevenueSummary | null; mrrCents: number; currency: string }) {
   return (
-    <section aria-labelledby="revenue-heading">
+    <section aria-labelledby="revenue-heading" className="az-private">
       <h2 id="revenue-heading" className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
         Revenue
       </h2>
@@ -200,7 +200,7 @@ export function RecurringRevenue({ summary }: { summary: DashboardSummary }) {
   const { recurring, currency } = summary;
 
   return (
-    <section aria-labelledby="recurring-heading">
+    <section aria-labelledby="recurring-heading" className="az-private">
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <h2
           id="recurring-heading"

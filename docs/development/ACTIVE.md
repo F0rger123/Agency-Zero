@@ -13,6 +13,7 @@ Claim work here before starting; move to "Recently done" (with commit) when fini
 - P1 item 6: unified work items (task/bug/feature_request) — migration `0016`.
 
 ## Recently done
+- 2026-10-23: meetings anywhere (`/app/meetings`, meeting page with whiteboards/notes/questions/uploads), whiteboard notepad, hide-money toggle (0033).
 - 2026-10-12: L&M Tire and Wheel full website preview + pitch page at `/preview/lm-tire-wheel/` (static, noindex).
 - 2026-10-10: L&M Tire and Wheel prospect landing page (first version).
 - 2026-10-10: meeting notes, estimates, client portal (0027), fresh-project install scripts, offline mode, splash/loader.

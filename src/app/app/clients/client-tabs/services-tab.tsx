@@ -33,7 +33,7 @@ export function ServicesTab({ data }: { data: ClientWorkspaceData }) {
             <li key={assignment.id} className="flex items-start justify-between gap-4 py-4">
               <div>
                 <p className="font-medium">{assignment.service_name}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="az-money mt-1 text-sm text-muted-foreground">
                   {assignment.billing === "recurring"
                     ? `Recurring · ${moneyLabel(assignment.amount_cents)} ${billingIntervalLabel(
                         assignment.billing_interval,

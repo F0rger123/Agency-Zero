@@ -6,7 +6,7 @@ import { isMissingTable } from "@/lib/forms";
 import { PageHeader } from "@/components/page-header";
 import { DataFailure, MigrationsRequired, SetupRequired } from "@/components/states";
 import { ClientWorkspace, type ClientWorkspaceData } from "../client-workspace";
-import type { Meeting } from "@/lib/meetings";
+import { MEETING_COLUMNS, type Meeting } from "@/lib/meetings";
 import type { ClientPortal } from "../client-tabs/portal-tab";
 import type { ShootsOverview } from "../../shoots/shoots-view";
 import { todayIso } from "@/lib/format";
@@ -22,12 +22,15 @@ import { todayIso } from "@/lib/format";
  */
 export default async function ClientDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   if (!isSupabaseConfigured()) return <SetupRequired />;
 
   const { id } = await params;
+  const { tab } = await searchParams;
   const supabase = await createClient();
   const [{ data, error }, templatesResponse, shootsResponse, projectTemplatesResponse, remindersResponse, meetingsResponse, portalResponse] = await Promise.all([
     supabase.rpc("get_client_workspace", { p_client_id: id }),
@@ -38,15 +41,14 @@ export default async function ClientDetailPage({
     supabase.from("project_templates").select("id, name").eq("active", true).order("name").limit(100),
     supabase.from("reminders").select("id, message, due_at").eq("subject_type", "client").eq("subject_id", id).eq("done", false).order("due_at").limit(100),
     // Meeting notes and the client portal (0027): each degrades to a "needs 0027" hint on a database that is behind.
-    supabase
-      .from("meetings")
-      .select("id, client_id, project_id, title, meeting_at, location, attendees, agenda, notes, decisions, action_items, status, ended_at")
-      .eq("client_id", id)
-      .order("meeting_at", { ascending: false })
-      .limit(50),
+    supabase.from("meetings").select(`${MEETING_COLUMNS}, questions`).eq("client_id", id).order("meeting_at", { ascending: false }).limit(50),
     supabase.from("clients").select("portal_token, portal_enabled").eq("id", id).maybeSingle(),
   ]);
-  const meetings = meetingsResponse.error ? null : ((meetingsResponse.data ?? []) as Meeting[]);
+  // Questions arrive with 0033; a database without it still lists the meetings (and the editor hides questions).
+  const meetingsResult = meetingsResponse.error && /questions/i.test(meetingsResponse.error.message)
+    ? await supabase.from("meetings").select(MEETING_COLUMNS).eq("client_id", id).order("meeting_at", { ascending: false }).limit(50)
+    : meetingsResponse;
+  const meetings = meetingsResult.error ? null : ((meetingsResult.data ?? []) as unknown as Meeting[]);
   const portal: ClientPortal | null =
     portalResponse.error || !portalResponse.data
       ? null
@@ -106,7 +108,7 @@ export default async function ClientDetailPage({
           "Client record"
         }
       />
-      <ClientWorkspace data={workspace} templates={templates} shoots={shoots} projectTemplates={projectTemplates} reminders={reminders} meetings={meetings} portal={portal} siteUrl={(process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "")} />
+      <ClientWorkspace data={workspace} templates={templates} shoots={shoots} projectTemplates={projectTemplates} reminders={reminders} meetings={meetings} portal={portal} initialTab={tab ?? null} siteUrl={(process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "")} />
     </>
   );
 }

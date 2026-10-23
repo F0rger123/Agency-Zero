@@ -73,7 +73,7 @@ export function Money({ cents, currency = "USD", className = "" }: { cents: numb
   const { ref, play } = useCountUp(value, withoutSymbol);
   if (cents == null) return <span className={className}>—</span>;
   return (
-    <span onClick={play} className={`cursor-default tabular-nums ${className}`}>
+    <span onClick={play} className={`az-money cursor-default tabular-nums ${className}`}>
       <span className="font-semibold text-money">{symbol}</span>
       <span ref={ref} key={cents}>
         {withoutSymbol(value)}
